@@ -22,8 +22,8 @@ export default function Header() {
       bg-bg-secondary/80 backdrop-blur-glass
       border-b border-border-subtle
       flex items-center pr-3 gap-3
-      pl-20
-    " style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+      overflow-visible
+    " style={{ WebkitAppRegion: 'drag', paddingLeft: '88px' } as React.CSSProperties}>
       {/* Subtle bottom glow line */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
 
