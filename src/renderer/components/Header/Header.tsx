@@ -21,13 +21,14 @@ export default function Header() {
       relative h-12
       bg-bg-secondary/80 backdrop-blur-glass
       border-b border-border-subtle
-      flex items-center px-3 gap-3
-    ">
+      flex items-center pr-3 gap-3
+      pl-20
+    " style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
       {/* Subtle bottom glow line */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
 
       {/* Left Section - Menu & Logo */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <IconButton
           icon={<Menu />}
           onClick={toggleLeftSidebar}
@@ -47,7 +48,7 @@ export default function Header() {
       <div className="w-px h-6 bg-border-subtle" />
 
       {/* Center Section - Tabs */}
-      <div className="flex-1 flex items-center gap-1 overflow-x-auto scrollbar-none">
+      <div className="flex-1 flex items-center gap-1 overflow-x-auto scrollbar-none" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {openTabs.map((tab, index) => (
           <motion.div
             key={tab}
@@ -70,7 +71,7 @@ export default function Header() {
       <div className="w-px h-6 bg-border-subtle" />
 
       {/* Right Section - Actions */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <IconButton
           icon={<GitBranch />}
           onClick={toggleRightSidebar}
