@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { setupIpcHandlers } from './ipc/handlers'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -15,6 +16,8 @@ function createWindow(): void {
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 15, y: 15 }
   })
+
+  setupIpcHandlers(mainWindow)
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
