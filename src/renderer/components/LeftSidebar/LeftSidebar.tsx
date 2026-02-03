@@ -1,7 +1,13 @@
+import SessionList from './SessionList'
+import ProjectContext from './ProjectContext'
+import QuickActions from './QuickActions'
+
 export default function LeftSidebar() {
   return (
-    <div className="p-4 text-text-secondary">
-      <p>Left Sidebar</p>
+    <div className="h-full flex flex-col p-2 overflow-y-auto">
+      <SessionList />
+      <ProjectContext />
+      <QuickActions />
     </div>
   )
 }
