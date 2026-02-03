@@ -1,4 +1,8 @@
+import { motion } from 'framer-motion'
+import { Menu, GitBranch, Settings } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
+import { IconButton } from '../ui'
+import { Logo } from '../icons'
 import RepoTab from './RepoTab'
 import RepoSelector from './RepoSelector'
 
@@ -13,44 +17,73 @@ export default function Header() {
   } = useAppStore()
 
   return (
-    <header className="h-12 border-b border-border-primary bg-bg-secondary flex items-center px-4 gap-4">
-      <button
-        onClick={toggleLeftSidebar}
-        className="p-2 hover:bg-bg-tertiary rounded text-text-secondary hover:text-text-primary"
-        title="Toggle sidebar"
-      >
-        ☰
-      </button>
+    <header className="
+      relative h-12
+      bg-bg-secondary/80 backdrop-blur-glass
+      border-b border-border-subtle
+      flex items-center px-3 gap-3
+    ">
+      {/* Subtle bottom glow line */}
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/20 to-transparent" />
 
-      <span className="font-semibold text-text-primary">AI Orchestrator</span>
+      {/* Left Section - Menu & Logo */}
+      <div className="flex items-center gap-3">
+        <IconButton
+          icon={<Menu />}
+          onClick={toggleLeftSidebar}
+          tooltip="Toggle sidebar"
+          variant="ghost"
+        />
 
-      <div className="flex-1 flex items-center gap-1 overflow-x-auto">
-        {openTabs.map((tab) => (
-          <RepoTab
+        <div className="flex items-center gap-2">
+          <Logo size={22} />
+          <span className="font-semibold text-text-primary text-sm tracking-tight">
+            AI Orchestrator
+          </span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px h-6 bg-border-subtle" />
+
+      {/* Center Section - Tabs */}
+      <div className="flex-1 flex items-center gap-1 overflow-x-auto scrollbar-none">
+        {openTabs.map((tab, index) => (
+          <motion.div
             key={tab}
-            name={tab}
-            isActive={tab === activeTab}
-            onClick={() => setActiveTab(tab)}
-            onClose={() => closeTab(tab)}
-          />
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15, delay: index * 0.03 }}
+          >
+            <RepoTab
+              name={tab}
+              isActive={tab === activeTab}
+              onClick={() => setActiveTab(tab)}
+              onClose={() => closeTab(tab)}
+            />
+          </motion.div>
         ))}
         <RepoSelector />
       </div>
 
-      <button
-        onClick={toggleRightSidebar}
-        className="p-2 hover:bg-bg-tertiary rounded text-text-secondary hover:text-text-primary"
-        title="Toggle commits"
-      >
-        🌿
-      </button>
+      {/* Divider */}
+      <div className="w-px h-6 bg-border-subtle" />
 
-      <button
-        className="p-2 hover:bg-bg-tertiary rounded text-text-secondary hover:text-text-primary"
-        title="Settings"
-      >
-        ⚙
-      </button>
+      {/* Right Section - Actions */}
+      <div className="flex items-center gap-1">
+        <IconButton
+          icon={<GitBranch />}
+          onClick={toggleRightSidebar}
+          tooltip="Toggle commits"
+          variant="ghost"
+        />
+
+        <IconButton
+          icon={<Settings />}
+          tooltip="Settings"
+          variant="ghost"
+        />
+      </div>
     </header>
   )
 }

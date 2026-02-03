@@ -1,3 +1,5 @@
+import { motion } from 'framer-motion'
+
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
 }
@@ -10,7 +12,11 @@ export default function LoadingSpinner({ size = 'md' }: LoadingSpinnerProps) {
   }
 
   return (
-    <div className={`${sizeClasses[size]} animate-spin`}>
+    <motion.div
+      animate={{ rotate: 360 }}
+      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+      className={sizeClasses[size]}
+    >
       <svg viewBox="0 0 24 24" fill="none" className="text-accent">
         <circle
           cx="12"
@@ -19,7 +25,7 @@ export default function LoadingSpinner({ size = 'md' }: LoadingSpinnerProps) {
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
-          className="opacity-25"
+          className="opacity-20"
         />
         <path
           d="M12 2a10 10 0 0 1 10 10"
@@ -28,6 +34,6 @@ export default function LoadingSpinner({ size = 'md' }: LoadingSpinnerProps) {
           strokeLinecap="round"
         />
       </svg>
-    </div>
+    </motion.div>
   )
 }

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import Header from '../Header/Header'
 import LeftSidebar from '../LeftSidebar/LeftSidebar'
 import RightSidebar from '../RightSidebar/RightSidebar'
 import TerminalPanel from '../TerminalPanel/TerminalPanel'
-import LoadingSpinner from '../common/LoadingSpinner'
+import { Logo } from '../icons'
 
 export default function Layout() {
   const [isInitializing, setIsInitializing] = useState(true)
@@ -31,35 +32,102 @@ export default function Layout() {
 
   if (isInitializing) {
     return (
-      <div className="h-screen w-screen bg-bg-primary flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-text-secondary">Initializing AI Orchestrator...</p>
-        </div>
+      <div className="h-screen w-screen bg-bg-void flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-col items-center gap-6"
+        >
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'linear',
+            }}
+          >
+            <Logo size={48} />
+          </motion.div>
+          <div className="flex flex-col items-center gap-2">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-text-primary font-medium"
+            >
+              AI Orchestrator
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-text-tertiary text-sm"
+            >
+              Initializing...
+            </motion.div>
+          </div>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-bg-primary overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-bg-void overflow-hidden">
+      {/* Gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.02] via-transparent to-transparent pointer-events-none" />
+
       <Header />
 
-      <div className="flex-1 flex overflow-hidden">
-        {leftSidebarOpen && (
-          <aside className="w-64 border-r border-border-primary bg-bg-secondary flex-shrink-0">
-            <LeftSidebar />
-          </aside>
-        )}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Sidebar */}
+        <AnimatePresence mode="wait">
+          {leftSidebarOpen && (
+            <motion.aside
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 256, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="
+                h-full flex-shrink-0 overflow-hidden
+                bg-bg-secondary/80 backdrop-blur-glass
+                border-r border-border-subtle
+              "
+            >
+              <LeftSidebar />
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
-        <main className="flex-1 overflow-hidden">
+        {/* Main Content Area */}
+        <motion.main
+          layout
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="flex-1 overflow-hidden bg-bg-primary"
+        >
           <TerminalPanel />
-        </main>
+        </motion.main>
 
-        {rightSidebarOpen && (
-          <aside className="w-72 border-l border-border-primary bg-bg-secondary flex-shrink-0">
-            <RightSidebar />
-          </aside>
-        )}
+        {/* Right Sidebar */}
+        <AnimatePresence mode="wait">
+          {rightSidebarOpen && (
+            <motion.aside
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 288, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="
+                h-full flex-shrink-0 overflow-hidden
+                bg-bg-secondary/80 backdrop-blur-glass
+                border-l border-border-subtle
+              "
+            >
+              <RightSidebar />
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

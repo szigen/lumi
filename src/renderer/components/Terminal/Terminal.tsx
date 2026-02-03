@@ -1,12 +1,41 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { X } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
+import { StatusDot } from '../icons'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalProps {
   terminalId: string
   onClose: () => void
+}
+
+// Synthwave terminal theme
+const SYNTHWAVE_THEME = {
+  background: '#0c0e12',
+  foreground: '#e4e4e7',
+  cursor: '#8b5cf6',
+  cursorAccent: '#0c0e12',
+  selectionBackground: 'rgba(139, 92, 246, 0.3)',
+  selectionForeground: '#e4e4e7',
+  black: '#1a1e25',
+  red: '#f43f5e',
+  green: '#10b981',
+  yellow: '#f59e0b',
+  blue: '#8b5cf6',
+  magenta: '#d946ef',
+  cyan: '#06b6d4',
+  white: '#e4e4e7',
+  brightBlack: '#71717a',
+  brightRed: '#fb7185',
+  brightGreen: '#34d399',
+  brightYellow: '#fbbf24',
+  brightBlue: '#a78bfa',
+  brightMagenta: '#e879f9',
+  brightCyan: '#22d3ee',
+  brightWhite: '#fafafa',
 }
 
 export default function Terminal({ terminalId, onClose }: TerminalProps) {
@@ -17,6 +46,8 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   const { terminals, outputs, updateTerminal, setActiveTerminal } = useTerminalStore()
   const terminal = terminals.get(terminalId)
   const output = outputs.get(terminalId) || ''
+
+  const status = terminal?.status || 'idle'
 
   const handleResize = useCallback(() => {
     if (fitAddonRef.current && xtermRef.current) {
@@ -30,25 +61,15 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     if (!terminalRef.current || xtermRef.current) return
 
     const xterm = new XTerm({
-      theme: {
-        background: '#0d1117',
-        foreground: '#c9d1d9',
-        cursor: '#58a6ff',
-        cursorAccent: '#0d1117',
-        selectionBackground: '#264f78',
-        black: '#484f58',
-        red: '#ff7b72',
-        green: '#3fb950',
-        yellow: '#d29922',
-        blue: '#58a6ff',
-        magenta: '#bc8cff',
-        cyan: '#39c5cf',
-        white: '#b1bac4'
-      },
+      theme: SYNTHWAVE_THEME,
       fontSize: 13,
-      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      fontFamily: "'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace",
+      fontWeight: '400',
+      letterSpacing: 0,
+      lineHeight: 1.4,
       cursorBlink: true,
-      cursorStyle: 'block'
+      cursorStyle: 'bar',
+      scrollback: 5000,
     })
 
     const fitAddon = new FitAddon()
@@ -84,7 +105,6 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   // Write new output
   useEffect(() => {
     if (xtermRef.current && output) {
-      // Only write the new content
       const currentContent = xtermRef.current.buffer.active.length
       if (currentContent === 0) {
         xtermRef.current.write(output)
@@ -112,34 +132,73 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     window.api.onTerminalExit(handleExit)
   }, [terminalId, updateTerminal])
 
+  // Status-based glow classes
+  const statusGlowClass = {
+    running: 'shadow-glow-success',
+    completed: 'shadow-glow-info',
+    error: 'shadow-glow-error',
+    idle: '',
+  }[status]
+
+  const statusBorderClass = {
+    running: 'border-success/30',
+    completed: 'border-info/30',
+    error: 'border-error/30',
+    idle: 'border-border-default',
+  }[status]
+
   return (
-    <div
-      className="h-full flex flex-col bg-bg-primary border border-border-primary rounded overflow-hidden"
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.2 }}
+      className={`
+        h-full flex flex-col
+        bg-bg-primary rounded-xl overflow-hidden
+        border ${statusBorderClass}
+        ${statusGlowClass}
+        transition-shadow duration-slow
+      `}
       onClick={() => setActiveTerminal(terminalId)}
     >
-      <div className="flex items-center justify-between px-3 py-1.5 bg-bg-secondary border-b border-border-primary">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${
-            terminal?.status === 'running' ? 'bg-green-500' :
-            terminal?.status === 'completed' ? 'bg-blue-500' :
-            terminal?.status === 'error' ? 'bg-red-500' :
-            'bg-gray-500'
-          }`} />
-          <span className="text-sm text-text-primary truncate">
+      {/* Terminal Header */}
+      <div className="
+        flex items-center justify-between
+        px-3 py-2
+        bg-bg-secondary/80 backdrop-blur-sm
+        border-b border-border-subtle
+      ">
+        <div className="flex items-center gap-2.5">
+          <StatusDot
+            status={status === 'idle' ? 'idle' : status}
+            size="md"
+          />
+          <span className="text-sm text-text-primary font-medium truncate max-w-48">
             {terminal?.task || 'Terminal'}
           </span>
         </div>
-        <button
+
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={(e) => {
             e.stopPropagation()
             onClose()
           }}
-          className="text-text-secondary hover:text-text-primary text-sm"
+          className="
+            p-1 rounded-md
+            text-text-tertiary hover:text-text-primary
+            hover:bg-surface-hover
+            transition-all duration-fast
+          "
         >
-          ✕
-        </button>
+          <X className="w-4 h-4" />
+        </motion.button>
       </div>
-      <div ref={terminalRef} className="flex-1" />
-    </div>
+
+      {/* Terminal Content */}
+      <div ref={terminalRef} className="flex-1 bg-bg-primary" />
+    </motion.div>
   )
 }

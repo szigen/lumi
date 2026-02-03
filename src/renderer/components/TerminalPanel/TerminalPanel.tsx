@@ -1,8 +1,11 @@
 import { useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { TerminalSquare, Plus, FolderOpen } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import Terminal from '../Terminal'
+import { Button, EmptyState } from '../ui'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
 
 export default function TerminalPanel() {
@@ -47,51 +50,96 @@ export default function TerminalPanel() {
     return 'grid-cols-4'
   }
 
+  // No repository selected state
   if (!activeTab) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-text-secondary">
-        <p className="text-lg mb-2">No repository selected</p>
-        <p className="text-sm">Select a repository from the header to get started</p>
+      <div className="h-full flex items-center justify-center bg-bg-primary">
+        <EmptyState
+          icon={<FolderOpen />}
+          title="No repository selected"
+          description="Open a repository from the header to start managing your AI coding sessions"
+        />
       </div>
     )
   }
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4">
+    <div className="h-full flex flex-col p-4 gap-4 bg-bg-primary">
+      {/* Header Bar */}
       <div className="flex items-center justify-between">
-        <h2 className="text-text-primary font-medium">
-          Terminals ({repoTerminals.length}/{DEFAULT_CONFIG.maxTerminals})
-        </h2>
-        <button
+        <div className="flex items-center gap-3">
+          <h2 className="text-text-primary font-medium">Terminals</h2>
+          <span className="
+            px-2 py-0.5
+            text-xs font-medium
+            text-text-secondary
+            bg-bg-tertiary rounded-full
+          ">
+            {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
+          </span>
+        </div>
+
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus className="w-4 h-4" />}
           onClick={handleNewTerminal}
-          className="px-3 py-1.5 bg-accent text-white rounded text-sm hover:bg-blue-600"
+          disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
         >
-          + New Terminal
-        </button>
+          New Terminal
+        </Button>
       </div>
 
+      {/* Terminal Grid or Empty State */}
       {repoTerminals.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center border-2 border-dashed border-border-primary rounded">
-          <div className="text-center text-text-secondary">
-            <p className="mb-2">No terminals open</p>
-            <button
-              onClick={handleNewTerminal}
-              className="text-accent hover:underline"
-            >
-              Create your first terminal
-            </button>
-          </div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="
+            flex-1 flex items-center justify-center
+            border-2 border-dashed border-border-subtle
+            rounded-xl
+            bg-bg-secondary/30
+          "
+        >
+          <EmptyState
+            icon={<TerminalSquare />}
+            title="No terminals running"
+            description="Spawn a new terminal to start coding with Claude"
+            action={
+              <Button
+                variant="secondary"
+                leftIcon={<Plus className="w-4 h-4" />}
+                onClick={handleNewTerminal}
+              >
+                Create Terminal
+              </Button>
+            }
+          />
+        </motion.div>
       ) : (
-        <div className={`flex-1 grid ${getGridCols(repoTerminals.length)} gap-4`}>
-          {repoTerminals.map((terminal) => (
-            <Terminal
-              key={terminal.id}
-              terminalId={terminal.id}
-              onClose={() => handleCloseTerminal(terminal.id)}
-            />
-          ))}
-        </div>
+        <motion.div
+          layout
+          className={`flex-1 grid ${getGridCols(repoTerminals.length)} gap-3 auto-rows-fr`}
+        >
+          <AnimatePresence mode="popLayout">
+            {repoTerminals.map((terminal) => (
+              <motion.div
+                key={terminal.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <Terminal
+                  terminalId={terminal.id}
+                  onClose={() => handleCloseTerminal(terminal.id)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
     </div>
   )
