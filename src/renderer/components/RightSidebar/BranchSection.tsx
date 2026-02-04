@@ -46,7 +46,7 @@ export default function BranchSection({ branch, commits, isExpanded, onToggle }:
               >
                 <span className="commit-hash">{commit.shortHash}</span>
                 {isHead && <Badge variant="success">HEAD</Badge>}
-                <p className="commit-message">{commit.message}</p>
+                <p className="commit-message"><span>{commit.message}</span></p>
                 <span className="commit-date">{formatDate(commit.date)}</span>
               </div>
             )

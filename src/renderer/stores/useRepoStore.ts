@@ -3,13 +3,15 @@ import type { Repository, Commit, Branch } from '../../shared/types'
 
 interface RepoState {
   repos: Repository[]
-  commits: Map<string, Commit[]>
+  commits: Map<string, Map<string, Commit[]>>  // Map<repoPath, Map<branchName, Commit[]>>
   branches: Map<string, Branch[]>
 
   loadRepos: () => Promise<void>
-  loadCommits: (repoPath: string, branch?: string) => Promise<void>
+  loadCommits: (repoPath: string, branch: string) => Promise<void>
+  loadAllBranchCommits: (repoPath: string) => Promise<void>
   loadBranches: (repoPath: string) => Promise<void>
   getRepoByName: (name: string) => Repository | undefined
+  getCommitsForBranch: (repoPath: string, branchName: string) => Commit[]
 }
 
 export const useRepoStore = create<RepoState>((set, get) => ({
@@ -31,12 +33,21 @@ export const useRepoStore = create<RepoState>((set, get) => ({
       const commits = await window.api.getCommits(repoPath, branch)
       set((state) => {
         const newCommits = new Map(state.commits)
-        newCommits.set(repoPath, commits)
+        const repoCommits = newCommits.get(repoPath) || new Map()
+        repoCommits.set(branch, commits)
+        newCommits.set(repoPath, repoCommits)
         return { commits: newCommits }
       })
     } catch (error) {
       console.error('Failed to load commits:', error)
     }
+  },
+
+  loadAllBranchCommits: async (repoPath) => {
+    const branches = get().branches.get(repoPath) || []
+    await Promise.all(
+      branches.map(b => get().loadCommits(repoPath, b.name))
+    )
   },
 
   loadBranches: async (repoPath) => {
@@ -54,5 +65,10 @@ export const useRepoStore = create<RepoState>((set, get) => ({
 
   getRepoByName: (name) => {
     return get().repos.find((r) => r.name === name)
+  },
+
+  getCommitsForBranch: (repoPath, branchName) => {
+    const repoCommits = get().commits.get(repoPath)
+    return repoCommits?.get(branchName) || []
   }
 }))

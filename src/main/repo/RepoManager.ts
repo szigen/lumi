@@ -77,10 +77,25 @@ export class RepoManager {
     const git: SimpleGit = simpleGit(this.expandPath(repoPath))
 
     try {
-      const log = await git.log({
-        maxCount: 50,
-        ...(branch && { from: branch })
-      })
+      // Default branch'i bul (main veya master)
+      const branches = await git.branchLocal()
+      const defaultBranch = branches.all.includes('main')
+        ? 'main'
+        : branches.all.includes('master')
+          ? 'master'
+          : null
+
+      const options: string[] = ['--max-count=50']
+
+      if (branch && defaultBranch && branch !== defaultBranch) {
+        // Branch-specific: main'de olmayan commit'ler
+        options.push(`${defaultBranch}..${branch}`)
+      } else if (branch) {
+        // Main/master veya default branch yoksa: tüm commit'ler
+        options.push(branch)
+      }
+
+      const log = await git.log(options)
 
       return log.all.map((commit) => ({
         hash: commit.hash,

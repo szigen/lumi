@@ -807,6 +807,21 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  position: relative;
+}
+
+.commit-message span {
+  display: inline-block;
+  padding-right: 50px;
+}
+
+.commit-message:hover span {
+  animation: marquee 5s linear infinite;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
 }
 
 .commit-date {

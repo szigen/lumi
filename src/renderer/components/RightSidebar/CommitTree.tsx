@@ -9,7 +9,7 @@ export default function CommitTree() {
   const [expandedByRepo, setExpandedByRepo] = useState<Map<string, Set<string>>>(new Map())
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { activeTab } = useAppStore()
-  const { getRepoByName, branches, commits, loadBranches, loadCommits } = useRepoStore()
+  const { getRepoByName, branches, loadBranches, loadAllBranchCommits, getCommitsForBranch } = useRepoStore()
 
   const activeRepo = useMemo(
     () => (activeTab ? getRepoByName(activeTab) : null),
@@ -20,14 +20,20 @@ export default function CommitTree() {
     () => (activeRepo ? branches.get(activeRepo.path) || [] : []),
     [activeRepo, branches]
   )
-  const repoCommits = activeRepo ? commits.get(activeRepo.path) || [] : []
 
+  // Branch'leri yükle
   useEffect(() => {
     if (activeRepo) {
       loadBranches(activeRepo.path)
-      loadCommits(activeRepo.path)
     }
-  }, [activeRepo, loadBranches, loadCommits])
+  }, [activeRepo, loadBranches])
+
+  // Branch'ler yüklendikten sonra commits'leri yükle
+  useEffect(() => {
+    if (activeRepo && repoBranches.length > 0) {
+      loadAllBranchCommits(activeRepo.path)
+    }
+  }, [activeRepo, repoBranches, loadAllBranchCommits])
 
   const expandedBranches = useMemo(() => {
     if (!activeRepo) return new Set<string>()
@@ -54,10 +60,8 @@ export default function CommitTree() {
   const handleRefresh = async () => {
     if (activeRepo) {
       setIsRefreshing(true)
-      await Promise.all([
-        loadBranches(activeRepo.path),
-        loadCommits(activeRepo.path)
-      ])
+      await loadBranches(activeRepo.path)
+      await loadAllBranchCommits(activeRepo.path)
       setIsRefreshing(false)
     }
   }
@@ -95,7 +99,7 @@ export default function CommitTree() {
               <BranchSection
                 key={branch.name}
                 branch={branch}
-                commits={repoCommits}
+                commits={getCommitsForBranch(activeRepo.path, branch.name)}
                 isExpanded={expandedBranches.has(branch.name)}
                 onToggle={() => toggleBranch(branch.name)}
               />
