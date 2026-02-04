@@ -815,7 +815,7 @@ a {
   padding-right: 50px;
 }
 
-.commit-message:hover span {
+.commit-item:hover .commit-message span {
   animation: marquee 5s linear infinite;
 }
 
