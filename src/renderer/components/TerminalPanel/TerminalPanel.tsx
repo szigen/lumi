@@ -1,5 +1,4 @@
 import { useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { TerminalSquare, Plus, FolderOpen } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
@@ -41,19 +40,9 @@ export default function TerminalPanel() {
     removeTerminal(terminalId)
   }, [removeTerminal])
 
-  // Calculate grid columns based on terminal count
-  const getGridCols = (count: number) => {
-    if (count <= 1) return 'grid-cols-1'
-    if (count <= 2) return 'grid-cols-2'
-    if (count <= 4) return 'grid-cols-2'
-    if (count <= 6) return 'grid-cols-3'
-    return 'grid-cols-4'
-  }
-
-  // No repository selected state
   if (!activeTab) {
     return (
-      <div className="h-full flex items-center justify-center bg-bg-primary">
+      <div>
         <EmptyState
           icon={<FolderOpen />}
           title="No repository selected"
@@ -64,25 +53,12 @@ export default function TerminalPanel() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4 bg-bg-primary">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-text-primary font-medium">Terminals</h2>
-          <span className="
-            px-2 py-0.5
-            text-xs font-medium
-            text-text-secondary
-            bg-bg-tertiary rounded-full
-          ">
-            {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
-          </span>
-        </div>
-
+    <div>
+      <div>
+        <h2>Terminals</h2>
+        <span>{repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}</span>
         <Button
-          variant="primary"
-          size="sm"
-          leftIcon={<Plus className="w-4 h-4" />}
+          leftIcon={<Plus size={16} />}
           onClick={handleNewTerminal}
           disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
         >
@@ -90,56 +66,32 @@ export default function TerminalPanel() {
         </Button>
       </div>
 
-      {/* Terminal Grid or Empty State */}
       {repoTerminals.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="
-            flex-1 flex items-center justify-center
-            border-2 border-dashed border-border-subtle
-            rounded-xl
-            bg-bg-secondary/30
-          "
-        >
+        <div>
           <EmptyState
             icon={<TerminalSquare />}
             title="No terminals running"
             description="Spawn a new terminal to start coding with Claude"
             action={
               <Button
-                variant="secondary"
-                leftIcon={<Plus className="w-4 h-4" />}
+                leftIcon={<Plus size={16} />}
                 onClick={handleNewTerminal}
               >
                 Create Terminal
               </Button>
             }
           />
-        </motion.div>
+        </div>
       ) : (
-        <motion.div
-          layout
-          className={`flex-1 grid ${getGridCols(repoTerminals.length)} gap-3 auto-rows-fr`}
-        >
-          <AnimatePresence mode="popLayout">
-            {repoTerminals.map((terminal) => (
-              <motion.div
-                key={terminal.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <Terminal
-                  terminalId={terminal.id}
-                  onClose={() => handleCloseTerminal(terminal.id)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+        <div>
+          {repoTerminals.map((terminal) => (
+            <Terminal
+              key={terminal.id}
+              terminalId={terminal.id}
+              onClose={() => handleCloseTerminal(terminal.id)}
+            />
+          ))}
+        </div>
       )}
     </div>
   )

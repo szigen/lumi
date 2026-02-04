@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { motion } from 'framer-motion'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { X } from 'lucide-react'
@@ -10,32 +9,6 @@ import '@xterm/xterm/css/xterm.css'
 interface TerminalProps {
   terminalId: string
   onClose: () => void
-}
-
-// Synthwave terminal theme
-const SYNTHWAVE_THEME = {
-  background: '#0c0e12',
-  foreground: '#e4e4e7',
-  cursor: '#8b5cf6',
-  cursorAccent: '#0c0e12',
-  selectionBackground: 'rgba(139, 92, 246, 0.3)',
-  selectionForeground: '#e4e4e7',
-  black: '#1a1e25',
-  red: '#f43f5e',
-  green: '#10b981',
-  yellow: '#f59e0b',
-  blue: '#8b5cf6',
-  magenta: '#d946ef',
-  cyan: '#06b6d4',
-  white: '#e4e4e7',
-  brightBlack: '#71717a',
-  brightRed: '#fb7185',
-  brightGreen: '#34d399',
-  brightYellow: '#fbbf24',
-  brightBlue: '#a78bfa',
-  brightMagenta: '#e879f9',
-  brightCyan: '#22d3ee',
-  brightWhite: '#fafafa',
 }
 
 export default function Terminal({ terminalId, onClose }: TerminalProps) {
@@ -81,14 +54,9 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     if (!terminalRef.current || xtermRef.current) return
 
     const xterm = new XTerm({
-      theme: SYNTHWAVE_THEME,
       fontSize: 13,
-      fontFamily: "'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace",
-      fontWeight: '400',
-      letterSpacing: 0,
-      lineHeight: 1.4,
+      fontFamily: "monospace",
       cursorBlink: true,
-      cursorStyle: 'bar',
       scrollback: 5000,
     })
 
@@ -100,17 +68,14 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     xtermRef.current = xterm
     fitAddonRef.current = fitAddon
 
-    // Handle user input
     xterm.onData((data) => {
       window.api.writeTerminal(terminalId, data)
     })
 
-    // Write existing output on mount
     if (output) {
       xterm.write(output)
     }
 
-    // Resize observer
     const resizeObserver = new ResizeObserver(handleResize)
     resizeObserver.observe(terminalRef.current)
 
@@ -120,11 +85,9 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       xtermRef.current = null
       fitAddonRef.current = null
     }
-    // Note: output is intentionally not in deps - we only want to write on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId, handleResize])
 
-  // Listen for terminal output
   useEffect(() => {
     const handleOutput = (id: string, data: string) => {
       if (id === terminalId && xtermRef.current) {
@@ -143,84 +106,29 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     const cleanupOutput = window.api.onTerminalOutput(handleOutput)
     const cleanupExit = window.api.onTerminalExit(handleExit)
 
-    // Cleanup listeners on unmount/re-render
     return () => {
       cleanupOutput()
       cleanupExit()
     }
   }, [terminalId, updateTerminal])
 
-  // Status-based glow classes
-  const statusGlowClass = {
-    running: 'shadow-glow-success',
-    completed: 'shadow-glow-info',
-    error: 'shadow-glow-error',
-    idle: '',
-  }[status]
-
-  const statusBorderClass = {
-    running: 'border-success/30',
-    completed: 'border-info/30',
-    error: 'border-error/30',
-    idle: 'border-border-default',
-  }[status]
-
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.2 }}
+    <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`
-        h-full flex flex-col
-        bg-bg-primary rounded-xl overflow-hidden
-        border ${statusBorderClass}
-        ${statusGlowClass}
-        ${isDragOver ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg-primary' : ''}
-        transition-all duration-slow
-      `}
       onClick={() => setActiveTerminal(terminalId)}
     >
-      {/* Terminal Header */}
-      <div className="
-        flex items-center justify-between
-        px-3 py-2
-        bg-bg-secondary/80 backdrop-blur-sm
-        border-b border-border-subtle
-      ">
-        <div className="flex items-center gap-2.5">
-          <StatusDot
-            status={status === 'idle' ? 'idle' : status}
-            size="md"
-          />
-          <span className="text-sm text-text-primary font-medium truncate max-w-48">
-            {terminal?.task || 'Terminal'}
-          </span>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={(e) => {
-            e.stopPropagation()
-            onClose()
-          }}
-          className="
-            p-1 rounded-md
-            text-text-tertiary hover:text-text-primary
-            hover:bg-surface-hover
-            transition-all duration-fast
-          "
-        >
-          <X className="w-4 h-4" />
-        </motion.button>
+      <div>
+        <StatusDot status={status === 'idle' ? 'idle' : status} />
+        <span>{terminal?.task || 'Terminal'}</span>
+        <button onClick={(e) => { e.stopPropagation(); onClose() }}>
+          <X size={16} />
+        </button>
       </div>
 
-      {/* Terminal Content */}
-      <div ref={terminalRef} className="flex-1 bg-bg-primary" />
-    </motion.div>
+      <div ref={terminalRef} />
+      {isDragOver && <span>Drop file here</span>}
+    </div>
   )
 }
