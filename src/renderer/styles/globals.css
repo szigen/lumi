@@ -266,6 +266,7 @@ a {
   border-bottom: 1px solid var(--border);
   -webkit-app-region: drag;
   padding-left: 80px; /* macOS traffic lights */
+  user-select: none;
 }
 
 .header > * {
@@ -776,6 +777,7 @@ a {
   padding-left: var(--spacing-lg);
   border-left: 1px solid var(--border);
   margin-left: var(--spacing-sm);
+  cursor: pointer;
 }
 
 .commit-item::before {
@@ -792,6 +794,27 @@ a {
 .commit-item--head::before {
   background: var(--accent-success);
   box-shadow: 0 0 8px var(--accent-success);
+}
+
+.commit-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--border) 30%,
+    var(--border) 70%,
+    transparent 100%
+  );
+  opacity: 0.5;
+}
+
+.commit-item:last-child::after {
+  display: none;
 }
 
 .commit-hash {

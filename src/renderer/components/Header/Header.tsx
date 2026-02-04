@@ -15,8 +15,12 @@ export default function Header() {
     toggleRightSidebar
   } = useAppStore()
 
+  const handleDoubleClick = () => {
+    window.api.toggleMaximize()
+  }
+
   return (
-    <header className="header">
+    <header className="header" onDoubleClick={handleDoubleClick}>
       <div className="header-left">
         <IconButton
           icon={<Menu size={18} />}

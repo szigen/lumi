@@ -105,4 +105,13 @@ export function setupIpcHandlers(): void {
       return true
     }
   )
+
+  // Window handlers
+  ipcMain.handle(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE, () => {
+    if (mainWindow?.isMaximized()) {
+      mainWindow.unmaximize()
+    } else {
+      mainWindow?.maximize()
+    }
+  })
 }

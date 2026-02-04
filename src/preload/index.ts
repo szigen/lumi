@@ -39,7 +39,10 @@ const api = {
   getUIState: () =>
     invokeIpc<Record<string, unknown>>(IPC_CHANNELS.UI_STATE_GET),
   setUIState: (state: Record<string, unknown>) =>
-    invokeIpc<boolean>(IPC_CHANNELS.UI_STATE_SET, state)
+    invokeIpc<boolean>(IPC_CHANNELS.UI_STATE_SET, state),
+
+  // Window operations
+  toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE)
 }
 
 contextBridge.exposeInMainWorld('api', api)

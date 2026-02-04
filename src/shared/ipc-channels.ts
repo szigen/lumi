@@ -26,7 +26,10 @@ export const IPC_CHANNELS = {
 
   // UI State operations
   UI_STATE_GET: 'ui-state:get',
-  UI_STATE_SET: 'ui-state:set'
+  UI_STATE_SET: 'ui-state:set',
+
+  // Window operations
+  WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

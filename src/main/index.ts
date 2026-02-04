@@ -16,7 +16,7 @@ function createWindow(): void {
       contextIsolation: true
     },
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 15, y: 15 }
+    trafficLightPosition: { x: 15, y: 19 }
   })
 
   setMainWindow(mainWindow)
