@@ -2,6 +2,7 @@ import * as pty from 'node-pty'
 import { BrowserWindow } from 'electron'
 import { v4 as uuidv4 } from 'uuid'
 import type { ManagedTerminal } from './types'
+import { IPC_CHANNELS } from '../../shared/ipc-channels'
 
 export class TerminalManager {
   private terminals: Map<string, ManagedTerminal> = new Map()
@@ -36,11 +37,11 @@ export class TerminalManager {
     }
 
     ptyProcess.onData((data) => {
-      window.webContents.send('terminal:output', id, data)
+      window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
     })
 
     ptyProcess.onExit(({ exitCode }) => {
-      window.webContents.send('terminal:exit', id, exitCode)
+      window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       this.terminals.delete(id)
     })
 

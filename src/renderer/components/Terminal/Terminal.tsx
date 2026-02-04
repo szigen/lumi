@@ -53,7 +53,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     if (fitAddonRef.current && xtermRef.current) {
       fitAddonRef.current.fit()
       const { cols, rows } = xtermRef.current
-      window.api.writeTerminal(terminalId, `\x1b[8;${rows};${cols}t`)
+      window.api.resizeTerminal(terminalId, cols, rows)
     }
   }, [terminalId])
 
@@ -128,8 +128,14 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       }
     }
 
-    window.api.onTerminalOutput(handleOutput)
-    window.api.onTerminalExit(handleExit)
+    const cleanupOutput = window.api.onTerminalOutput(handleOutput)
+    const cleanupExit = window.api.onTerminalExit(handleExit)
+
+    // Cleanup listeners on unmount/re-render
+    return () => {
+      cleanupOutput()
+      cleanupExit()
+    }
   }, [terminalId, updateTerminal])
 
   // Status-based glow classes

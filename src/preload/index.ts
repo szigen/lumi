@@ -1,37 +1,43 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge } from 'electron'
+import { createIpcListener, invokeIpc } from './ipc-utils'
+import { IPC_CHANNELS } from '../shared/ipc-channels'
 
 const api = {
   // Terminal operations
   spawnTerminal: (repoPath: string) =>
-    ipcRenderer.invoke('terminal:spawn', repoPath),
+    invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_SPAWN, repoPath),
   writeTerminal: (terminalId: string, data: string) =>
-    ipcRenderer.invoke('terminal:write', terminalId, data),
+    invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_WRITE, terminalId, data),
   killTerminal: (terminalId: string) =>
-    ipcRenderer.invoke('terminal:kill', terminalId),
-  onTerminalOutput: (callback: (terminalId: string, data: string) => void) => {
-    ipcRenderer.on('terminal:output', (_, terminalId, data) => callback(terminalId, data))
-  },
-  onTerminalExit: (callback: (terminalId: string, code: number) => void) => {
-    ipcRenderer.on('terminal:exit', (_, terminalId, code) => callback(terminalId, code))
-  },
+    invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_KILL, terminalId),
+  resizeTerminal: (terminalId: string, cols: number, rows: number) =>
+    invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_RESIZE, terminalId, cols, rows),
+
+  // Terminal event listeners with auto-cleanup
+  onTerminalOutput: (callback: (terminalId: string, data: string) => void) =>
+    createIpcListener<[string, string]>(IPC_CHANNELS.TERMINAL_OUTPUT, callback),
+  onTerminalExit: (callback: (terminalId: string, code: number) => void) =>
+    createIpcListener<[string, number]>(IPC_CHANNELS.TERMINAL_EXIT, callback),
 
   // Repository operations
-  getRepos: () => ipcRenderer.invoke('repos:list'),
-  getRepoFiles: (repoPath: string) => ipcRenderer.invoke('repos:files', repoPath),
+  getRepos: () => invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_LIST),
+  getRepoFiles: (repoPath: string) =>
+    invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_FILES, repoPath),
 
   // Git operations
   getCommits: (repoPath: string, branch?: string) =>
-    ipcRenderer.invoke('git:commits', repoPath, branch),
+    invokeIpc<unknown[]>(IPC_CHANNELS.GIT_COMMITS, repoPath, branch),
   getBranches: (repoPath: string) =>
-    ipcRenderer.invoke('git:branches', repoPath),
+    invokeIpc<unknown[]>(IPC_CHANNELS.GIT_BRANCHES, repoPath),
 
   // Config operations
-  getConfig: () => ipcRenderer.invoke('config:get'),
+  getConfig: () => invokeIpc<Record<string, unknown>>(IPC_CHANNELS.CONFIG_GET),
   setConfig: (config: Record<string, unknown>) =>
-    ipcRenderer.invoke('config:set', config),
-  getUIState: () => ipcRenderer.invoke('ui-state:get'),
+    invokeIpc<boolean>(IPC_CHANNELS.CONFIG_SET, config),
+  getUIState: () =>
+    invokeIpc<Record<string, unknown>>(IPC_CHANNELS.UI_STATE_GET),
   setUIState: (state: Record<string, unknown>) =>
-    ipcRenderer.invoke('ui-state:set', state)
+    invokeIpc<boolean>(IPC_CHANNELS.UI_STATE_SET, state)
 }
 
 contextBridge.exposeInMainWorld('api', api)
