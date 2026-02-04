@@ -17,11 +17,12 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   const fitAddonRef = useRef<FitAddon | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const { terminals, outputs, updateTerminal, setActiveTerminal } = useTerminalStore()
+  const { terminals, outputs, updateTerminal, setActiveTerminal, activeTerminalId } = useTerminalStore()
   const terminal = terminals.get(terminalId)
   const output = outputs.get(terminalId) || ''
 
   const status = terminal?.status || 'idle'
+  const isActive = activeTerminalId === terminalId
 
   const handleResize = useCallback(() => {
     if (fitAddonRef.current && xtermRef.current) {
@@ -112,9 +113,16 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     }
   }, [terminalId, updateTerminal])
 
+  // Focus xterm when this terminal becomes active
+  useEffect(() => {
+    if (isActive && xtermRef.current) {
+      xtermRef.current.focus()
+    }
+  }, [isActive])
+
   return (
     <div
-      className={`terminal-card ${isDragOver ? 'terminal-card--drag' : ''}`}
+      className={`terminal-card ${isDragOver ? 'terminal-card--drag' : ''} ${isActive ? 'terminal-card--focused' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

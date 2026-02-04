@@ -901,6 +901,12 @@ a {
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
 }
 
+.terminal-card--focused {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary),
+              0 0 15px rgba(139, 92, 246, 0.2);
+}
+
 .terminal-card__header {
   display: flex;
   align-items: center;
