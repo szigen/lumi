@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
+import { useKeyboardShortcuts } from '../../hooks'
 import Header from '../Header/Header'
 import LeftSidebar from '../LeftSidebar/LeftSidebar'
 import RightSidebar from '../RightSidebar/RightSidebar'
@@ -9,6 +10,7 @@ import TerminalPanel from '../TerminalPanel/TerminalPanel'
 import { Logo } from '../icons'
 
 export default function Layout() {
+  useKeyboardShortcuts()
   const [isInitializing, setIsInitializing] = useState(true)
   const { leftSidebarOpen, rightSidebarOpen, loadUIState } = useAppStore()
   const { loadRepos } = useRepoStore()

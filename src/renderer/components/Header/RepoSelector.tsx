@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { Plus, FolderGit2, Folder, Search } from 'lucide-react'
 import { useRepoStore } from '../../stores/useRepoStore'
@@ -8,11 +8,19 @@ import { IconButton } from '../ui'
 export default function RepoSelector() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { repos, loadRepos } = useRepoStore()
   const { openTabs, openTab } = useAppStore()
+
+  const availableRepos = useMemo(() =>
+    repos
+      .filter((r) => !openTabs.includes(r.name))
+      .filter((r) => r.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [repos, openTabs, searchTerm]
+  )
 
   useEffect(() => {
     loadRepos()
@@ -31,20 +39,40 @@ export default function RepoSelector() {
       setSearchTerm('')
     }
 
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false)
-        setSearchTerm('')
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          setIsOpen(false)
+          setSearchTerm('')
+          setSelectedIndex(0)
+          break
+        case 'ArrowDown':
+          e.preventDefault()
+          setSelectedIndex(i => Math.min(i + 1, availableRepos.length - 1))
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          setSelectedIndex(i => Math.max(i - 1, 0))
+          break
+        case 'Enter':
+          e.preventDefault()
+          if (availableRepos[selectedIndex]) {
+            openTab(availableRepos[selectedIndex].name)
+            setIsOpen(false)
+            setSearchTerm('')
+            setSelectedIndex(0)
+          }
+          break
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleEscape)
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEscape)
+      document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen])
+  }, [isOpen, availableRepos, selectedIndex, openTab])
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -52,9 +80,15 @@ export default function RepoSelector() {
     }
   }, [isOpen])
 
-  const availableRepos = repos
-    .filter((r) => !openTabs.includes(r.name))
-    .filter((r) => r.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Listen for global keyboard shortcut (Cmd+O)
+  useEffect(() => {
+    const handleOpenEvent = () => {
+      setIsOpen(true)
+      setSelectedIndex(0)
+    }
+    window.addEventListener('open-repo-selector', handleOpenEvent)
+    return () => window.removeEventListener('open-repo-selector', handleOpenEvent)
+  }, [])
 
   const dropdown = isOpen && (
     <div ref={dropdownRef} className="repo-dropdown">
@@ -65,7 +99,10 @@ export default function RepoSelector() {
           type="text"
           placeholder="Search repos..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value)
+            setSelectedIndex(0)
+          }}
         />
       </div>
 
@@ -75,14 +112,15 @@ export default function RepoSelector() {
         </div>
       ) : (
         <div className="repo-dropdown__list">
-          {availableRepos.map((repo) => (
+          {availableRepos.map((repo, index) => (
             <button
               key={repo.path}
-              className="repo-dropdown__item"
+              className={`repo-dropdown__item ${index === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
               onClick={() => {
                 openTab(repo.name)
                 setIsOpen(false)
                 setSearchTerm('')
+                setSelectedIndex(0)
               }}
             >
               {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
@@ -100,8 +138,11 @@ export default function RepoSelector() {
       <IconButton
         ref={triggerRef}
         icon={<Plus />}
-        onClick={() => setIsOpen(!isOpen)}
-        tooltip="Open repository"
+        onClick={() => {
+          setIsOpen(!isOpen)
+          if (!isOpen) setSelectedIndex(0)
+        }}
+        tooltip="Open repository (⌘O)"
       />
       {createPortal(dropdown, document.body)}
     </>

@@ -422,7 +422,8 @@ a {
   transition: all 0.15s ease;
 }
 
-.repo-dropdown__item:hover {
+.repo-dropdown__item:hover,
+.repo-dropdown__item--selected {
   background: var(--bg-elevated);
   color: var(--text-primary);
 }

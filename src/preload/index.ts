@@ -42,7 +42,11 @@ const api = {
     invokeIpc<boolean>(IPC_CHANNELS.UI_STATE_SET, state),
 
   // Window operations
-  toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE)
+  toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE),
+
+  // Shortcut events from menu
+  onShortcut: (callback: (action: string) => void) =>
+    createIpcListener<[string]>('shortcut', callback)
 }
 
 contextBridge.exposeInMainWorld('api', api)
