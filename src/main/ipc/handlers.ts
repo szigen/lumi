@@ -55,6 +55,10 @@ export function setupIpcHandlers(): void {
     return repoManager.getFiles(repoPath)
   })
 
+  ipcMain.handle(IPC_CHANNELS.REPOS_FILE_TREE, async (_, repoPath: string) => {
+    return repoManager.getFileTree(repoPath)
+  })
+
   // Git handlers
   ipcMain.handle(
     IPC_CHANNELS.GIT_COMMITS,

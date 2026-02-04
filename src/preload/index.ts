@@ -23,6 +23,8 @@ const api = {
   getRepos: () => invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_LIST),
   getRepoFiles: (repoPath: string) =>
     invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_FILES, repoPath),
+  getFileTree: (repoPath: string) =>
+    invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_FILE_TREE, repoPath),
 
   // Git operations
   getCommits: (repoPath: string, branch?: string) =>

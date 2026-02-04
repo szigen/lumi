@@ -1,12 +1,96 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FolderTree, ChevronDown, Folder, FileText } from 'lucide-react'
+import { FolderTree, ChevronDown, ChevronRight, Folder, FileText } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
+import type { FileTreeNode } from '../../../shared/types'
+
+interface TreeNodeProps {
+  node: FileTreeNode
+  depth: number
+}
+
+function TreeNode({ node, depth }: TreeNodeProps) {
+  const [expanded, setExpanded] = useState(depth === 0)
+
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', node.path)
+    e.dataTransfer.effectAllowed = 'copy'
+  }, [node.path])
+
+  const handleClick = useCallback(() => {
+    if (node.type === 'folder') {
+      setExpanded(prev => !prev)
+    }
+  }, [node.type])
+
+  const isFolder = node.type === 'folder'
+  const hasChildren = isFolder && node.children && node.children.length > 0
+
+  return (
+    <div>
+      <div
+        draggable
+        onDragStart={handleDragStart}
+        onClick={handleClick}
+        style={{ paddingLeft: `${depth * 12 + 4}px` }}
+        className="
+          flex items-center gap-1.5 py-1 pr-2
+          rounded hover:bg-surface-hover
+          cursor-pointer select-none
+          transition-colors duration-fast
+          group
+        "
+      >
+        {/* Expand/Collapse Icon */}
+        <span className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+          {isFolder && hasChildren && (
+            <motion.span
+              animate={{ rotate: expanded ? 90 : 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <ChevronRight className="w-3 h-3 text-text-tertiary" />
+            </motion.span>
+          )}
+        </span>
+
+        {/* Icon */}
+        {isFolder ? (
+          <Folder className="w-4 h-4 text-accent flex-shrink-0" />
+        ) : (
+          <FileText className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+        )}
+
+        {/* Name */}
+        <span className="text-sm text-text-secondary truncate group-hover:text-text-primary transition-colors">
+          {node.name}
+        </span>
+      </div>
+
+      {/* Children */}
+      <AnimatePresence>
+        {isFolder && expanded && hasChildren && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            {node.children!.map(child => (
+              <TreeNode key={child.path} node={child} depth={depth + 1} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
 
 export default function ProjectContext() {
-  const [filesCache, setFilesCache] = useState<Map<string, string[]>>(new Map())
+  const [treeCache, setTreeCache] = useState<Map<string, FileTreeNode[]>>(new Map())
   const [expanded, setExpanded] = useState(true)
+  const [loading, setLoading] = useState(false)
   const { activeTab } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
@@ -20,15 +104,19 @@ export default function ProjectContext() {
   useEffect(() => {
     if (!activeRepoPath) return
 
-    window.api.getRepoFiles(activeRepoPath).then((newFiles) => {
-      setFilesCache((prev) => new Map(prev).set(activeRepoPath, newFiles))
-    })
-  }, [activeRepoPath])
+    // Check cache first
+    if (treeCache.has(activeRepoPath)) return
 
-  // Derived state: activeRepo yoksa veya henüz yüklenmediyse boş array
-  const files = activeRepoPath ? filesCache.get(activeRepoPath) ?? [] : []
-  const directories = files.filter((f) => f.endsWith('/'))
-  const regularFiles = files.filter((f) => !f.endsWith('/'))
+    setLoading(true)
+    window.api.getFileTree(activeRepoPath).then((tree) => {
+      setTreeCache(prev => new Map(prev).set(activeRepoPath, tree as FileTreeNode[]))
+      setLoading(false)
+    }).catch(() => {
+      setLoading(false)
+    })
+  }, [activeRepoPath, treeCache])
+
+  const fileTree = activeRepoPath ? treeCache.get(activeRepoPath) ?? [] : []
 
   return (
     <div className="mb-5">
@@ -53,7 +141,7 @@ export default function ProjectContext() {
         </motion.span>
       </button>
 
-      {/* File List */}
+      {/* File Tree */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -65,55 +153,19 @@ export default function ProjectContext() {
           >
             {!activeRepo ? (
               <p className="text-text-tertiary text-sm px-1">No repo selected</p>
-            ) : files.length === 0 ? (
+            ) : loading ? (
               <div className="px-1 space-y-2">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-5 animate-shimmer rounded" />
                 ))}
               </div>
+            ) : fileTree.length === 0 ? (
+              <p className="text-text-tertiary text-sm px-1">Empty directory</p>
             ) : (
-              <div className="max-h-48 overflow-y-auto space-y-0.5">
-                {directories.slice(0, 10).map((file, index) => (
-                  <motion.div
-                    key={file}
-                    initial={{ opacity: 0, x: -5 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    className="
-                      flex items-center gap-2 px-1.5 py-1
-                      rounded hover:bg-surface-hover
-                      transition-colors duration-fast
-                    "
-                  >
-                    <Folder className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-                    <span className="text-sm text-text-secondary truncate">
-                      {file}
-                    </span>
-                  </motion.div>
+              <div className="max-h-64 overflow-y-auto">
+                {fileTree.map(node => (
+                  <TreeNode key={node.path} node={node} depth={0} />
                 ))}
-                {regularFiles.slice(0, 10).map((file, index) => (
-                  <motion.div
-                    key={file}
-                    initial={{ opacity: 0, x: -5 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: (directories.slice(0, 10).length + index) * 0.02 }}
-                    className="
-                      flex items-center gap-2 px-1.5 py-1
-                      rounded hover:bg-surface-hover
-                      transition-colors duration-fast
-                    "
-                  >
-                    <FileText className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0" />
-                    <span className="text-sm text-text-secondary truncate">
-                      {file}
-                    </span>
-                  </motion.div>
-                ))}
-                {files.length > 20 && (
-                  <div className="px-1.5 py-1 text-xs text-text-tertiary">
-                    ... and {files.length - 20} more
-                  </div>
-                )}
               </div>
             )}
           </motion.div>

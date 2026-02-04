@@ -14,6 +14,7 @@ export const IPC_CHANNELS = {
   // Repository operations
   REPOS_LIST: 'repos:list',
   REPOS_FILES: 'repos:files',
+  REPOS_FILE_TREE: 'repos:file-tree',
 
   // Git operations
   GIT_COMMITS: 'git:commits',

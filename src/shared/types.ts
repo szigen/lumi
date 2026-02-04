@@ -47,3 +47,10 @@ export interface WorkLog {
   status: 'running' | 'completed' | 'error'
   output: string
 }
+
+export interface FileTreeNode {
+  name: string
+  path: string
+  type: 'file' | 'folder'
+  children?: FileTreeNode[]
+}

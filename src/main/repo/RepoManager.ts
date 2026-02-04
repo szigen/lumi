@@ -2,7 +2,8 @@ import { simpleGit, SimpleGit } from 'simple-git'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type { Repository, Commit, Branch } from '../../shared/types'
+import ignore, { Ignore } from 'ignore'
+import type { Repository, Commit, Branch, FileTreeNode } from '../../shared/types'
 
 export class RepoManager {
   private projectsRoot: string
@@ -112,5 +113,94 @@ export class RepoManager {
 
   setProjectsRoot(root: string): void {
     this.projectsRoot = this.expandPath(root)
+  }
+
+  async getFileTree(repoPath: string): Promise<FileTreeNode[]> {
+    const expandedPath = this.expandPath(repoPath)
+    const ig = this.createIgnoreFilter(expandedPath)
+
+    const buildTree = (dir: string, relativePath: string = ''): FileTreeNode[] => {
+      const nodes: FileTreeNode[] = []
+
+      let entries: fs.Dirent[]
+      try {
+        entries = fs.readdirSync(dir, { withFileTypes: true })
+      } catch {
+        return nodes
+      }
+
+      // Sort: folders first, then files, alphabetically
+      entries.sort((a, b) => {
+        if (a.isDirectory() && !b.isDirectory()) return -1
+        if (!a.isDirectory() && b.isDirectory()) return 1
+        return a.name.localeCompare(b.name)
+      })
+
+      for (const entry of entries) {
+        const entryRelativePath = relativePath ? `${relativePath}/${entry.name}` : entry.name
+        const fullPath = path.join(dir, entry.name)
+
+        // Check against ignore patterns
+        const checkPath = entry.isDirectory() ? `${entryRelativePath}/` : entryRelativePath
+        if (ig.ignores(checkPath)) continue
+
+        if (entry.isDirectory()) {
+          const children = buildTree(fullPath, entryRelativePath)
+          nodes.push({
+            name: entry.name,
+            path: entryRelativePath,
+            type: 'folder',
+            children
+          })
+        } else {
+          nodes.push({
+            name: entry.name,
+            path: entryRelativePath,
+            type: 'file'
+          })
+        }
+      }
+
+      return nodes
+    }
+
+    return buildTree(expandedPath)
+  }
+
+  private createIgnoreFilter(repoPath: string): Ignore {
+    const ig = ignore()
+
+    // Default excludes
+    ig.add([
+      '.git',
+      'node_modules',
+      'dist',
+      'build',
+      '.DS_Store',
+      '*.log',
+      '.env',
+      '.env.*',
+      'coverage',
+      '.next',
+      '.nuxt',
+      '.cache',
+      '__pycache__',
+      '.pytest_cache',
+      'venv',
+      '.venv',
+    ])
+
+    // Read .gitignore if exists
+    const gitignorePath = path.join(repoPath, '.gitignore')
+    if (fs.existsSync(gitignorePath)) {
+      try {
+        const gitignoreContent = fs.readFileSync(gitignorePath, 'utf-8')
+        ig.add(gitignoreContent)
+      } catch {
+        // Ignore read errors
+      }
+    }
+
+    return ig
   }
 }

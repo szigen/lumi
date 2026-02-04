@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
@@ -42,6 +42,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const { terminals, outputs, updateTerminal, setActiveTerminal } = useTerminalStore()
   const terminal = terminals.get(terminalId)
@@ -54,6 +55,25 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       fitAddonRef.current.fit()
       const { cols, rows } = xtermRef.current
       window.api.resizeTerminal(terminalId, cols, rows)
+    }
+  }, [terminalId])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+    setIsDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const path = e.dataTransfer.getData('text/plain')
+    if (path) {
+      window.api.writeTerminal(terminalId, path)
     }
   }, [terminalId])
 
@@ -151,12 +171,16 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.2 }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       className={`
         h-full flex flex-col
         bg-bg-primary rounded-xl overflow-hidden
         border ${statusBorderClass}
         ${statusGlowClass}
-        transition-shadow duration-slow
+        ${isDragOver ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg-primary' : ''}
+        transition-all duration-slow
       `}
       onClick={() => setActiveTerminal(terminalId)}
     >
