@@ -1,27 +1,34 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FolderTree, ChevronDown, ChevronRight, Folder, FileText } from 'lucide-react'
+import { FolderTree, ChevronDown, Folder, FileText } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 
 export default function ProjectContext() {
-  const [files, setFiles] = useState<string[]>([])
+  const [filesCache, setFilesCache] = useState<Map<string, string[]>>(new Map())
   const [expanded, setExpanded] = useState(true)
   const { activeTab } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
-  const activeRepo = activeTab ? getRepoByName(activeTab) : null
+  const activeRepo = useMemo(
+    () => (activeTab ? getRepoByName(activeTab) : null),
+    [activeTab, getRepoByName]
+  )
+
+  const activeRepoPath = activeRepo?.path
 
   useEffect(() => {
-    if (activeRepo) {
-      window.api.getRepoFiles(activeRepo.path).then(setFiles)
-    } else {
-      setFiles([])
-    }
-  }, [activeRepo])
+    if (!activeRepoPath) return
 
-  const directories = files.filter(f => f.endsWith('/'))
-  const regularFiles = files.filter(f => !f.endsWith('/'))
+    window.api.getRepoFiles(activeRepoPath).then((newFiles) => {
+      setFilesCache((prev) => new Map(prev).set(activeRepoPath, newFiles))
+    })
+  }, [activeRepoPath])
+
+  // Derived state: activeRepo yoksa veya henüz yüklenmediyse boş array
+  const files = activeRepoPath ? filesCache.get(activeRepoPath) ?? [] : []
+  const directories = files.filter((f) => f.endsWith('/'))
+  const regularFiles = files.filter((f) => !f.endsWith('/'))
 
   return (
     <div className="mb-5">

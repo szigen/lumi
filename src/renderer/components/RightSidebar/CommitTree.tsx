@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { GitCommitHorizontal, RefreshCw } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
@@ -7,13 +7,21 @@ import { IconButton, EmptyState } from '../ui'
 import BranchSection from './BranchSection'
 
 export default function CommitTree() {
-  const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set())
+  // Store expanded branches per repo path - automatically "resets" when repo changes
+  const [expandedByRepo, setExpandedByRepo] = useState<Map<string, Set<string>>>(new Map())
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { activeTab } = useAppStore()
   const { getRepoByName, branches, commits, loadBranches, loadCommits } = useRepoStore()
 
-  const activeRepo = activeTab ? getRepoByName(activeTab) : null
-  const repoBranches = activeRepo ? branches.get(activeRepo.path) || [] : []
+  const activeRepo = useMemo(
+    () => (activeTab ? getRepoByName(activeTab) : null),
+    [activeTab, getRepoByName]
+  )
+
+  const repoBranches = useMemo(
+    () => (activeRepo ? branches.get(activeRepo.path) || [] : []),
+    [activeRepo, branches]
+  )
   const repoCommits = activeRepo ? commits.get(activeRepo.path) || [] : []
 
   useEffect(() => {
@@ -21,25 +29,29 @@ export default function CommitTree() {
       loadBranches(activeRepo.path)
       loadCommits(activeRepo.path)
     }
-  }, [activeRepo?.path, loadBranches, loadCommits])
+  }, [activeRepo, loadBranches, loadCommits])
 
-  useEffect(() => {
-    // Auto-expand current branch
-    const currentBranch = repoBranches.find(b => b.isCurrent)
-    if (currentBranch) {
-      setExpandedBranches(new Set([currentBranch.name]))
-    }
-  }, [repoBranches])
+  // Derived state: use user preference if exists, otherwise default to current branch
+  const expandedBranches = useMemo(() => {
+    if (!activeRepo) return new Set<string>()
+    const userExpanded = expandedByRepo.get(activeRepo.path)
+    if (userExpanded !== undefined) return userExpanded
+    // Default: expand current branch
+    const currentBranch = repoBranches.find((b) => b.isCurrent)
+    return currentBranch ? new Set([currentBranch.name]) : new Set<string>()
+  }, [activeRepo, expandedByRepo, repoBranches])
 
   const toggleBranch = (branchName: string) => {
-    setExpandedBranches(prev => {
-      const next = new Set(prev)
+    if (!activeRepo) return
+    setExpandedByRepo((prev) => {
+      const current = prev.get(activeRepo.path) ?? expandedBranches
+      const next = new Set(current)
       if (next.has(branchName)) {
         next.delete(branchName)
       } else {
         next.add(branchName)
       }
-      return next
+      return new Map(prev).set(activeRepo.path, next)
     })
   }
 

@@ -4,32 +4,45 @@ import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 
-export function setupIpcHandlers(window: BrowserWindow): void {
+let mainWindow: BrowserWindow | null = null
+let terminalManager: TerminalManager | null = null
+
+export function setMainWindow(window: BrowserWindow): void {
+  mainWindow = window
+
+  // Cleanup on window close
+  window.on('close', () => {
+    terminalManager?.killAll()
+  })
+}
+
+export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
-  const terminalManager = new TerminalManager(config.maxTerminals)
+  terminalManager = new TerminalManager(config.maxTerminals)
   const repoManager = new RepoManager(config.projectsRoot)
 
   // Terminal handlers
   ipcMain.handle(IPC_CHANNELS.TERMINAL_SPAWN, async (_, repoPath: string) => {
-    return terminalManager.spawn(repoPath, window)
+    if (!mainWindow) throw new Error('No main window')
+    return terminalManager!.spawn(repoPath, mainWindow)
   })
 
   ipcMain.handle(
     IPC_CHANNELS.TERMINAL_WRITE,
     async (_, terminalId: string, data: string) => {
-      return terminalManager.write(terminalId, data)
+      return terminalManager!.write(terminalId, data)
     }
   )
 
   ipcMain.handle(IPC_CHANNELS.TERMINAL_KILL, async (_, terminalId: string) => {
-    return terminalManager.kill(terminalId)
+    return terminalManager!.kill(terminalId)
   })
 
   ipcMain.handle(
     IPC_CHANNELS.TERMINAL_RESIZE,
     async (_, terminalId: string, cols: number, rows: number) => {
-      return terminalManager.resize(terminalId, cols, rows)
+      return terminalManager!.resize(terminalId, cols, rows)
     }
   )
 
@@ -66,7 +79,7 @@ export function setupIpcHandlers(window: BrowserWindow): void {
 
       // Update managers with new config
       if (newConfig.maxTerminals) {
-        terminalManager.setMaxTerminals(newConfig.maxTerminals as number)
+        terminalManager!.setMaxTerminals(newConfig.maxTerminals as number)
       }
       if (newConfig.projectsRoot) {
         repoManager.setProjectsRoot(newConfig.projectsRoot as string)
@@ -88,9 +101,4 @@ export function setupIpcHandlers(window: BrowserWindow): void {
       return true
     }
   )
-
-  // Cleanup on window close
-  window.on('close', () => {
-    terminalManager.killAll()
-  })
 }

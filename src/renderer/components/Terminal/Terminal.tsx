@@ -85,7 +85,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       window.api.writeTerminal(terminalId, data)
     })
 
-    // Write existing output
+    // Write existing output on mount
     if (output) {
       xterm.write(output)
     }
@@ -100,17 +100,9 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       xtermRef.current = null
       fitAddonRef.current = null
     }
+    // Note: output is intentionally not in deps - we only want to write on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId, handleResize])
-
-  // Write new output
-  useEffect(() => {
-    if (xtermRef.current && output) {
-      const currentContent = xtermRef.current.buffer.active.length
-      if (currentContent === 0) {
-        xtermRef.current.write(output)
-      }
-    }
-  }, [output])
 
   // Listen for terminal output
   useEffect(() => {

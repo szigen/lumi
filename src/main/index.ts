@@ -1,9 +1,11 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { setupIpcHandlers } from './ipc/handlers'
+import { setupIpcHandlers, setMainWindow } from './ipc/handlers'
+
+let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1000,
@@ -17,7 +19,7 @@ function createWindow(): void {
     trafficLightPosition: { x: 15, y: 15 }
   })
 
-  setupIpcHandlers(mainWindow)
+  setMainWindow(mainWindow)
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
@@ -25,9 +27,14 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
+  })
 }
 
 app.whenReady().then(() => {
+  setupIpcHandlers()
   createWindow()
 
   app.on('activate', () => {
