@@ -13,8 +13,9 @@ export default function TerminalPanel() {
   const { getRepoByName } = useRepoStore()
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
+  const allTerminals = Array.from(terminals.values())
   const repoTerminals = activeRepo
-    ? Array.from(terminals.values()).filter(t => t.repoPath === activeRepo.path)
+    ? allTerminals.filter(t => t.repoPath === activeRepo.path)
     : []
 
   const handleNewTerminal = useCallback(async () => {
@@ -88,12 +89,16 @@ export default function TerminalPanel() {
         </div>
       ) : (
         <div className="terminal-grid">
-          {repoTerminals.map((terminal) => (
-            <Terminal
+          {allTerminals.map((terminal) => (
+            <div
               key={terminal.id}
-              terminalId={terminal.id}
-              onClose={() => handleCloseTerminal(terminal.id)}
-            />
+              style={{ display: terminal.repoPath === activeRepo?.path ? 'block' : 'none' }}
+            >
+              <Terminal
+                terminalId={terminal.id}
+                onClose={() => handleCloseTerminal(terminal.id)}
+              />
+            </div>
           ))}
         </div>
       )}
