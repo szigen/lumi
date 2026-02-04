@@ -42,9 +42,9 @@ export default function TerminalPanel() {
 
   if (!activeTab) {
     return (
-      <div>
+      <div className="terminal-panel terminal-empty">
         <EmptyState
-          icon={<FolderOpen />}
+          icon={<FolderOpen size={48} />}
           title="No repository selected"
           description="Open a repository from the header to start managing your AI coding sessions"
         />
@@ -53,28 +53,32 @@ export default function TerminalPanel() {
   }
 
   return (
-    <div>
-      <div>
-        <h2>Terminals</h2>
-        <span>{repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}</span>
-        <Button
-          leftIcon={<Plus size={16} />}
-          onClick={handleNewTerminal}
-          disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
-        >
-          New Terminal
-        </Button>
+    <div className="terminal-panel">
+      <div className="terminal-panel__header">
+        <h2 className="terminal-panel__title">Terminals</h2>
+        <span className="terminal-panel__count">
+          {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
+        </span>
+        <div className="terminal-panel__actions">
+          <Button
+            leftIcon={<Plus size={14} />}
+            onClick={handleNewTerminal}
+            disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
+          >
+            New Terminal
+          </Button>
+        </div>
       </div>
 
       {repoTerminals.length === 0 ? (
-        <div>
+        <div className="terminal-empty">
           <EmptyState
-            icon={<TerminalSquare />}
+            icon={<TerminalSquare size={48} />}
             title="No terminals running"
             description="Spawn a new terminal to start coding with Claude"
             action={
               <Button
-                leftIcon={<Plus size={16} />}
+                leftIcon={<Plus size={14} />}
                 onClick={handleNewTerminal}
               >
                 Create Terminal
@@ -83,7 +87,7 @@ export default function TerminalPanel() {
           />
         </div>
       ) : (
-        <div>
+        <div className="terminal-grid">
           {repoTerminals.map((terminal) => (
             <Terminal
               key={terminal.id}

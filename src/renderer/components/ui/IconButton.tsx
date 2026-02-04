@@ -6,9 +6,15 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ icon, tooltip, disabled, ...props }, ref) => {
+  ({ icon, tooltip, disabled, className = '', ...props }, ref) => {
     return (
-      <button ref={ref} disabled={disabled} title={tooltip} {...props}>
+      <button 
+        ref={ref} 
+        disabled={disabled} 
+        title={tooltip} 
+        className={`icon-btn ${className}`}
+        {...props}
+      >
         {icon}
       </button>
     )

@@ -23,25 +23,31 @@ export default function BranchSection({ branch, commits, isExpanded, onToggle }:
   }
 
   return (
-    <div>
-      <button onClick={onToggle}>
-        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        <GitBranch size={16} />
-        <span>{branch.name}</span>
+    <div className="branch-section">
+      <button 
+        className={`branch-header ${branch.isCurrent ? 'branch-header--current' : ''}`}
+        onClick={onToggle}
+      >
+        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <GitBranch size={14} />
+        <span className="branch-header__name">{branch.name}</span>
         {branch.isCurrent && <Badge variant="accent">current</Badge>}
       </button>
 
       {isExpanded && (
-        <div>
+        <div className="commit-list">
           {commits.map((commit, index) => {
             const isHead = index === 0 && branch.isCurrent
 
             return (
-              <div key={commit.hash}>
-                <span>{commit.shortHash}</span>
+              <div 
+                key={commit.hash} 
+                className={`commit-item ${isHead ? 'commit-item--head' : ''}`}
+              >
+                <span className="commit-hash">{commit.shortHash}</span>
                 {isHead && <Badge variant="success">HEAD</Badge>}
-                <p>{commit.message}</p>
-                <span>{formatDate(commit.date)}</span>
+                <p className="commit-message">{commit.message}</p>
+                <span className="commit-date">{formatDate(commit.date)}</span>
               </div>
             )
           })}

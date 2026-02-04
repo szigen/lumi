@@ -32,33 +32,35 @@ export default function Layout() {
 
   if (isInitializing) {
     return (
-      <div>
-        <Logo size={48} />
-        <div>AI Orchestrator</div>
-        <div>Initializing...</div>
+      <div className="loading-screen">
+        <div className="loading-content">
+          <Logo size={48} className="loading-logo" />
+          <div className="loading-title">AI Orchestrator</div>
+          <div className="loading-status">Initializing...</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div>
+    <div className="layout">
       <Header />
-      <div>
+      <div className="layout-body">
         <AnimatePresence mode="wait">
           {leftSidebarOpen && (
-            <aside>
+            <aside className="sidebar sidebar-left">
               <LeftSidebar />
             </aside>
           )}
         </AnimatePresence>
 
-        <main>
+        <main className="main-content">
           <TerminalPanel />
         </main>
 
         <AnimatePresence mode="wait">
           {rightSidebarOpen && (
-            <aside>
+            <aside className="sidebar sidebar-right">
               <RightSidebar />
             </aside>
           )}

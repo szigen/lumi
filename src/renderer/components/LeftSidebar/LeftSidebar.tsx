@@ -4,7 +4,7 @@ import QuickActions from './QuickActions'
 
 export default function LeftSidebar() {
   return (
-    <div>
+    <div className="left-sidebar">
       <SessionList />
       <ProjectContext />
       <QuickActions />

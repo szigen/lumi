@@ -16,18 +16,18 @@ export default function Header() {
   } = useAppStore()
 
   return (
-    <header>
-      <div>
+    <header className="header">
+      <div className="header-left">
         <IconButton
-          icon={<Menu />}
+          icon={<Menu size={18} />}
           onClick={toggleLeftSidebar}
           tooltip="Toggle sidebar"
         />
-        <Logo size={22} />
-        <span>AI Orchestrator</span>
+        <Logo size={22} animated />
+        <span className="app-title">AI Orchestrator</span>
       </div>
 
-      <div>
+      <div className="header-center">
         {openTabs.map((tab) => (
           <RepoTab
             key={tab}
@@ -40,14 +40,14 @@ export default function Header() {
         <RepoSelector />
       </div>
 
-      <div>
+      <div className="header-right">
         <IconButton
-          icon={<GitBranch />}
+          icon={<GitBranch size={18} />}
           onClick={toggleRightSidebar}
           tooltip="Toggle commits"
         />
         <IconButton
-          icon={<Settings />}
+          icon={<Settings size={18} />}
           tooltip="Settings"
         />
       </div>

@@ -1,9 +1,11 @@
 interface LogoProps {
   size?: number
   className?: string
+  animated?: boolean
 }
 
-export default function Logo({ size = 24, className = '' }: LogoProps) {
+export default function Logo({ size = 24, className = '', animated = false }: LogoProps) {
+  const animatedClass = animated ? 'logo--animated' : ''
   return (
     <svg
       width={size}
@@ -11,7 +13,7 @@ export default function Logo({ size = 24, className = '' }: LogoProps) {
       viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
+      className={`logo ${animatedClass} ${className}`}
     >
       <defs>
         <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">

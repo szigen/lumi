@@ -2,7 +2,7 @@ import CommitTree from './CommitTree'
 
 export default function RightSidebar() {
   return (
-    <div>
+    <div className="right-sidebar">
       <CommitTree />
     </div>
   )

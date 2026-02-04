@@ -2,16 +2,14 @@ type StatusType = 'running' | 'completed' | 'error' | 'idle' | 'warning'
 
 interface StatusDotProps {
   status: StatusType
+  className?: string
 }
 
-export default function StatusDot({ status }: StatusDotProps) {
-  const labels: Record<StatusType, string> = {
-    running: '●',
-    completed: '✓',
-    error: '✗',
-    idle: '○',
-    warning: '!'
-  }
-
-  return <span>{labels[status]}</span>
+export default function StatusDot({ status, className = '' }: StatusDotProps) {
+  return (
+    <span 
+      className={`status-dot status-dot--${status} ${className}`}
+      aria-label={status}
+    />
+  )
 }

@@ -114,21 +114,27 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
 
   return (
     <div
+      className={`terminal-card ${isDragOver ? 'terminal-card--drag' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={() => setActiveTerminal(terminalId)}
     >
-      <div>
+      <div className="terminal-card__header">
         <StatusDot status={status === 'idle' ? 'idle' : status} />
-        <span>{terminal?.task || 'Terminal'}</span>
-        <button onClick={(e) => { e.stopPropagation(); onClose() }}>
-          <X size={16} />
+        <span className="terminal-card__title">{terminal?.task || 'Terminal'}</span>
+        <button 
+          className="terminal-card__close"
+          onClick={(e) => { e.stopPropagation(); onClose() }}
+        >
+          <X size={14} />
         </button>
       </div>
 
-      <div ref={terminalRef} />
-      {isDragOver && <span>Drop file here</span>}
+      <div className="terminal-card__body">
+        <div ref={terminalRef} />
+        {isDragOver && <span className="drag-overlay">Drop file here</span>}
+      </div>
     </div>
   )
 }

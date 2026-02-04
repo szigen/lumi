@@ -15,20 +15,23 @@ export default function SessionList() {
     : []
 
   return (
-    <div>
-      <div>
+    <div className="sidebar-section">
+      <div className="section-header">
         <Layers size={16} />
         <h3>Sessions</h3>
-        {repoTerminals.length > 0 && <span>{repoTerminals.length}</span>}
+        {repoTerminals.length > 0 && (
+          <span className="section-header__count">{repoTerminals.length}</span>
+        )}
       </div>
 
       {repoTerminals.length === 0 ? (
-        <p>No active sessions</p>
+        <p className="session-empty">No active sessions</p>
       ) : (
-        <div>
+        <div className="session-list">
           {repoTerminals.map((terminal) => (
             <div
               key={terminal.id}
+              className={`session-item ${activeTerminalId === terminal.id ? 'session-item--active' : ''}`}
               onClick={() => setActiveTerminal(terminal.id)}
             >
               <StatusDot
@@ -36,8 +39,9 @@ export default function SessionList() {
                         terminal.status === 'completed' ? 'completed' :
                         terminal.status === 'error' ? 'error' : 'idle'}
               />
-              <span>{terminal.task || `Terminal ${terminal.id.slice(0, 6)}`}</span>
-              {activeTerminalId === terminal.id && <span>(active)</span>}
+              <span className="session-item__name">
+                {terminal.task || `Terminal ${terminal.id.slice(0, 6)}`}
+              </span>
             </div>
           ))}
         </div>

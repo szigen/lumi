@@ -64,9 +64,9 @@ export default function CommitTree() {
 
   if (!activeRepo) {
     return (
-      <div>
+      <div className="commit-tree">
         <EmptyState
-          icon={<GitCommitHorizontal />}
+          icon={<GitCommitHorizontal size={32} />}
           title="No repository"
           description="Select a repository to view commits"
         />
@@ -75,21 +75,20 @@ export default function CommitTree() {
   }
 
   return (
-    <div>
-      <div>
+    <div className="commit-tree">
+      <div className="commit-header">
         <GitCommitHorizontal size={16} />
         <h3>Commits</h3>
         <IconButton
-          icon={<RefreshCw />}
+          icon={<RefreshCw size={14} className={isRefreshing ? 'commit-header__refresh--spinning' : ''} />}
           onClick={handleRefresh}
           tooltip="Refresh"
         />
-        {isRefreshing && <span>Refreshing...</span>}
       </div>
 
-      <div>
+      <div className="commit-list-container">
         {repoBranches.length === 0 ? (
-          <p>Loading branches...</p>
+          <p className="tree-empty">Loading branches...</p>
         ) : (
           <div>
             {repoBranches.map((branch) => (

@@ -5,14 +5,15 @@ interface EmptyStateProps {
   title: string
   description?: string
   action?: ReactNode
+  className?: string
 }
 
-export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+export default function EmptyState({ icon, title, description, action, className = '' }: EmptyStateProps) {
   return (
-    <div>
-      {icon}
-      <h3>{title}</h3>
-      {description && <p>{description}</p>}
+    <div className={`empty-state ${className}`}>
+      <div className="empty-state__icon">{icon}</div>
+      <h3 className="empty-state__title">{title}</h3>
+      {description && <p className="empty-state__desc">{description}</p>}
       {action}
     </div>
   )

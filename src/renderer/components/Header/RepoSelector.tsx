@@ -57,8 +57,8 @@ export default function RepoSelector() {
     .filter((r) => r.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const dropdown = isOpen && (
-    <div ref={dropdownRef}>
-      <div>
+    <div ref={dropdownRef} className="repo-dropdown">
+      <div className="repo-dropdown__search">
         <Search size={16} />
         <input
           ref={searchInputRef}
@@ -70,14 +70,15 @@ export default function RepoSelector() {
       </div>
 
       {availableRepos.length === 0 ? (
-        <div>
+        <div className="repo-dropdown__empty">
           {searchTerm ? 'No matching repos' : 'No more repos available'}
         </div>
       ) : (
-        <div>
+        <div className="repo-dropdown__list">
           {availableRepos.map((repo) => (
             <button
               key={repo.path}
+              className="repo-dropdown__item"
               onClick={() => {
                 openTab(repo.name)
                 setIsOpen(false)
@@ -85,8 +86,8 @@ export default function RepoSelector() {
               }}
             >
               {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
-              <span>{repo.name}</span>
-              {repo.isGitRepo && <span>git</span>}
+              <span className="repo-dropdown__item-name">{repo.name}</span>
+              {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
             </button>
           ))}
         </div>

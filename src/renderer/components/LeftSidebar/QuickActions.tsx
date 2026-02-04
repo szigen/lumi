@@ -51,16 +51,17 @@ export default function QuickActions() {
   }
 
   return (
-    <div>
-      <div>
+    <div className="sidebar-section">
+      <div className="section-header">
         <Zap size={16} />
         <h3>Quick Actions</h3>
       </div>
 
-      <div>
+      <div className="quick-actions">
         {QUICK_ACTIONS.map((action) => (
           <button
             key={action.id}
+            className="action-btn"
             onClick={() => handleAction(action)}
             disabled={!activeRepo}
           >

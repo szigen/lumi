@@ -9,10 +9,14 @@ interface RepoTabProps {
 
 export default function RepoTab({ name, isActive, onClick, onClose }: RepoTabProps) {
   return (
-    <div onClick={onClick}>
+    <div 
+      className={`repo-tab ${isActive ? 'repo-tab--active' : ''}`}
+      onClick={onClick}
+    >
       <Folder size={14} />
-      <span>{name}</span>
+      <span className="repo-tab__name">{name}</span>
       <button
+        className="repo-tab__close"
         onClick={(e) => {
           e.stopPropagation()
           onClose()
@@ -20,7 +24,6 @@ export default function RepoTab({ name, isActive, onClick, onClose }: RepoTabPro
       >
         <X size={12} />
       </button>
-      {isActive && <span>(active)</span>}
     </div>
   )
 }

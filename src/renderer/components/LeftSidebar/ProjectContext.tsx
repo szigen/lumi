@@ -27,19 +27,29 @@ function TreeNode({ node, depth }: TreeNodeProps) {
   const hasChildren = isFolder && node.children && node.children.length > 0
 
   return (
-    <div>
+    <div className="tree-node">
       <div
+        className="tree-node__content"
         draggable
         onDragStart={handleDragStart}
         onClick={handleClick}
+        style={{ paddingLeft: depth > 0 ? 0 : undefined }}
       >
-        {isFolder && hasChildren && (expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
-        {isFolder ? <Folder size={16} /> : <FileText size={16} />}
-        <span>{node.name}</span>
+        {isFolder && hasChildren ? (
+          expanded ? <ChevronDown size={12} className="chevron-icon" /> : <ChevronRight size={12} className="chevron-icon" />
+        ) : (
+          <span style={{ width: 12 }} />
+        )}
+        {isFolder ? (
+          <Folder size={16} className="folder-icon" />
+        ) : (
+          <FileText size={16} className="file-icon" />
+        )}
+        <span className="tree-node__name">{node.name}</span>
       </div>
 
       {isFolder && expanded && hasChildren && (
-        <div>
+        <div className="tree-children">
           {node.children!.map(child => (
             <TreeNode key={child.path} node={child} depth={depth + 1} />
           ))}
@@ -79,21 +89,21 @@ export default function ProjectContext() {
   const fileTree = activeRepoPath ? treeCache.get(activeRepoPath) ?? [] : []
 
   return (
-    <div>
-      <button onClick={() => setExpanded(!expanded)}>
+    <div className="sidebar-section file-tree-section">
+      <button className="file-tree-header" onClick={() => setExpanded(!expanded)}>
         <FolderTree size={16} />
         <h3>Project Context</h3>
         {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
       </button>
 
       {expanded && (
-        <div>
+        <div className="file-tree">
           {!activeRepo ? (
-            <p>No repo selected</p>
+            <p className="tree-empty">No repo selected</p>
           ) : loading ? (
-            <p>Loading...</p>
+            <p className="tree-empty">Loading...</p>
           ) : fileTree.length === 0 ? (
-            <p>Empty directory</p>
+            <p className="tree-empty">Empty directory</p>
           ) : (
             <div>
               {fileTree.map(node => (
