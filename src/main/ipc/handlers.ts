@@ -3,9 +3,12 @@ import { TerminalManager } from '../terminal/TerminalManager'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
 import * as path from 'path'
+import * as fs from 'fs'
+import * as os from 'os'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { ActionStore } from '../action/ActionStore'
 import { ActionEngine } from '../action/ActionEngine'
+import { CREATE_ACTION_PROMPT } from '../action/create-action-prompt'
 
 let mainWindow: BrowserWindow | null = null
 let terminalManager: TerminalManager | null = null
@@ -194,6 +197,9 @@ export function setupIpcHandlers(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.ACTIONS_CREATE_NEW, async (_, repoPath: string) => {
+    const promptPath = path.join(os.tmpdir(), 'ai-orchestrator-create-action-prompt.txt')
+    fs.writeFileSync(promptPath, CREATE_ACTION_PROMPT, 'utf-8')
+
     const action: import('../../shared/action-types').Action = {
       id: '__create-action',
       label: 'Create Action',
@@ -202,14 +208,7 @@ export function setupIpcHandlers(): void {
       steps: [
         {
           type: 'write',
-          content:
-            'claude "Sen bir Action Creator agent\'isin. Kullanici yeni bir Quick Action olusturmak istiyor. ' +
-            'Action YAML formati: id: kebab-case-id, label: Human Readable Label, icon: LucideIconName, ' +
-            'scope: user | project, steps: [type: write | wait_for | delay, content/pattern/ms: ...]. ' +
-            'Kullaniciya ne yapmak istedigini sor. ' +
-            'Scope\'u belirle (user: her repoda ayni, project: repo-specific). ' +
-            'YAML dosyasini su dizine yaz: user scope: ~/.ai-orchestrator/actions/<id>.yaml, ' +
-            'project scope: <cwd>/.ai-orchestrator/actions/<id>.yaml"\r'
+          content: `claude "$(cat '${promptPath}')"\r`
         }
       ]
     }
