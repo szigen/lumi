@@ -59,6 +59,13 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       fontFamily: "monospace",
       cursorBlink: true,
       scrollback: 5000,
+      theme: {
+        background: '#12121f',
+        foreground: '#e2e2f0',
+        cursor: '#a78bfa',
+        cursorAccent: '#12121f',
+        selectionBackground: 'rgba(139, 92, 246, 0.3)',
+      }
     })
 
     const fitAddon = new FitAddon()
