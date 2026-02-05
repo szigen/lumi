@@ -25,15 +25,16 @@ export default function TerminalPanel() {
       return
     }
 
-    const terminalId = await window.api.spawnTerminal(activeRepo.path)
-    if (terminalId) {
+    const result = await window.api.spawnTerminal(activeRepo.path)
+    if (result) {
       addTerminal({
-        id: terminalId,
+        id: result.id,
+        name: result.name,
         repoPath: activeRepo.path,
         status: 'running',
         createdAt: new Date()
       })
-      window.api.writeTerminal(terminalId, 'claude\r')
+      window.api.writeTerminal(result.id, 'claude\r')
     }
   }, [activeRepo, addTerminal, getTerminalCount])
 

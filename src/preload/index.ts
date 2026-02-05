@@ -1,11 +1,12 @@
 import { contextBridge } from 'electron'
 import { createIpcListener, invokeIpc } from './ipc-utils'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
+import type { SpawnResult } from '../main/terminal/types'
 
 const api = {
   // Terminal operations
   spawnTerminal: (repoPath: string) =>
-    invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_SPAWN, repoPath),
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.TERMINAL_SPAWN, repoPath),
   writeTerminal: (terminalId: string, data: string) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_WRITE, terminalId, data),
   killTerminal: (terminalId: string) =>
@@ -59,13 +60,13 @@ const api = {
   getActions: (repoPath?: string) =>
     invokeIpc<unknown[]>(IPC_CHANNELS.ACTIONS_LIST, repoPath),
   executeAction: (actionId: string, repoPath: string) =>
-    invokeIpc<string | null>(IPC_CHANNELS.ACTIONS_EXECUTE, actionId, repoPath),
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_EXECUTE, actionId, repoPath),
   deleteAction: (actionId: string, scope: 'user' | 'project', repoPath?: string) =>
     invokeIpc<boolean>(IPC_CHANNELS.ACTIONS_DELETE, actionId, scope, repoPath),
   loadProjectActions: (repoPath: string) =>
     invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
   createNewAction: (repoPath: string) =>
-    invokeIpc<string | null>(IPC_CHANNELS.ACTIONS_CREATE_NEW, repoPath),
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_CREATE_NEW, repoPath),
   onActionsChanged: (callback: () => void) =>
     createIpcListener<[]>(IPC_CHANNELS.ACTIONS_CHANGED, callback),
 

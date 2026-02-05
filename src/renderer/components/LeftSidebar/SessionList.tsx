@@ -40,7 +40,7 @@ export default function SessionList() {
                         terminal.status === 'error' ? 'error' : 'idle'}
               />
               <span className="session-item__name">
-                {terminal.task || `Terminal ${terminal.id.slice(0, 6)}`}
+                {terminal.task || terminal.name}
               </span>
             </div>
           ))}

@@ -51,14 +51,15 @@ export default function QuickActions() {
   }, [activeRepo?.path])
 
   const executeAndTrack = async (
-    apiCall: () => Promise<string | null>,
+    apiCall: () => Promise<{ id: string; name: string } | null>,
     task?: string
   ) => {
     if (!activeRepo) return
-    const terminalId = await apiCall()
-    if (terminalId) {
+    const result = await apiCall()
+    if (result) {
       addTerminal({
-        id: terminalId,
+        id: result.id,
+        name: result.name,
         repoPath: activeRepo.path,
         status: 'running',
         task,

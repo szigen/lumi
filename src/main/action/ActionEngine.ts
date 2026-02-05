@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
 import type { Action } from '../../shared/action-types'
+import type { SpawnResult } from '../terminal/types'
 
 interface OutputEvent {
   terminalId: string
@@ -19,11 +20,13 @@ export class ActionEngine {
     this.window = window
   }
 
-  async execute(action: Action, repoPath: string): Promise<string | null> {
+  async execute(action: Action, repoPath: string): Promise<SpawnResult | null> {
     if (!this.window) throw new Error('No main window')
 
-    const terminalId = this.terminalManager.spawn(repoPath, this.window)
-    if (!terminalId) return null
+    const result = this.terminalManager.spawn(repoPath, this.window)
+    if (!result) return null
+
+    const { id: terminalId } = result
 
     for (const step of action.steps) {
       switch (step.type) {
@@ -41,7 +44,7 @@ export class ActionEngine {
       }
     }
 
-    return terminalId
+    return result
   }
 
   private waitForOutput(terminalId: string, pattern: string, timeout: number): Promise<void> {

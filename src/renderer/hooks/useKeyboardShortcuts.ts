@@ -15,15 +15,16 @@ export function useKeyboardShortcuts() {
     if (!activeRepo) return
     if (getTerminalCount() >= DEFAULT_CONFIG.maxTerminals) return
 
-    window.api.spawnTerminal(activeRepo.path).then((terminalId) => {
-      if (terminalId) {
+    window.api.spawnTerminal(activeRepo.path).then((result) => {
+      if (result) {
         addTerminal({
-          id: terminalId,
+          id: result.id,
+          name: result.name,
           repoPath: activeRepo.path,
           status: 'running',
           createdAt: new Date()
         })
-        window.api.writeTerminal(terminalId, 'claude\r')
+        window.api.writeTerminal(result.id, 'claude\r')
       }
     })
   }, [activeTab, getRepoByName, getTerminalCount, addTerminal])

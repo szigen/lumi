@@ -1,5 +1,6 @@
 export interface Terminal {
   id: string
+  name: string
   repoPath: string
   status: 'idle' | 'running' | 'completed' | 'error'
   task?: string

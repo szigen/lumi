@@ -2,9 +2,10 @@ import * as pty from 'node-pty'
 import { BrowserWindow } from 'electron'
 import { v4 as uuidv4 } from 'uuid'
 import { EventEmitter } from 'events'
-import type { ManagedTerminal } from './types'
+import type { ManagedTerminal, SpawnResult } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { NotificationManager } from '../notification/NotificationManager'
+import { generateCodename } from './codenames'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
@@ -17,13 +18,14 @@ export class TerminalManager extends EventEmitter {
     this.notificationManager = new NotificationManager()
   }
 
-  spawn(repoPath: string, window: BrowserWindow): string | null {
+  spawn(repoPath: string, window: BrowserWindow): SpawnResult | null {
     if (this.terminals.size >= this.maxTerminals) {
       console.error(`Max terminals (${this.maxTerminals}) reached`)
       return null
     }
 
     const id = uuidv4()
+    const name = generateCodename()
     const shell = process.platform === 'win32' ? 'powershell.exe' : 'zsh'
 
     const ptyProcess = pty.spawn(shell, [], {
@@ -36,6 +38,7 @@ export class TerminalManager extends EventEmitter {
 
     const terminal: ManagedTerminal = {
       id,
+      name,
       pty: ptyProcess,
       repoPath,
       createdAt: new Date()
@@ -56,7 +59,7 @@ export class TerminalManager extends EventEmitter {
 
     this.terminals.set(id, terminal)
 
-    return id
+    return { id, name }
   }
 
   write(terminalId: string, data: string): boolean {
