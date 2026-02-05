@@ -1,13 +1,10 @@
 import { useEffect, useState, useMemo } from 'react'
-import { RefreshCw } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
-import { IconButton } from '../ui'
 import BranchSection from './BranchSection'
 
 export default function CommitTree() {
   const [expandedByRepo, setExpandedByRepo] = useState<Map<string, Set<string>>>(new Map())
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const { activeTab } = useAppStore()
   const { getRepoByName, branches, loadBranches, loadAllBranchCommits, getCommitsForBranch } = useRepoStore()
 
@@ -57,29 +54,12 @@ export default function CommitTree() {
     })
   }
 
-  const handleRefresh = async () => {
-    if (activeRepo) {
-      setIsRefreshing(true)
-      await loadBranches(activeRepo.path)
-      await loadAllBranchCommits(activeRepo.path)
-      setIsRefreshing(false)
-    }
-  }
-
   if (!activeRepo) {
     return null
   }
 
   return (
     <div className="commit-tree">
-      <div className="commit-tree__toolbar">
-        <IconButton
-          icon={<RefreshCw size={14} className={isRefreshing ? 'commit-header__refresh--spinning' : ''} />}
-          onClick={handleRefresh}
-          tooltip="Refresh"
-        />
-      </div>
-
       <div className="commit-list-container">
         {repoBranches.length === 0 ? (
           <p className="tree-empty">Loading branches...</p>
