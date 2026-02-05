@@ -4,12 +4,17 @@ import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
 import * as path from 'path'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { ActionStore } from '../action/ActionStore'
+import { ActionEngine } from '../action/ActionEngine'
 
 let mainWindow: BrowserWindow | null = null
 let terminalManager: TerminalManager | null = null
+let actionStore: ActionStore | null = null
+let actionEngine: ActionEngine | null = null
 
 export function setMainWindow(window: BrowserWindow): void {
   mainWindow = window
+  actionEngine?.setWindow(window)
 
   // Cleanup on window close
   window.on('close', () => {
@@ -22,6 +27,14 @@ export function setupIpcHandlers(): void {
   const config = configManager.getConfig()
   terminalManager = new TerminalManager(config.maxTerminals)
   const repoManager = new RepoManager(config.projectsRoot)
+
+  actionStore = new ActionStore()
+  actionEngine = new ActionEngine(terminalManager)
+
+  // Send action changes to renderer
+  actionStore.setOnChange(() => {
+    mainWindow?.webContents.send(IPC_CHANNELS.ACTIONS_CHANGED)
+  })
 
   // Terminal handlers
   ipcMain.handle(IPC_CHANNELS.TERMINAL_SPAWN, async (_, repoPath: string) => {
@@ -153,4 +166,30 @@ export function setupIpcHandlers(): void {
       shell.showItemInFolder(absolutePath)
     }
   )
+
+  // Action handlers
+  ipcMain.handle(IPC_CHANNELS.ACTIONS_LIST, async (_, repoPath?: string) => {
+    return actionStore!.getActions(repoPath)
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.ACTIONS_EXECUTE,
+    async (_, actionId: string, repoPath: string) => {
+      const actions = actionStore!.getActions(repoPath)
+      const action = actions.find((a) => a.id === actionId)
+      if (!action) throw new Error(`Action not found: ${actionId}`)
+      return actionEngine!.execute(action, repoPath)
+    }
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.ACTIONS_DELETE,
+    async (_, actionId: string, scope: 'user' | 'project', repoPath?: string) => {
+      return actionStore!.deleteAction(actionId, scope, repoPath)
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, async (_, repoPath: string) => {
+    actionStore!.loadProjectActions(repoPath)
+  })
 }

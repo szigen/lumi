@@ -712,6 +712,12 @@ a {
   color: var(--text-primary);
 }
 
+.action-divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--spacing-sm) 0;
+}
+
 /* === RIGHT SIDEBAR === */
 .right-sidebar {
   display: flex;

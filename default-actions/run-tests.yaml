@@ -1,0 +1,13 @@
+id: run-tests
+label: Run Tests
+icon: TestTube
+scope: user
+steps:
+  - type: write
+    content: "claude\r"
+  - type: wait_for
+    pattern: "❯|\\$|>"
+    timeout: 15000
+  - type: write
+    content: |
+      Run the test suite for this project. Use the appropriate test runner (npm test, pytest, etc).

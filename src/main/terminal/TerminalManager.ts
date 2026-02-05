@@ -1,16 +1,18 @@
 import * as pty from 'node-pty'
 import { BrowserWindow } from 'electron'
 import { v4 as uuidv4 } from 'uuid'
+import { EventEmitter } from 'events'
 import type { ManagedTerminal } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { NotificationManager } from '../notification/NotificationManager'
 
-export class TerminalManager {
+export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
   private maxTerminals: number
   private notificationManager: NotificationManager
 
   constructor(maxTerminals: number = 12) {
+    super()
     this.maxTerminals = maxTerminals
     this.notificationManager = new NotificationManager()
   }
@@ -42,18 +44,17 @@ export class TerminalManager {
     ptyProcess.onData((data) => {
       window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
       this.notificationManager.processPtyOutput(id, data, window, repoPath)
+      this.emit('output', { terminalId: id, data })
     })
 
     ptyProcess.onExit(({ exitCode }) => {
       window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       this.terminals.delete(id)
       this.notificationManager.removeTerminal(id)
+      this.emit('exit', { terminalId: id, exitCode })
     })
 
     this.terminals.set(id, terminal)
-
-    // Auto-start Claude CLI
-    ptyProcess.write('claude\r')
 
     return id
   }

@@ -55,6 +55,18 @@ const api = {
   revealInFinder: (repoPath: string, relativePath: string) =>
     invokeIpc<void>(IPC_CHANNELS.CONTEXT_REVEAL_IN_FINDER, repoPath, relativePath),
 
+  // Action operations
+  getActions: (repoPath?: string) =>
+    invokeIpc<unknown[]>(IPC_CHANNELS.ACTIONS_LIST, repoPath),
+  executeAction: (actionId: string, repoPath: string) =>
+    invokeIpc<string | null>(IPC_CHANNELS.ACTIONS_EXECUTE, actionId, repoPath),
+  deleteAction: (actionId: string, scope: 'user' | 'project', repoPath?: string) =>
+    invokeIpc<boolean>(IPC_CHANNELS.ACTIONS_DELETE, actionId, scope, repoPath),
+  loadProjectActions: (repoPath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
+  onActionsChanged: (callback: () => void) =>
+    createIpcListener<[]>(IPC_CHANNELS.ACTIONS_CHANGED, callback),
+
   // Dialog operations
   openFolderDialog: () => invokeIpc<string | null>(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
 

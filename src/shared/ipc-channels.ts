@@ -42,7 +42,14 @@ export const IPC_CHANNELS = {
   WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize',
 
   // Dialog operations
-  DIALOG_OPEN_FOLDER: 'dialog:open-folder'
+  DIALOG_OPEN_FOLDER: 'dialog:open-folder',
+
+  // Action operations
+  ACTIONS_LIST: 'actions:list',
+  ACTIONS_EXECUTE: 'actions:execute',
+  ACTIONS_DELETE: 'actions:delete',
+  ACTIONS_CHANGED: 'actions:changed',
+  ACTIONS_LOAD_PROJECT: 'actions:load-project'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
