@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, shell } from 'electron'
+import { ipcMain, BrowserWindow, shell, dialog } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
@@ -125,6 +125,16 @@ export function setupIpcHandlers(): void {
     } else {
       mainWindow?.maximize()
     }
+  })
+
+  // Dialog handlers
+  ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN_FOLDER, async () => {
+    if (!mainWindow) return null
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
   })
 
   // Context menu handlers

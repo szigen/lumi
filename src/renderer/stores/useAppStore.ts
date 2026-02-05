@@ -5,6 +5,9 @@ import { useTerminalStore } from './useTerminalStore'
 import { useRepoStore } from './useRepoStore'
 
 interface AppState extends UIState {
+  settingsOpen: boolean
+  openSettings: () => void
+  closeSettings: () => void
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
@@ -16,6 +19,9 @@ interface AppState extends UIState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   ...DEFAULT_UI_STATE,
+  settingsOpen: false,
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
 
   setActiveTab: (tab) => {
     set({ activeTab: tab })

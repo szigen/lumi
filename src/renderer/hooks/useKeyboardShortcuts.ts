@@ -5,7 +5,7 @@ import { useTerminalStore } from '../stores/useTerminalStore'
 import { DEFAULT_CONFIG } from '../../shared/constants'
 
 export function useKeyboardShortcuts() {
-  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar } = useAppStore()
+  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings } = useAppStore()
   const { repos, getRepoByName } = useRepoStore()
   const { addTerminal, getTerminalCount, activeTerminalId, removeTerminal, terminals, setActiveTerminal } = useTerminalStore()
 
@@ -54,17 +54,16 @@ export function useKeyboardShortcuts() {
         case 'open-repo-selector':
           window.dispatchEvent(new CustomEvent('open-repo-selector'))
           break
+        case 'open-settings':
+          openSettings()
+          break
       }
     })
     return cleanup
-  }, [handleNewTerminal, handleCloseTerminal, toggleLeftSidebar, toggleRightSidebar])
+  }, [handleNewTerminal, handleCloseTerminal, toggleLeftSidebar, toggleRightSidebar, openSettings])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const isMeta = e.metaKey || e.ctrlKey
-
-    // Skip if focus is in input/textarea
-    const target = e.target as HTMLElement
-    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
 
     // Cmd+1-9: Switch to tab N
     if (isMeta && !e.shiftKey && e.key >= '1' && e.key <= '9') {

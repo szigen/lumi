@@ -39,7 +39,10 @@ export const IPC_CHANNELS = {
   CONTEXT_REVEAL_IN_FINDER: 'context:reveal-in-finder',
 
   // Window operations
-  WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize'
+  WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize',
+
+  // Dialog operations
+  DIALOG_OPEN_FOLDER: 'dialog:open-folder'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

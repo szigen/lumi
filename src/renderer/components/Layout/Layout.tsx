@@ -9,6 +9,7 @@ import LeftSidebar from '../LeftSidebar/LeftSidebar'
 import RightSidebar from '../RightSidebar/RightSidebar'
 import TerminalPanel from '../TerminalPanel/TerminalPanel'
 import { Logo } from '../icons'
+import { SettingsModal } from '../Settings'
 
 export default function Layout() {
   useKeyboardShortcuts()
@@ -70,6 +71,7 @@ export default function Layout() {
           )}
         </AnimatePresence>
       </div>
+      <SettingsModal />
       <ToastContainer />
     </div>
   )

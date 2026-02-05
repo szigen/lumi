@@ -12,7 +12,8 @@ export default function Header() {
     setActiveTab,
     closeTab,
     toggleLeftSidebar,
-    toggleRightSidebar
+    toggleRightSidebar,
+    openSettings
   } = useAppStore()
 
   const handleDoubleClick = () => {
@@ -52,6 +53,7 @@ export default function Header() {
         />
         <IconButton
           icon={<Settings size={18} />}
+          onClick={openSettings}
           tooltip="Settings"
         />
       </div>

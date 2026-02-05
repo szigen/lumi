@@ -95,6 +95,11 @@ function createMenu(): void {
           accelerator: 'CmdOrCtrl+Shift+B',
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-right-sidebar')
         },
+        {
+          label: 'Settings',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => mainWindow?.webContents.send('shortcut', 'open-settings')
+        },
         { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },

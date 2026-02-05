@@ -29,6 +29,7 @@ export interface Config {
   projectsRoot: string
   maxTerminals: number
   theme: 'dark' | 'light'
+  terminalFontSize: number
 }
 
 export interface UIState {

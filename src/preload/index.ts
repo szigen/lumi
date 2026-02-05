@@ -55,6 +55,9 @@ const api = {
   revealInFinder: (repoPath: string, relativePath: string) =>
     invokeIpc<void>(IPC_CHANNELS.CONTEXT_REVEAL_IN_FINDER, repoPath, relativePath),
 
+  // Dialog operations
+  openFolderDialog: () => invokeIpc<string | null>(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
+
   // Window operations
   toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE),
 

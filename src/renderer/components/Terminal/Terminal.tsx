@@ -16,6 +16,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [fontSize, setFontSize] = useState(13)
 
   const { terminals, outputs, updateTerminal, setActiveTerminal, activeTerminalId } = useTerminalStore()
   const terminal = terminals.get(terminalId)
@@ -52,10 +53,17 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   }, [terminalId])
 
   useEffect(() => {
+    window.api.getConfig().then((cfg) => {
+      const size = (cfg as Record<string, unknown>)?.terminalFontSize
+      if (typeof size === 'number') setFontSize(size)
+    })
+  }, [])
+
+  useEffect(() => {
     if (!terminalRef.current || xtermRef.current) return
 
     const xterm = new XTerm({
-      fontSize: 13,
+      fontSize,
       fontFamily: "monospace",
       cursorBlink: true,
       scrollback: 5000,
@@ -97,7 +105,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       fitAddonRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [terminalId, handleResize])
+  }, [terminalId, handleResize, fontSize])
 
   useEffect(() => {
     const handleOutput = (id: string, data: string) => {
