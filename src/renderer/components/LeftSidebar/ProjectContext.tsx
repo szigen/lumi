@@ -1,15 +1,17 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { FolderTree, ChevronDown, ChevronRight, Folder, FileText } from 'lucide-react'
+import { FolderTree, ChevronDown, ChevronRight, Folder, FileText, Trash2, Copy, FolderOpen } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import type { FileTreeNode } from '../../../shared/types'
+import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 
 interface TreeNodeProps {
   node: FileTreeNode
   depth: number
+  onContextMenu: (e: React.MouseEvent, node: FileTreeNode) => void
 }
 
-function TreeNode({ node, depth }: TreeNodeProps) {
+function TreeNode({ node, depth, onContextMenu }: TreeNodeProps) {
   const [expanded, setExpanded] = useState(depth === 0)
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
@@ -33,6 +35,11 @@ function TreeNode({ node, depth }: TreeNodeProps) {
         draggable
         onDragStart={handleDragStart}
         onClick={handleClick}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          onContextMenu(e, node)
+        }}
         style={{ paddingLeft: depth > 0 ? 0 : undefined }}
       >
         {isFolder && hasChildren ? (
@@ -51,7 +58,7 @@ function TreeNode({ node, depth }: TreeNodeProps) {
       {isFolder && expanded && hasChildren && (
         <div className="tree-children">
           {node.children!.map(child => (
-            <TreeNode key={child.path} node={child} depth={depth + 1} />
+            <TreeNode key={child.path} node={child} depth={depth + 1} onContextMenu={onContextMenu} />
           ))}
         </div>
       )}
@@ -65,6 +72,20 @@ export default function ProjectContext() {
   const [loading, setLoading] = useState(false)
   const { activeTab } = useAppStore()
   const { getRepoByName } = useRepoStore()
+
+  const [contextMenu, setContextMenu] = useState<{
+    node: FileTreeNode
+    x: number
+    y: number
+  } | null>(null)
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, node: FileTreeNode) => {
+    setContextMenu({ node, x: e.clientX, y: e.clientY })
+  }, [])
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null)
+  }, [])
 
   const activeRepo = useMemo(
     () => (activeTab ? getRepoByName(activeTab) : null),
@@ -88,6 +109,50 @@ export default function ProjectContext() {
 
   const fileTree = activeRepoPath ? treeCache.get(activeRepoPath) ?? [] : []
 
+  const getContextMenuItems = useCallback((node: FileTreeNode): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = []
+
+    if (node.type === 'file' && activeRepoPath) {
+      items.push({
+        label: 'Delete',
+        icon: <Trash2 size={14} />,
+        onClick: async () => {
+          try {
+            await window.api.deleteFile(activeRepoPath, node.path)
+            // Invalidate tree cache to trigger re-fetch
+            setTreeCache(prev => {
+              const next = new Map(prev)
+              next.delete(activeRepoPath)
+              return next
+            })
+          } catch {
+            // silently fail — file may already be deleted
+          }
+        }
+      })
+    }
+
+    items.push({
+      label: 'Copy Path',
+      icon: <Copy size={14} />,
+      onClick: () => {
+        navigator.clipboard.writeText(node.path)
+      }
+    })
+
+    if (activeRepoPath) {
+      items.push({
+        label: 'Reveal in Finder',
+        icon: <FolderOpen size={14} />,
+        onClick: () => {
+          window.api.revealInFinder(activeRepoPath, node.path)
+        }
+      })
+    }
+
+    return items
+  }, [activeRepoPath])
+
   return (
     <div className="sidebar-section file-tree-section">
       <button className="file-tree-header" onClick={() => setExpanded(!expanded)}>
@@ -107,11 +172,19 @@ export default function ProjectContext() {
           ) : (
             <div>
               {fileTree.map(node => (
-                <TreeNode key={node.path} node={node} depth={0} />
+                <TreeNode key={node.path} node={node} depth={0} onContextMenu={handleContextMenu} />
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          items={getContextMenuItems(contextMenu.node)}
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={closeContextMenu}
+        />
       )}
     </div>
   )

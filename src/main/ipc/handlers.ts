@@ -1,7 +1,8 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, shell } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
+import * as path from 'path'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 
 let mainWindow: BrowserWindow | null = null
@@ -125,4 +126,21 @@ export function setupIpcHandlers(): void {
       mainWindow?.maximize()
     }
   })
+
+  // Context menu handlers
+  ipcMain.handle(
+    IPC_CHANNELS.CONTEXT_DELETE_FILE,
+    async (_, repoPath: string, relativePath: string) => {
+      const absolutePath = path.join(repoPath, relativePath)
+      await shell.trashItem(absolutePath)
+    }
+  )
+
+  ipcMain.handle(
+    IPC_CHANNELS.CONTEXT_REVEAL_IN_FINDER,
+    async (_, repoPath: string, relativePath: string) => {
+      const absolutePath = path.join(repoPath, relativePath)
+      shell.showItemInFolder(absolutePath)
+    }
+  )
 }

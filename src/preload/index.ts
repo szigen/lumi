@@ -49,6 +49,12 @@ const api = {
   setUIState: (state: Record<string, unknown>) =>
     invokeIpc<boolean>(IPC_CHANNELS.UI_STATE_SET, state),
 
+  // Context menu operations
+  deleteFile: (repoPath: string, relativePath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.CONTEXT_DELETE_FILE, repoPath, relativePath),
+  revealInFinder: (repoPath: string, relativePath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.CONTEXT_REVEAL_IN_FINDER, repoPath, relativePath),
+
   // Window operations
   toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE),
 

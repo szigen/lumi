@@ -34,6 +34,10 @@ export const IPC_CHANNELS = {
   TERMINAL_BELL: 'terminal:bell',
   NOTIFICATION_CLICK: 'notification:click',
 
+  // Context menu operations
+  CONTEXT_DELETE_FILE: 'context:delete-file',
+  CONTEXT_REVEAL_IN_FINDER: 'context:reveal-in-finder',
+
   // Window operations
   WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize'
 } as const
