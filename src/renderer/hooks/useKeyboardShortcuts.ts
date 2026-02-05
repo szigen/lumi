@@ -6,7 +6,7 @@ import { DEFAULT_CONFIG } from '../../shared/constants'
 
 export function useKeyboardShortcuts() {
   const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar } = useAppStore()
-  const { getRepoByName } = useRepoStore()
+  const { repos, getRepoByName } = useRepoStore()
   const { addTerminal, getTerminalCount, activeTerminalId, removeTerminal, terminals, setActiveTerminal } = useTerminalStore()
 
   // Handle new terminal action
@@ -83,7 +83,16 @@ export function useKeyboardShortcuts() {
       if (terminalIds.length === 0) return
       const currentIndex = activeTerminalId ? terminalIds.indexOf(activeTerminalId) : 0
       const prevIndex = (currentIndex - 1 + terminalIds.length) % terminalIds.length
-      setActiveTerminal(terminalIds[prevIndex])
+      const newTerminalId = terminalIds[prevIndex]
+      setActiveTerminal(newTerminalId)
+
+      const newTerminal = terminals.get(newTerminalId)
+      if (newTerminal) {
+        const repoName = repos.find(r => r.path === newTerminal.repoPath)?.name
+        if (repoName && repoName !== activeTab) {
+          setActiveTab(repoName)
+        }
+      }
       return
     }
 
@@ -94,11 +103,20 @@ export function useKeyboardShortcuts() {
       if (terminalIds.length === 0) return
       const currentIndex = activeTerminalId ? terminalIds.indexOf(activeTerminalId) : -1
       const nextIndex = (currentIndex + 1) % terminalIds.length
-      setActiveTerminal(terminalIds[nextIndex])
+      const newTerminalId = terminalIds[nextIndex]
+      setActiveTerminal(newTerminalId)
+
+      const newTerminal = terminals.get(newTerminalId)
+      if (newTerminal) {
+        const repoName = repos.find(r => r.path === newTerminal.repoPath)?.name
+        if (repoName && repoName !== activeTab) {
+          setActiveTab(repoName)
+        }
+      }
       return
     }
 
-  }, [openTabs, setActiveTab, terminals, setActiveTerminal, activeTerminalId])
+  }, [openTabs, setActiveTab, terminals, setActiveTerminal, activeTerminalId, repos, activeTab])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
