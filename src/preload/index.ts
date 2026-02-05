@@ -18,6 +18,10 @@ const api = {
     createIpcListener<[string, string]>(IPC_CHANNELS.TERMINAL_OUTPUT, callback),
   onTerminalExit: (callback: (terminalId: string, code: number) => void) =>
     createIpcListener<[string, number]>(IPC_CHANNELS.TERMINAL_EXIT, callback),
+  onTerminalBell: (callback: (terminalId: string, repoName: string) => void) =>
+    createIpcListener<[string, string]>(IPC_CHANNELS.TERMINAL_BELL, callback),
+  onNotificationClick: (callback: (terminalId: string) => void) =>
+    createIpcListener<[string]>(IPC_CHANNELS.NOTIFICATION_CLICK, callback),
 
   // Repository operations
   getRepos: () => invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_LIST),

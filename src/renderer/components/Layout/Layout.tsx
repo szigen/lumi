@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
-import { useKeyboardShortcuts } from '../../hooks'
+import { useKeyboardShortcuts, useNotificationListener } from '../../hooks'
+import { ToastContainer } from '../Notifications'
 import Header from '../Header/Header'
 import LeftSidebar from '../LeftSidebar/LeftSidebar'
 import RightSidebar from '../RightSidebar/RightSidebar'
@@ -11,6 +12,7 @@ import { Logo } from '../icons'
 
 export default function Layout() {
   useKeyboardShortcuts()
+  useNotificationListener()
   const [isInitializing, setIsInitializing] = useState(true)
   const { leftSidebarOpen, rightSidebarOpen, loadUIState } = useAppStore()
   const { loadRepos } = useRepoStore()
@@ -68,6 +70,7 @@ export default function Layout() {
           )}
         </AnimatePresence>
       </div>
+      <ToastContainer />
     </div>
   )
 }

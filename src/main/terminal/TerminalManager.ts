@@ -3,13 +3,16 @@ import { BrowserWindow } from 'electron'
 import { v4 as uuidv4 } from 'uuid'
 import type { ManagedTerminal } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { NotificationManager } from '../notification/NotificationManager'
 
 export class TerminalManager {
   private terminals: Map<string, ManagedTerminal> = new Map()
   private maxTerminals: number
+  private notificationManager: NotificationManager
 
   constructor(maxTerminals: number = 12) {
     this.maxTerminals = maxTerminals
+    this.notificationManager = new NotificationManager()
   }
 
   spawn(repoPath: string, window: BrowserWindow): string | null {
@@ -38,11 +41,13 @@ export class TerminalManager {
 
     ptyProcess.onData((data) => {
       window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
+      this.notificationManager.processPtyOutput(id, data, window, repoPath)
     })
 
     ptyProcess.onExit(({ exitCode }) => {
       window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       this.terminals.delete(id)
+      this.notificationManager.removeTerminal(id)
     })
 
     this.terminals.set(id, terminal)
@@ -72,12 +77,14 @@ export class TerminalManager {
     if (!terminal) return false
     terminal.pty.kill()
     this.terminals.delete(terminalId)
+    this.notificationManager.removeTerminal(terminalId)
     return true
   }
 
   killAll(): void {
-    for (const terminal of this.terminals.values()) {
+    for (const [id, terminal] of this.terminals.entries()) {
       terminal.pty.kill()
+      this.notificationManager.removeTerminal(id)
     }
     this.terminals.clear()
   }

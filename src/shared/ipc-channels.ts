@@ -30,6 +30,10 @@ export const IPC_CHANNELS = {
   UI_STATE_GET: 'ui-state:get',
   UI_STATE_SET: 'ui-state:set',
 
+  // Notification operations
+  TERMINAL_BELL: 'terminal:bell',
+  NOTIFICATION_CLICK: 'notification:click',
+
   // Window operations
   WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize'
 } as const
