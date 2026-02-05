@@ -65,6 +65,9 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
         cursor: '#a78bfa',
         cursorAccent: '#12121f',
         selectionBackground: 'rgba(139, 92, 246, 0.3)',
+        scrollbarSliderBackground: 'rgba(42, 42, 74, 0.5)',
+        scrollbarSliderHoverBackground: 'rgba(74, 74, 106, 0.7)',
+        scrollbarSliderActiveBackground: 'rgba(74, 74, 106, 0.9)',
       }
     })
 

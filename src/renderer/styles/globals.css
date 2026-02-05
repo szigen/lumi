@@ -101,21 +101,37 @@ a {
 
 /* === SCROLLBAR === */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
+  background: rgba(42, 42, 74, 0.5);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: rgba(74, 74, 106, 0.7);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: rgba(74, 74, 106, 0.9);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* === ANIMATIONS === */
@@ -154,31 +170,6 @@ a {
     box-shadow: 0 0 15px var(--accent-primary),
                 0 0 30px rgba(139, 92, 246, 0.4);
   }
-}
-
-/* === UTILITY CLASSES === */
-.transition-all {
-  transition: all 0.2s ease;
-}
-
-.transition-colors {
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.glow {
-  box-shadow: 0 0 15px var(--accent-primary),
-              0 0 30px rgba(139, 92, 246, 0.3);
-}
-
-.glow-text {
-  text-shadow: 0 0 10px var(--accent-primary),
-               0 0 20px rgba(139, 92, 246, 0.5);
-}
-
-.gradient-border {
-  border: 1px solid transparent;
-  background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
-              linear-gradient(135deg, var(--accent-primary), var(--accent-deep)) border-box;
 }
 
 /* === LAYOUT === */
@@ -694,35 +685,6 @@ a {
   overflow: hidden;
 }
 
-.commit-header {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-
-.commit-header svg:first-child {
-  color: var(--accent-primary);
-}
-
-.commit-header h3 {
-  flex: 1;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.commit-header__refresh {
-  animation: none;
-}
-
-.commit-header__refresh--spinning {
-  animation: spin 1s linear infinite;
-}
-
 .commit-list-container {
   flex: 1;
   overflow-y: auto;
@@ -895,12 +857,6 @@ a {
 
 .collapsible-section__content {
   overflow: hidden;
-}
-
-.commit-tree__toolbar {
-  display: flex;
-  justify-content: flex-end;
-  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 /* === FILE CHANGE ITEM === */
@@ -1470,19 +1426,8 @@ a {
   background: transparent !important;
 }
 
-.xterm-viewport::-webkit-scrollbar {
-  width: 3px;
+/* xterm custom scrollbar border-radius */
+.xterm .xterm-scrollable-element > .scrollbar > .slider {
+  border-radius: 8px !important;
 }
 
-.xterm-viewport::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.xterm-viewport::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-.xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
