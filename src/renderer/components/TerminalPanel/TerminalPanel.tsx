@@ -33,6 +33,7 @@ export default function TerminalPanel() {
         status: 'running',
         createdAt: new Date()
       })
+      window.api.writeTerminal(terminalId, 'claude\r')
     }
   }, [activeRepo, addTerminal, getTerminalCount])
 
@@ -66,7 +67,7 @@ export default function TerminalPanel() {
             onClick={handleNewTerminal}
             disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
           >
-            New Terminal
+            New Claude
           </Button>
         </div>
       </div>
@@ -82,7 +83,7 @@ export default function TerminalPanel() {
                 leftIcon={<Plus size={14} />}
                 onClick={handleNewTerminal}
               >
-                Create Terminal
+                New Claude
               </Button>
             }
           />

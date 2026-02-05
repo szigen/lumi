@@ -27,19 +27,28 @@ export class ActionStore {
   }
 
   private seedDefaults(): void {
-    const files = fs.readdirSync(this.userDir).filter(
-      (f) => f.endsWith('.yaml') || f.endsWith('.yml')
-    )
-    if (files.length > 0) return // Already has actions, skip
-
     const defaultsDir = path.join(app.getAppPath(), 'default-actions')
     if (!fs.existsSync(defaultsDir)) return
 
     const defaults = fs.readdirSync(defaultsDir).filter(
       (f) => f.endsWith('.yaml') || f.endsWith('.yml')
     )
+    const defaultNames = new Set(defaults)
+
+    // Always overwrite default action files with latest versions
     for (const file of defaults) {
       fs.copyFileSync(path.join(defaultsDir, file), path.join(this.userDir, file))
+    }
+
+    // Remove deprecated defaults that no longer ship
+    const deprecated = ['new-terminal.yaml', 'create-action.yaml']
+    for (const file of deprecated) {
+      if (!defaultNames.has(file)) {
+        const filePath = path.join(this.userDir, file)
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath)
+        }
+      }
     }
   }
 

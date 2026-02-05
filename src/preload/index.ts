@@ -64,6 +64,8 @@ const api = {
     invokeIpc<boolean>(IPC_CHANNELS.ACTIONS_DELETE, actionId, scope, repoPath),
   loadProjectActions: (repoPath: string) =>
     invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
+  createNewAction: (repoPath: string) =>
+    invokeIpc<string | null>(IPC_CHANNELS.ACTIONS_CREATE_NEW, repoPath),
   onActionsChanged: (callback: () => void) =>
     createIpcListener<[]>(IPC_CHANNELS.ACTIONS_CHANGED, callback),
 

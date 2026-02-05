@@ -50,20 +50,28 @@ export default function QuickActions() {
     }
   }, [activeRepo?.path])
 
-  const handleAction = async (action: Action) => {
+  const executeAndTrack = async (
+    apiCall: () => Promise<string | null>,
+    task?: string
+  ) => {
     if (!activeRepo) return
-
-    const terminalId = await window.api.executeAction(action.id, activeRepo.path)
+    const terminalId = await apiCall()
     if (terminalId) {
       addTerminal({
         id: terminalId,
         repoPath: activeRepo.path,
         status: 'running',
-        task: action.label,
+        task,
         createdAt: new Date()
       })
     }
   }
+
+  const handleCreateAction = () =>
+    executeAndTrack(() => window.api.createNewAction(activeRepo!.path), 'Create Action')
+
+  const handleAction = (action: Action) =>
+    executeAndTrack(() => window.api.executeAction(action.id, activeRepo!.path), action.label)
 
   const userActions = actions.filter((a) => a.scope === 'user')
   const projectActions = actions.filter((a) => a.scope === 'project')
@@ -73,6 +81,14 @@ export default function QuickActions() {
       <div className="section-header">
         <Zap size={16} />
         <h3>Quick Actions</h3>
+        <button
+          className="section-header__action"
+          onClick={handleCreateAction}
+          disabled={!activeRepo}
+          title="Create new action"
+        >
+          <Plus size={14} />
+        </button>
       </div>
 
       <div className="quick-actions">

@@ -23,6 +23,7 @@ export function useKeyboardShortcuts() {
           status: 'running',
           createdAt: new Date()
         })
+        window.api.writeTerminal(terminalId, 'claude\r')
       }
     })
   }, [activeTab, getRepoByName, getTerminalCount, addTerminal])
@@ -62,6 +63,27 @@ export function useKeyboardShortcuts() {
     return cleanup
   }, [handleNewTerminal, handleCloseTerminal, toggleLeftSidebar, toggleRightSidebar, openSettings])
 
+  const navigateTerminal = useCallback((direction: 'prev' | 'next') => {
+    const terminalIds = Array.from(terminals.keys())
+    if (terminalIds.length === 0) return
+    const currentIndex = activeTerminalId
+      ? terminalIds.indexOf(activeTerminalId)
+      : (direction === 'next' ? -1 : 0)
+    const newIndex = direction === 'next'
+      ? (currentIndex + 1) % terminalIds.length
+      : (currentIndex - 1 + terminalIds.length) % terminalIds.length
+    const newTerminalId = terminalIds[newIndex]
+    setActiveTerminal(newTerminalId)
+
+    const newTerminal = terminals.get(newTerminalId)
+    if (newTerminal) {
+      const repoName = repos.find(r => r.path === newTerminal.repoPath)?.name
+      if (repoName && repoName !== activeTab) {
+        setActiveTab(repoName)
+      }
+    }
+  }, [terminals, activeTerminalId, setActiveTerminal, repos, activeTab, setActiveTab])
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const isMeta = e.metaKey || e.ctrlKey
 
@@ -78,44 +100,18 @@ export function useKeyboardShortcuts() {
     // Cmd+Shift+Left: Previous terminal
     if (isMeta && e.shiftKey && e.key === 'ArrowLeft') {
       e.preventDefault()
-      const terminalIds = Array.from(terminals.keys())
-      if (terminalIds.length === 0) return
-      const currentIndex = activeTerminalId ? terminalIds.indexOf(activeTerminalId) : 0
-      const prevIndex = (currentIndex - 1 + terminalIds.length) % terminalIds.length
-      const newTerminalId = terminalIds[prevIndex]
-      setActiveTerminal(newTerminalId)
-
-      const newTerminal = terminals.get(newTerminalId)
-      if (newTerminal) {
-        const repoName = repos.find(r => r.path === newTerminal.repoPath)?.name
-        if (repoName && repoName !== activeTab) {
-          setActiveTab(repoName)
-        }
-      }
+      navigateTerminal('prev')
       return
     }
 
     // Cmd+Shift+Right: Next terminal
     if (isMeta && e.shiftKey && e.key === 'ArrowRight') {
       e.preventDefault()
-      const terminalIds = Array.from(terminals.keys())
-      if (terminalIds.length === 0) return
-      const currentIndex = activeTerminalId ? terminalIds.indexOf(activeTerminalId) : -1
-      const nextIndex = (currentIndex + 1) % terminalIds.length
-      const newTerminalId = terminalIds[nextIndex]
-      setActiveTerminal(newTerminalId)
-
-      const newTerminal = terminals.get(newTerminalId)
-      if (newTerminal) {
-        const repoName = repos.find(r => r.path === newTerminal.repoPath)?.name
-        if (repoName && repoName !== activeTab) {
-          setActiveTab(repoName)
-        }
-      }
+      navigateTerminal('next')
       return
     }
 
-  }, [openTabs, setActiveTab, terminals, setActiveTerminal, activeTerminalId, repos, activeTab])
+  }, [openTabs, setActiveTab, navigateTerminal])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

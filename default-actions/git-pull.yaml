@@ -4,10 +4,4 @@ icon: GitBranch
 scope: user
 steps:
   - type: write
-    content: "claude\r"
-  - type: wait_for
-    pattern: "❯|\\$|>"
-    timeout: 15000
-  - type: write
-    content: |
-      Pull the latest changes from the remote repository and resolve any conflicts.
+    content: "claude \"Pull the latest changes from the remote repository and resolve any conflicts.\"\r"

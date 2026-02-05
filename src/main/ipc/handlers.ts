@@ -192,4 +192,27 @@ export function setupIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, async (_, repoPath: string) => {
     actionStore!.loadProjectActions(repoPath)
   })
+
+  ipcMain.handle(IPC_CHANNELS.ACTIONS_CREATE_NEW, async (_, repoPath: string) => {
+    const action: import('../../shared/action-types').Action = {
+      id: '__create-action',
+      label: 'Create Action',
+      icon: 'Plus',
+      scope: 'user',
+      steps: [
+        {
+          type: 'write',
+          content:
+            'claude "Sen bir Action Creator agent\'isin. Kullanici yeni bir Quick Action olusturmak istiyor. ' +
+            'Action YAML formati: id: kebab-case-id, label: Human Readable Label, icon: LucideIconName, ' +
+            'scope: user | project, steps: [type: write | wait_for | delay, content/pattern/ms: ...]. ' +
+            'Kullaniciya ne yapmak istedigini sor. ' +
+            'Scope\'u belirle (user: her repoda ayni, project: repo-specific). ' +
+            'YAML dosyasini su dizine yaz: user scope: ~/.ai-orchestrator/actions/<id>.yaml, ' +
+            'project scope: <cwd>/.ai-orchestrator/actions/<id>.yaml"\r'
+        }
+      ]
+    }
+    return actionEngine!.execute(action, repoPath)
+  })
 }

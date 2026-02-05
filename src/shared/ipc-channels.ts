@@ -49,7 +49,8 @@ export const IPC_CHANNELS = {
   ACTIONS_EXECUTE: 'actions:execute',
   ACTIONS_DELETE: 'actions:delete',
   ACTIONS_CHANGED: 'actions:changed',
-  ACTIONS_LOAD_PROJECT: 'actions:load-project'
+  ACTIONS_LOAD_PROJECT: 'actions:load-project',
+  ACTIONS_CREATE_NEW: 'actions:create-new'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

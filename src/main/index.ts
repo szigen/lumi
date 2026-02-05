@@ -53,7 +53,7 @@ function createMenu(): void {
       label: 'File',
       submenu: [
         {
-          label: 'New Terminal',
+          label: 'New Claude',
           accelerator: 'CmdOrCtrl+T',
           click: () => mainWindow?.webContents.send('shortcut', 'new-terminal')
         },
