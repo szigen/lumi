@@ -71,6 +71,17 @@ export function setupIpcHandlers(): void {
     return repoManager.getBranches(repoPath)
   })
 
+  ipcMain.handle(IPC_CHANNELS.GIT_STATUS, async (_, repoPath: string) => {
+    return repoManager.getStatus(repoPath)
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.GIT_COMMIT,
+    async (_, repoPath: string, files: string[], message: string) => {
+      return repoManager.commit(repoPath, files, message)
+    }
+  )
+
   // Config handlers
   ipcMain.handle(IPC_CHANNELS.CONFIG_GET, async () => {
     return configManager.getConfig()

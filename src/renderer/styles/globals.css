@@ -854,6 +854,214 @@ a {
   margin-top: 2px;
 }
 
+/* === COLLAPSIBLE SECTION === */
+.collapsible-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.collapsible-section:last-child {
+  border-bottom: none;
+}
+
+.collapsible-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-md);
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.collapsible-section__header:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.collapsible-section__icon {
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+}
+
+.collapsible-section__title {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.collapsible-section__content {
+  overflow: hidden;
+}
+
+.commit-tree__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* === FILE CHANGE ITEM === */
+.file-change {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.file-change:hover {
+  background: var(--bg-elevated);
+}
+
+.file-change__checkbox {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent-vivid);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.file-change__status {
+  font-size: 10px;
+  font-weight: 700;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.file-change__status--modified {
+  color: var(--accent-warning);
+}
+
+.file-change__status--added {
+  color: var(--accent-success);
+}
+
+.file-change__status--deleted {
+  color: var(--accent-error);
+}
+
+.file-change__status--renamed {
+  color: var(--accent-cyan);
+}
+
+.file-change__status--untracked {
+  color: var(--accent-primary);
+}
+
+.file-change__name {
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === CHANGES SECTION === */
+.changes-section {
+  padding: var(--spacing-sm);
+}
+
+.changes-empty {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.changes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.changes-toggle-all {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.changes-toggle-all:hover {
+  color: var(--text-primary);
+}
+
+.changes-toggle-all input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent-vivid);
+  cursor: pointer;
+}
+
+.changes-count {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.changes-file-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-sm);
+}
+
+.changes-commit {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.changes-commit__input {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.changes-commit__input:focus {
+  border-color: var(--accent-vivid);
+}
+
+.changes-commit__input::placeholder {
+  color: var(--text-muted);
+}
+
+.changes-commit__input:disabled {
+  opacity: 0.5;
+}
+
+.changes-commit__btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--accent-vivid);
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.changes-commit__btn:hover:not(:disabled) {
+  background: var(--accent-deep);
+}
+
+.changes-commit__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* === TERMINAL PANEL === */
 .terminal-panel {
   flex: 1;

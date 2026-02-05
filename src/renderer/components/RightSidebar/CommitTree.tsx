@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react'
-import { GitCommitHorizontal, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
-import { IconButton, EmptyState } from '../ui'
+import { IconButton } from '../ui'
 import BranchSection from './BranchSection'
 
 export default function CommitTree() {
@@ -67,22 +67,12 @@ export default function CommitTree() {
   }
 
   if (!activeRepo) {
-    return (
-      <div className="commit-tree">
-        <EmptyState
-          icon={<GitCommitHorizontal size={32} />}
-          title="No repository"
-          description="Select a repository to view commits"
-        />
-      </div>
-    )
+    return null
   }
 
   return (
     <div className="commit-tree">
-      <div className="commit-header">
-        <GitCommitHorizontal size={16} />
-        <h3>Commits</h3>
+      <div className="commit-tree__toolbar">
         <IconButton
           icon={<RefreshCw size={14} className={isRefreshing ? 'commit-header__refresh--spinning' : ''} />}
           onClick={handleRefresh}

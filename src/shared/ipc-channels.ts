@@ -19,6 +19,8 @@ export const IPC_CHANNELS = {
   // Git operations
   GIT_COMMITS: 'git:commits',
   GIT_BRANCHES: 'git:branches',
+  GIT_STATUS: 'git:status',
+  GIT_COMMIT: 'git:commit',
 
   // Config operations
   CONFIG_GET: 'config:get',

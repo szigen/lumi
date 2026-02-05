@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import ignore, { Ignore } from 'ignore'
-import type { Repository, Commit, Branch, FileTreeNode } from '../../shared/types'
+import type { Repository, Commit, Branch, FileTreeNode, FileChange } from '../../shared/types'
 
 export class RepoManager {
   private projectsRoot: string
@@ -123,6 +123,49 @@ export class RepoManager {
     } catch (error) {
       console.error('Failed to get branches:', error)
       return []
+    }
+  }
+
+  async getStatus(repoPath: string): Promise<FileChange[]> {
+    const git: SimpleGit = simpleGit(this.expandPath(repoPath))
+
+    try {
+      const status = await git.status()
+      const changes: FileChange[] = []
+
+      for (const file of status.modified) {
+        changes.push({ path: file, status: 'modified' })
+      }
+      for (const file of status.not_added) {
+        changes.push({ path: file, status: 'untracked' })
+      }
+      for (const file of status.deleted) {
+        changes.push({ path: file, status: 'deleted' })
+      }
+      for (const file of status.created) {
+        changes.push({ path: file, status: 'added' })
+      }
+      for (const file of status.renamed.map(r => r.to)) {
+        changes.push({ path: file, status: 'renamed' })
+      }
+
+      return changes
+    } catch (error) {
+      console.error('Failed to get status:', error)
+      return []
+    }
+  }
+
+  async commit(repoPath: string, files: string[], message: string): Promise<{ success: boolean; error?: string }> {
+    const git: SimpleGit = simpleGit(this.expandPath(repoPath))
+
+    try {
+      await git.add(files)
+      await git.commit(message)
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to commit:', error)
+      return { success: false, error: String(error) }
     }
   }
 

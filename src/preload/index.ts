@@ -31,6 +31,10 @@ const api = {
     invokeIpc<unknown[]>(IPC_CHANNELS.GIT_COMMITS, repoPath, branch),
   getBranches: (repoPath: string) =>
     invokeIpc<unknown[]>(IPC_CHANNELS.GIT_BRANCHES, repoPath),
+  getStatus: (repoPath: string) =>
+    invokeIpc<unknown[]>(IPC_CHANNELS.GIT_STATUS, repoPath),
+  commitFiles: (repoPath: string, files: string[], message: string) =>
+    invokeIpc<{ success: boolean; error?: string }>(IPC_CHANNELS.GIT_COMMIT, repoPath, files, message),
 
   // Config operations
   getConfig: () => invokeIpc<Record<string, unknown>>(IPC_CHANNELS.CONFIG_GET),

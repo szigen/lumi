@@ -54,3 +54,8 @@ export interface FileTreeNode {
   type: 'file' | 'folder'
   children?: FileTreeNode[]
 }
+
+export interface FileChange {
+  path: string
+  status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
+}
