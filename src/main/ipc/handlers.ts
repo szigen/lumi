@@ -3,8 +3,6 @@ import { TerminalManager } from '../terminal/TerminalManager'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
 import * as path from 'path'
-import * as fs from 'fs'
-import * as os from 'os'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { ActionStore } from '../action/ActionStore'
 import { ActionEngine } from '../action/ActionEngine'
@@ -196,18 +194,18 @@ export function setupIpcHandlers(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.ACTIONS_CREATE_NEW, async (_, repoPath: string) => {
-    const promptPath = path.join(os.tmpdir(), 'ai-orchestrator-create-action-prompt.txt')
-    fs.writeFileSync(promptPath, CREATE_ACTION_PROMPT, 'utf-8')
-
     const action: import('../../shared/action-types').Action = {
       id: '__create-action',
       label: 'Create Action',
       icon: 'Plus',
       scope: 'user',
+      claude: {
+        appendSystemPrompt: CREATE_ACTION_PROMPT
+      },
       steps: [
         {
           type: 'write',
-          content: `claude "$(cat '${promptPath}')"\r`
+          content: `claude "Help me create a new Quick Action. Ask me what I want to automate."\r`
         }
       ]
     }

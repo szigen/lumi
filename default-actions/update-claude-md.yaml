@@ -2,6 +2,18 @@ id: update-claude-md
 label: Update CLAUDE.md
 icon: FileEdit
 scope: user
+claude:
+  appendSystemPrompt: >
+    Focus exclusively on CLAUDE.md maintenance. Read the existing CLAUDE.md first,
+    then analyze recent git changes. Update file paths, command references, and
+    architecture notes. Remove any dead references. Keep the format consistent.
+  allowedTools:
+    - "Read"
+    - "Edit"
+    - "Bash(git log *)"
+    - "Bash(git diff *)"
+    - "Glob"
+    - "Grep"
 steps:
   - type: write
     content: "claude \"Analyze all changes since your last CLAUDE.md revision. Clean up dead references and update CLAUDE.md to accurately reflect the current codebase.\"\r"

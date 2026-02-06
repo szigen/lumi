@@ -2,6 +2,15 @@ id: run-tests
 label: Run Tests
 icon: TestTube
 scope: user
+claude:
+  model: sonnet
+  allowedTools:
+    - "Bash(npm test *)"
+    - "Bash(npx *)"
+    - "Bash(pytest *)"
+    - "Read"
+    - "Glob"
+    - "Grep"
 steps:
   - type: write
     content: "claude \"Run the test suite for this project. Use the appropriate test runner (npm test, pytest, etc).\"\r"

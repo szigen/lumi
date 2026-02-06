@@ -68,6 +68,7 @@ export class ActionStore {
             label: parsed.label as string,
             icon: (parsed.icon as string) || 'Zap',
             scope,
+            claude: parsed.claude as Action['claude'],
             steps: parsed.steps as Action['steps']
           })
         }

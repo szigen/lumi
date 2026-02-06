@@ -35,10 +35,42 @@ steps:
 
 **project** scope: Saved to <cwd>/.ai-orchestrator/actions/<id>.yaml — lives in the repo, shared with the team. Use for repo-specific automation like custom build steps or deployment.
 
+# Claude CLI Config (optional)
+
+Actions can include an optional \`claude\` block to customize how Claude CLI behaves:
+
+claude:
+  appendSystemPrompt: 'Extra instructions appended to Claude default prompt'
+  systemPrompt: 'Replaces Claude entire system prompt (use rarely)'
+  model: sonnet | opus | haiku
+  allowedTools:
+    - "Read"
+    - "Edit"
+    - "Bash(git *)"
+  disallowedTools:
+    - "Bash(rm *)"
+  tools: "Bash,Read,Edit"
+  permissionMode: plan
+  maxTurns: 10
+
+**Guidelines:**
+- Prefer \`appendSystemPrompt\` over \`systemPrompt\` — it keeps Claude defaults while adding context.
+- Use \`model: sonnet\` for fast/simple tasks, omit for complex ones (defaults to user setting).
+- Use \`allowedTools\` to auto-approve safe tools (prevents permission prompts).
+- Use \`disallowedTools\` to block dangerous tools for safety.
+- Only use \`systemPrompt\` (full replace) when you need complete control over Claude behavior.
+
 # Common Patterns
 
-## Pattern 1: Single Claude command (most actions follow this)
+## Pattern 1: Single Claude command with config
 
+claude:
+  model: sonnet
+  appendSystemPrompt: 'Focus only on linting. Do not refactor or change logic.'
+  allowedTools:
+    - "Bash(npx eslint *)"
+    - "Read"
+    - "Edit"
 steps:
   - type: write
     content: 'claude "Run the linter, fix all auto-fixable issues, then report remaining warnings with file locations."\\r'

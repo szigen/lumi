@@ -2,6 +2,16 @@ id: install-deps
 label: Install Deps
 icon: Package
 scope: user
+claude:
+  model: sonnet
+  allowedTools:
+    - "Bash(npm *)"
+    - "Bash(yarn *)"
+    - "Bash(pnpm *)"
+    - "Bash(pip *)"
+    - "Bash(cargo *)"
+    - "Read"
+    - "Glob"
 steps:
   - type: write
     content: "claude \"Install all dependencies for this project using the appropriate package manager.\"\r"

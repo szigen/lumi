@@ -2,6 +2,7 @@ import { BrowserWindow } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
 import type { Action } from '../../shared/action-types'
 import type { SpawnResult } from '../terminal/types'
+import { buildClaudeCommand } from './build-claude-command'
 
 interface OutputEvent {
   terminalId: string
@@ -30,9 +31,13 @@ export class ActionEngine {
 
     for (const step of action.steps) {
       switch (step.type) {
-        case 'write':
-          this.terminalManager.write(terminalId, step.content)
+        case 'write': {
+          const cmd = action.claude
+            ? buildClaudeCommand(step.content, action.claude)
+            : step.content
+          this.terminalManager.write(terminalId, cmd)
           break
+        }
 
         case 'wait_for':
           await this.waitForOutput(terminalId, step.pattern, step.timeout ?? 10000)
