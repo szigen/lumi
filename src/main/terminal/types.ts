@@ -3,6 +3,7 @@ import type { IPty } from 'node-pty'
 export interface SpawnResult {
   id: string
   name: string
+  isNew: boolean
 }
 
 export interface ManagedTerminal {

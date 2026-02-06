@@ -52,6 +52,9 @@ export const IPC_CHANNELS = {
   ACTIONS_LOAD_PROJECT: 'actions:load-project',
   ACTIONS_CREATE_NEW: 'actions:create-new',
 
+  // Collection operations
+  COLLECTION_GET: 'collection:get',
+
   // App lifecycle
   APP_CONFIRM_QUIT: 'app:confirm-quit',
   APP_QUIT_CONFIRMED: 'app:quit-confirmed'

@@ -4,6 +4,7 @@ export interface Terminal {
   repoPath: string
   status: 'idle' | 'running' | 'completed' | 'error'
   task?: string
+  isNew?: boolean
   createdAt: Date
 }
 

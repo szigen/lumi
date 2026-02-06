@@ -24,6 +24,8 @@ const NOUNS = [
   'spark', 'summit', 'tiger', 'vortex', 'wolf'
 ]
 
+export const TOTAL_CODENAMES = ADJECTIVES.length * NOUNS.length
+
 export function generateCodename(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)]

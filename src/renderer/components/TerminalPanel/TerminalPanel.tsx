@@ -32,6 +32,7 @@ export default function TerminalPanel() {
         name: result.name,
         repoPath: activeRepo.path,
         status: 'running',
+        isNew: result.isNew,
         createdAt: new Date()
       })
       window.api.writeTerminal(result.id, 'claude\r')

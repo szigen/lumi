@@ -7,6 +7,7 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { ActionStore } from '../action/ActionStore'
 import { ActionEngine } from '../action/ActionEngine'
 import { CREATE_ACTION_PROMPT } from '../action/create-action-prompt'
+import { TOTAL_CODENAMES } from '../terminal/codenames'
 
 let mainWindow: BrowserWindow | null = null
 let terminalManager: TerminalManager | null = null
@@ -25,7 +26,7 @@ export function getTerminalManager(): TerminalManager | null {
 export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
-  terminalManager = new TerminalManager(config.maxTerminals)
+  terminalManager = new TerminalManager(config.maxTerminals, configManager)
   const repoManager = new RepoManager(config.projectsRoot)
 
   actionStore = new ActionStore()
@@ -166,6 +167,12 @@ export function setupIpcHandlers(): void {
       shell.showItemInFolder(absolutePath)
     }
   )
+
+  // Collection handlers
+  ipcMain.handle(IPC_CHANNELS.COLLECTION_GET, async () => {
+    const discovered = configManager.getDiscoveredCodenames()
+    return { discovered: discovered.length, total: TOTAL_CODENAMES }
+  })
 
   // Action handlers
   ipcMain.handle(IPC_CHANNELS.ACTIONS_LIST, async (_, repoPath?: string) => {

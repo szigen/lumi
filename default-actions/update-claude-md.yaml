@@ -26,8 +26,4 @@ claude:
     - "Grep"
 steps:
   - type: write
-    content: "clear\r"
-  - type: delay
-    ms: 200
-  - type: write
     content: "claude \"Update CLAUDE.md\"\r"

@@ -16,19 +16,22 @@ Birden fazla Claude Code CLI instance'ı yönetmek için Electron tabanlı masa�
 ```
 src/
 ├── main/                    # Electron main process
-│   ├── index.ts             # Main entry, BrowserWindow, app menu
+│   ├── index.ts             # Main entry, BrowserWindow, app menu, quit dialog
 │   ├── ipc/
 │   │   └── handlers.ts      # All IPC handler registrations
 │   ├── action/
 │   │   ├── ActionStore.ts   # YAML action loading & file watching
-│   │   └── ActionEngine.ts  # Action step execution (write/wait_for/delay)
+│   │   ├── ActionEngine.ts  # Action step execution (write/wait_for/delay)
+│   │   ├── build-claude-command.ts  # Claude CLI flag injection for actions
+│   │   └── create-action-prompt.ts  # System prompt for "Create Action" flow
 │   ├── terminal/
 │   │   ├── TerminalManager.ts # PTY process spawn/management
-│   │   └── types.ts         # ManagedTerminal interface
+│   │   ├── codenames.ts     # Random adjective-noun codename generator
+│   │   └── types.ts         # ManagedTerminal, SpawnResult interfaces
 │   ├── repo/
 │   │   └── RepoManager.ts   # simple-git operations
 │   ├── config/
-│   │   └── ConfigManager.ts # Config & UI state persistence
+│   │   └── ConfigManager.ts # Config, UI state & codename collection persistence
 │   └── notification/
 │       └── NotificationManager.ts # Terminal bell & OS notifications
 ├── preload/                 # Electron preload (contextBridge)
@@ -39,10 +42,11 @@ src/
 │   ├── components/
 │   │   ├── Header/          # Top bar, RepoSelector, RepoTab
 │   │   ├── Layout/          # Main layout wrapper
-│   │   ├── LeftSidebar/     # QuickActions, SessionList, ProjectContext, ContextMenu
+│   │   ├── LeftSidebar/     # QuickActions, SessionList, CollectionProgress, ContextMenu
 │   │   ├── RightSidebar/    # BranchSection, ChangesSection, CommitTree
 │   │   ├── TerminalPanel/   # Terminal container panel
 │   │   ├── Terminal/        # xterm.js wrapper per session
+│   │   ├── QuitDialog/      # Quit confirmation when terminals active
 │   │   ├── Settings/        # Settings modal (General, Terminal, Appearance, Shortcuts)
 │   │   ├── Notifications/   # Toast notification system
 │   │   ├── common/          # ErrorBoundary, LoadingSpinner
@@ -50,7 +54,7 @@ src/
 │   │   └── ui/              # Button, Badge, Card, IconButton, EmptyState
 │   ├── stores/              # Zustand stores
 │   │   ├── useTerminalStore.ts    # Terminal sessions & outputs
-│   │   ├── useAppStore.ts         # UI layout state (tabs, sidebars)
+│   │   ├── useAppStore.ts         # UI layout state (tabs, sidebars, quit dialog)
 │   │   ├── useRepoStore.ts        # Repository list
 │   │   └── useNotificationStore.ts # Toast notifications
 │   ├── hooks/
@@ -63,7 +67,7 @@ src/
 ├── shared/                  # Shared between main & renderer
 │   ├── types.ts             # Core interfaces (Terminal, Repository, Commit, etc.)
 │   ├── ipc-channels.ts      # Centralized IPC channel constants
-│   ├── action-types.ts      # Action & ActionStep types
+│   ├── action-types.ts      # Action, ActionStep & ClaudeConfig types
 │   └── constants.ts         # DEFAULT_UI_STATE, etc.
 └── default-actions/         # Bundled YAML action templates
     ├── git-pull.yaml
@@ -92,7 +96,7 @@ npm run typecheck    # TypeScript check
 
 ### State Management
 - **useTerminalStore**: Terminal sessions, outputs, active terminal tracking
-- **useAppStore**: UI layout (open tabs, active tab, sidebar visibility, settings modal)
+- **useAppStore**: UI layout (open tabs, active tab, sidebar visibility, settings modal, quit dialog)
 - **useRepoStore**: Available repositories
 - **useNotificationStore**: Toast notification queue
 
@@ -106,6 +110,19 @@ npm run typecheck    # TypeScript check
 - ActionStore: `~/.ai-orchestrator/actions` (user) + `<repo>/.ai-orchestrator/actions` (project) dizinlerini izler
 - ActionEngine: Step'leri sırayla execute eder
 - Default action'lar `default-actions/` klasöründen kopyalanır
+- Actions can include `claude:` config block for CLI flags (model, allowedTools, systemPrompt, permissionMode, maxTurns, etc.)
+- `build-claude-command.ts`: Injects CLI flags into commands starting with `claude `, writes system prompts to temp files
+- "Create Action" flow: Spawns a Claude terminal with `create-action-prompt.ts` to guide users through YAML action creation
+
+### Terminal Codenames
+- Terminals get random adjective-noun codenames on spawn (e.g., "brave-alpaca")
+- 50 adjectives × 50 nouns = 2,500 possible codenames (`codenames.ts`)
+- Discovered codenames tracked in `~/.ai-orchestrator/discovered-codenames.json` (ConfigManager)
+- CollectionProgress component shows discovery progress with animated UI
+
+### Quit Confirmation
+- QuitDialog shown when closing app with active terminal sessions
+- Warns user about running processes before termination
 
 ### Notifications
 - Terminal bell character algılama → OS notification
@@ -149,9 +166,12 @@ npm run typecheck    # TypeScript check
 | `src/main/ipc/handlers.ts` | Tüm IPC handler kayıtları |
 | `src/main/terminal/TerminalManager.ts` | PTY process management |
 | `src/main/action/ActionStore.ts` | Action YAML loading & file watching |
-| `src/main/action/ActionEngine.ts` | Action step execution |
+| `src/main/action/ActionEngine.ts` | Action step execution with Claude CLI flag injection |
+| `src/main/action/build-claude-command.ts` | Claude CLI flag builder for action commands |
+| `src/main/action/create-action-prompt.ts` | System prompt for Create Action flow |
+| `src/main/terminal/codenames.ts` | Random codename generator for terminal sessions |
 | `src/main/repo/RepoManager.ts` | Git operations |
-| `src/main/config/ConfigManager.ts` | Config & UI state persistence |
+| `src/main/config/ConfigManager.ts` | Config, UI state & codename collection persistence |
 | `src/preload/index.ts` | IPC API bridge (`window.api`) |
 | `src/renderer/stores/useTerminalStore.ts` | Terminal state management |
 | `src/renderer/stores/useAppStore.ts` | App UI state management |

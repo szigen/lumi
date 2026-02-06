@@ -45,15 +45,13 @@ export function buildClaudeCommand(content: string, config: ClaudeConfig): strin
   }
 
   if (config.allowedTools?.length) {
-    for (const tool of config.allowedTools) {
-      flags.push(`--allowedTools "${tool}"`)
-    }
+    const tools = config.allowedTools.map((t) => `"${t}"`).join(' ')
+    flags.push(`--allowedTools ${tools}`)
   }
 
   if (config.disallowedTools?.length) {
-    for (const tool of config.disallowedTools) {
-      flags.push(`--disallowedTools "${tool}"`)
-    }
+    const tools = config.disallowedTools.map((t) => `"${t}"`).join(' ')
+    flags.push(`--disallowedTools ${tools}`)
   }
 
   if (config.tools !== undefined) {
@@ -73,5 +71,5 @@ export function buildClaudeCommand(content: string, config: ClaudeConfig): strin
   }
 
   const flagStr = flags.join(' ')
-  return content.replace(/^(\s*)claude /, `$1claude ${flagStr} `)
+  return content.replace(/^(\s*)claude /, `$1claude ${flagStr} -- `)
 }

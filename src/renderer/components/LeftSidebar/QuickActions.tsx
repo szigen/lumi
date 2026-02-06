@@ -51,7 +51,7 @@ export default function QuickActions() {
   }, [activeRepo?.path])
 
   const executeAndTrack = async (
-    apiCall: () => Promise<{ id: string; name: string } | null>,
+    apiCall: () => Promise<{ id: string; name: string; isNew: boolean } | null>,
     task?: string
   ) => {
     if (!activeRepo) return
@@ -62,6 +62,7 @@ export default function QuickActions() {
         name: result.name,
         repoPath: activeRepo.path,
         status: 'running',
+        isNew: result.isNew,
         task,
         createdAt: new Date()
       })

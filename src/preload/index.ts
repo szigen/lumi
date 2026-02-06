@@ -70,6 +70,10 @@ const api = {
   onActionsChanged: (callback: () => void) =>
     createIpcListener<[]>(IPC_CHANNELS.ACTIONS_CHANGED, callback),
 
+  // Collection operations
+  getCollection: () =>
+    invokeIpc<{ discovered: number; total: number }>(IPC_CHANNELS.COLLECTION_GET),
+
   // Dialog operations
   openFolderDialog: () => invokeIpc<string | null>(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
 

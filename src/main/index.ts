@@ -1,5 +1,7 @@
 import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { join } from 'path'
+import { rmSync } from 'fs'
+import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 
@@ -174,6 +176,12 @@ app.whenReady().then(() => {
       createWindow()
     }
   })
+})
+
+app.on('will-quit', () => {
+  try {
+    rmSync(join(tmpdir(), 'ai-orchestrator'), { recursive: true, force: true })
+  } catch { /* ignore */ }
 })
 
 app.on('window-all-closed', () => {

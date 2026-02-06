@@ -5,20 +5,23 @@ import { EventEmitter } from 'events'
 import type { ManagedTerminal, SpawnResult } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { NotificationManager } from '../notification/NotificationManager'
+import { ConfigManager } from '../config/ConfigManager'
 import { generateCodename } from './codenames'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
   private maxTerminals: number
   private notificationManager: NotificationManager
+  private configManager: ConfigManager
 
-  constructor(maxTerminals: number = 12) {
+  constructor(maxTerminals: number = 12, configManager?: ConfigManager) {
     super()
     this.maxTerminals = maxTerminals
     this.notificationManager = new NotificationManager()
+    this.configManager = configManager || new ConfigManager()
   }
 
-  spawn(repoPath: string, window: BrowserWindow): SpawnResult | null {
+  spawn(repoPath: string, window: BrowserWindow, trackCollection = true): SpawnResult | null {
     if (this.terminals.size >= this.maxTerminals) {
       console.error(`Max terminals (${this.maxTerminals}) reached`)
       return null
@@ -26,6 +29,7 @@ export class TerminalManager extends EventEmitter {
 
     const id = uuidv4()
     const name = generateCodename()
+    const isNew = trackCollection ? this.configManager.addDiscoveredCodename(name) : false
     const shell = process.platform === 'win32' ? 'powershell.exe' : 'zsh'
 
     const ptyProcess = pty.spawn(shell, [], {
@@ -63,7 +67,7 @@ export class TerminalManager extends EventEmitter {
 
     this.terminals.set(id, terminal)
 
-    return { id, name }
+    return { id, name, isNew }
   }
 
   write(terminalId: string, data: string): boolean {

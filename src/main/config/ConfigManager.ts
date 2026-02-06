@@ -9,12 +9,14 @@ export class ConfigManager {
   private configPath: string
   private uiStatePath: string
   private workLogsDir: string
+  private codenamesPath: string
 
   constructor() {
     this.configDir = path.join(os.homedir(), '.ai-orchestrator')
     this.configPath = path.join(this.configDir, 'config.json')
     this.uiStatePath = path.join(this.configDir, 'ui-state.json')
     this.workLogsDir = path.join(this.configDir, 'work-logs')
+    this.codenamesPath = path.join(this.configDir, 'discovered-codenames.json')
     this.ensureDirectories()
   }
 
@@ -97,5 +99,27 @@ export class ConfigManager {
     }
 
     return logs
+  }
+
+  getDiscoveredCodenames(): string[] {
+    try {
+      if (fs.existsSync(this.codenamesPath)) {
+        const data = fs.readFileSync(this.codenamesPath, 'utf-8')
+        return JSON.parse(data)
+      }
+    } catch (error) {
+      console.error('Failed to read discovered codenames:', error)
+    }
+    return []
+  }
+
+  addDiscoveredCodename(name: string): boolean {
+    const codenames = this.getDiscoveredCodenames()
+    if (codenames.includes(name)) {
+      return false
+    }
+    codenames.push(name)
+    fs.writeFileSync(this.codenamesPath, JSON.stringify(codenames))
+    return true
   }
 }

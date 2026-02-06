@@ -1,4 +1,5 @@
-import { Layers } from 'lucide-react'
+import { Layers, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
@@ -42,6 +43,17 @@ export default function SessionList() {
               <span className="session-item__name">
                 {terminal.task || terminal.name}
               </span>
+              {terminal.isNew && (
+                <motion.span
+                  className="session-item__new-badge"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                >
+                  <Sparkles size={10} />
+                  NEW
+                </motion.span>
+              )}
             </div>
           ))}
         </div>
