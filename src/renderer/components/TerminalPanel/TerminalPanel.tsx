@@ -81,20 +81,22 @@ export default function TerminalPanel() {
 
   return (
     <div className="terminal-panel">
-      <div className="terminal-panel__header">
-        <h2 className="terminal-panel__title">Terminals</h2>
-        <span className="terminal-panel__count">
-          {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
-        </span>
-        <div className="terminal-panel__actions">
-          <PersonaDropdown
-            disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
-            onNewClaude={handleNewTerminal}
-            onPersonaSelect={handlePersonaSelect}
-            repoPath={activeRepo?.path}
-          />
+      {repoTerminals.length > 0 && (
+        <div className="terminal-panel__header">
+          <h2 className="terminal-panel__title">Terminals</h2>
+          <span className="terminal-panel__count">
+            {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
+          </span>
+          <div className="terminal-panel__actions">
+            <PersonaDropdown
+              disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
+              onNewClaude={handleNewTerminal}
+              onPersonaSelect={handlePersonaSelect}
+              repoPath={activeRepo?.path}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {repoTerminals.length === 0 && (
         <div className="terminal-empty">
