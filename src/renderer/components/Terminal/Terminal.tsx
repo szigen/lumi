@@ -27,9 +27,15 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
 
   const handleResize = useCallback(() => {
     if (fitAddonRef.current && xtermRef.current) {
-      fitAddonRef.current.fit()
-      const { cols, rows } = xtermRef.current
-      window.api.resizeTerminal(terminalId, cols, rows)
+      setTimeout(() => {
+        fitAddonRef.current?.fit()
+        const cols = xtermRef.current?.cols
+        const rows = xtermRef.current?.rows
+        if (cols && rows) {
+          window.api.resizeTerminal(terminalId, cols, rows)
+        }
+        xtermRef.current?.refresh(0, (xtermRef.current?.rows ?? 1) - 1)
+      }, 50)
     }
   }, [terminalId])
 
@@ -65,13 +71,15 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     const xterm = new XTerm({
       fontSize,
       fontFamily: "monospace",
-      cursorBlink: true,
+      cursorBlink: false,
+      cursorStyle: 'bar',
+      cursorInactiveStyle: 'none',
       scrollback: 5000,
       theme: {
         background: '#12121f',
         foreground: '#e2e2f0',
-        cursor: '#a78bfa',
-        cursorAccent: '#12121f',
+        cursor: 'transparent',
+        cursorAccent: 'transparent',
         selectionBackground: 'rgba(139, 92, 246, 0.3)',
         scrollbarSliderBackground: 'rgba(42, 42, 74, 0.5)',
         scrollbarSliderHoverBackground: 'rgba(74, 74, 106, 0.7)',
