@@ -18,6 +18,18 @@ Three step types:
 
 **delay** — Fixed wait in milliseconds. Only use when wait_for isn't practical (no reliable output pattern to match).
 
+**CRITICAL — YAML Quoting:**
+- The \\r at the end of write content MUST be inside **double quotes** in YAML. Single-quoted strings treat \\r as literal text, not as a carriage return.
+- Good: \`content: "command\\r"\`
+- Bad: \`content: 'command\\r'\` — this will NOT press Enter!
+- If your content contains double quotes, escape them with backslash: \`content: "echo \\"hello\\"\\r"\`
+
+**Shell Compatibility:**
+- The terminal runs **zsh** (macOS default). Some bash-isms don't work:
+  - \`read -p "prompt" var\` → use \`read "var?prompt"\` (zsh syntax)
+  - \`dirname "$PWD"\` → use \`\${PWD:h}\` (zsh shorthand)
+- When in doubt, prefer POSIX-compatible or zsh-native syntax.
+
 # YAML Schema
 
 id: kebab-case-id
@@ -26,7 +38,7 @@ icon: Terminal | TestTube | Package | GitBranch | FileEdit | Zap
 scope: user | project
 steps:
   - type: write
-    content: 'command\\r'
+    content: "command\\r"
   - type: wait_for
     pattern: 'regex-pattern'
     timeout: 30000
@@ -77,28 +89,34 @@ claude:
     - "Edit"
 steps:
   - type: write
-    content: 'claude "Run the linter, fix all auto-fixable issues, then report remaining warnings with file locations."\\r'
+    content: "claude \\"Run the linter, fix all auto-fixable issues, then report remaining warnings with file locations.\\"\\r"
 
 ## Pattern 2: Shell command followed by Claude analysis
 
 steps:
   - type: write
-    content: 'git pull\\r'
+    content: "git pull\\r"
   - type: wait_for
     pattern: 'Already up to date|Fast-forward|Merge made'
     timeout: 30000
   - type: write
-    content: 'claude "Summarize what changed in the latest pull and flag anything that needs attention."\\r'
+    content: "claude \\"Summarize what changed in the latest pull and flag anything that needs attention.\\"\\r"
 
 ## Pattern 3: Sequential shell commands
 
 steps:
   - type: write
-    content: 'rm -rf node_modules\\r'
+    content: "rm -rf node_modules\\r"
   - type: delay
     ms: 3000
   - type: write
-    content: 'npm install\\r'
+    content: "npm install\\r"
+
+## Pattern 4: Interactive input (ask user, then act)
+
+steps:
+  - type: write
+    content: "PARENT=\${PWD:h}; read \\"name?Project name: \\" && mkdir -p \\"$PARENT/$name\\" && git init \\"$PARENT/$name\\" && echo \\"Created: $PARENT/$name\\"\\r"
 
 # Design Rules
 
