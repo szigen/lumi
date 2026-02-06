@@ -82,6 +82,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         window.api.killTerminal(terminal.id)
         terminalState.removeTerminal(terminal.id)
       })
+
+      window.api.unwatchFileTree(repo.path)
     }
 
     set({ openTabs: newTabs, activeTab: newActive })

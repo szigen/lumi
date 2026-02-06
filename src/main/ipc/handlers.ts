@@ -11,6 +11,7 @@ import { TOTAL_CODENAMES } from '../terminal/codenames'
 
 let mainWindow: BrowserWindow | null = null
 let terminalManager: TerminalManager | null = null
+let repoManager: RepoManager | null = null
 let actionStore: ActionStore | null = null
 let actionEngine: ActionEngine | null = null
 
@@ -23,11 +24,15 @@ export function getTerminalManager(): TerminalManager | null {
   return terminalManager
 }
 
+export function getRepoManager(): RepoManager | null {
+  return repoManager
+}
+
 export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
   terminalManager = new TerminalManager(config.maxTerminals, configManager)
-  const repoManager = new RepoManager(config.projectsRoot)
+  repoManager = new RepoManager(config.projectsRoot)
 
   actionStore = new ActionStore()
   actionEngine = new ActionEngine(terminalManager)
@@ -36,6 +41,15 @@ export function setupIpcHandlers(): void {
   actionStore.setOnChange(() => {
     mainWindow?.webContents.send(IPC_CHANNELS.ACTIONS_CHANGED)
   })
+
+  // Send repo/file-tree changes to renderer
+  repoManager.setOnReposChange(() => {
+    mainWindow?.webContents.send(IPC_CHANNELS.REPOS_CHANGED)
+  })
+  repoManager.setOnFileTreeChange((repoPath) => {
+    mainWindow?.webContents.send(IPC_CHANNELS.FILE_TREE_CHANGED, repoPath)
+  })
+  repoManager.watchProjectsRoot()
 
   // Terminal handlers
   ipcMain.handle(IPC_CHANNELS.TERMINAL_SPAWN, async (_, repoPath: string) => {
@@ -63,37 +77,45 @@ export function setupIpcHandlers(): void {
 
   // Repository handlers
   ipcMain.handle(IPC_CHANNELS.REPOS_LIST, async () => {
-    return repoManager.listRepos()
+    return repoManager!.listRepos()
   })
 
   ipcMain.handle(IPC_CHANNELS.REPOS_FILES, async (_, repoPath: string) => {
-    return repoManager.getFiles(repoPath)
+    return repoManager!.getFiles(repoPath)
   })
 
   ipcMain.handle(IPC_CHANNELS.REPOS_FILE_TREE, async (_, repoPath: string) => {
-    return repoManager.getFileTree(repoPath)
+    return repoManager!.getFileTree(repoPath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.REPOS_WATCH_FILE_TREE, async (_, repoPath: string) => {
+    repoManager!.watchRepoFileTree(repoPath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.REPOS_UNWATCH_FILE_TREE, async (_, repoPath: string) => {
+    repoManager!.unwatchRepoFileTree(repoPath)
   })
 
   // Git handlers
   ipcMain.handle(
     IPC_CHANNELS.GIT_COMMITS,
     async (_, repoPath: string, branch?: string) => {
-      return repoManager.getCommits(repoPath, branch)
+      return repoManager!.getCommits(repoPath, branch)
     }
   )
 
   ipcMain.handle(IPC_CHANNELS.GIT_BRANCHES, async (_, repoPath: string) => {
-    return repoManager.getBranches(repoPath)
+    return repoManager!.getBranches(repoPath)
   })
 
   ipcMain.handle(IPC_CHANNELS.GIT_STATUS, async (_, repoPath: string) => {
-    return repoManager.getStatus(repoPath)
+    return repoManager!.getStatus(repoPath)
   })
 
   ipcMain.handle(
     IPC_CHANNELS.GIT_COMMIT,
     async (_, repoPath: string, files: string[], message: string) => {
-      return repoManager.commit(repoPath, files, message)
+      return repoManager!.commit(repoPath, files, message)
     }
   )
 
@@ -112,7 +134,7 @@ export function setupIpcHandlers(): void {
         terminalManager!.setMaxTerminals(newConfig.maxTerminals as number)
       }
       if (newConfig.projectsRoot) {
-        repoManager.setProjectsRoot(newConfig.projectsRoot as string)
+        repoManager!.setProjectsRoot(newConfig.projectsRoot as string)
       }
 
       return true

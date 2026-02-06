@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
 import { tmpdir } from 'os'
-import { setupIpcHandlers, setMainWindow, getTerminalManager } from './ipc/handlers'
+import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 
 let mainWindow: BrowserWindow | null = null
@@ -35,6 +35,7 @@ function createWindow(): void {
       mainWindow?.webContents.send(IPC_CHANNELS.APP_CONFIRM_QUIT, terminalCount)
     } else {
       terminalManager?.killAll()
+      getRepoManager()?.dispose()
     }
   })
 
@@ -152,6 +153,7 @@ function createMenu(): void {
 process.on('uncaughtException', (error) => {
   console.error('Uncaught exception:', error)
   getTerminalManager()?.killAll()
+  getRepoManager()?.dispose()
   app.exit(1)
 })
 
@@ -168,6 +170,7 @@ app.whenReady().then(() => {
   ipcMain.on(IPC_CHANNELS.APP_QUIT_CONFIRMED, () => {
     isQuitting = true
     getTerminalManager()?.killAll()
+    getRepoManager()?.dispose()
     app.quit()
   })
 

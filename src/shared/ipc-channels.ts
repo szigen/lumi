@@ -15,6 +15,10 @@ export const IPC_CHANNELS = {
   REPOS_LIST: 'repos:list',
   REPOS_FILES: 'repos:files',
   REPOS_FILE_TREE: 'repos:file-tree',
+  REPOS_CHANGED: 'repos:changed',
+  FILE_TREE_CHANGED: 'file-tree:changed',
+  REPOS_WATCH_FILE_TREE: 'repos:watch-file-tree',
+  REPOS_UNWATCH_FILE_TREE: 'repos:unwatch-file-tree',
 
   // Git operations
   GIT_COMMITS: 'git:commits',

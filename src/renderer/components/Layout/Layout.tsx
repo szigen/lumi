@@ -27,6 +27,14 @@ export default function Layout() {
     return cleanup
   }, [showQuitDialog])
 
+  // Listen for repo changes from file system watcher
+  useEffect(() => {
+    const cleanup = window.api.onReposChanged(() => {
+      loadRepos()
+    })
+    return cleanup
+  }, [loadRepos])
+
   useEffect(() => {
     const initialize = async () => {
       try {

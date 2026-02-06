@@ -7,6 +7,10 @@ import type { Repository, Commit, Branch, FileTreeNode, FileChange } from '../..
 
 export class RepoManager {
   private projectsRoot: string
+  private watchers: Map<string, fs.FSWatcher> = new Map()
+  private debounceTimers: Map<string, NodeJS.Timeout> = new Map()
+  private onReposChange: (() => void) | null = null
+  private onFileTreeChange: ((repoPath: string) => void) | null = null
 
   constructor(projectsRoot: string) {
     this.projectsRoot = this.expandPath(projectsRoot)
@@ -171,6 +175,105 @@ export class RepoManager {
 
   setProjectsRoot(root: string): void {
     this.projectsRoot = this.expandPath(root)
+    this.watchProjectsRoot()
+  }
+
+  setOnReposChange(cb: () => void): void {
+    this.onReposChange = cb
+  }
+
+  setOnFileTreeChange(cb: (repoPath: string) => void): void {
+    this.onFileTreeChange = cb
+  }
+
+  watchProjectsRoot(): void {
+    // Close existing root watcher
+    const existing = this.watchers.get('__root__')
+    if (existing) {
+      existing.close()
+      this.watchers.delete('__root__')
+    }
+    // Clear pending debounce for old root
+    const pendingTimer = this.debounceTimers.get('__root__')
+    if (pendingTimer) {
+      clearTimeout(pendingTimer)
+      this.debounceTimers.delete('__root__')
+    }
+
+    if (!fs.existsSync(this.projectsRoot)) return
+
+    try {
+      const watcher = fs.watch(this.projectsRoot, () => {
+        this.debounce('__root__', () => {
+          this.onReposChange?.()
+        }, 300)
+      })
+      watcher.on('error', (err) => {
+        console.error('Projects root watcher error:', err)
+      })
+      this.watchers.set('__root__', watcher)
+    } catch (error) {
+      console.error('Failed to watch projects root:', error)
+    }
+  }
+
+  watchRepoFileTree(repoPath: string): void {
+    // Close existing watcher for this repo
+    this.unwatchRepoFileTree(repoPath)
+
+    const expandedPath = this.expandPath(repoPath)
+    if (!fs.existsSync(expandedPath)) return
+
+    try {
+      const watcher = fs.watch(expandedPath, { recursive: true }, () => {
+        this.debounce(repoPath, () => {
+          this.onFileTreeChange?.(repoPath)
+        }, 500)
+      })
+      watcher.on('error', (err) => {
+        console.error('Repo file tree watcher error:', err)
+      })
+      this.watchers.set(repoPath, watcher)
+    } catch (error) {
+      console.error('Failed to watch repo file tree:', error)
+    }
+  }
+
+  unwatchRepoFileTree(repoPath: string): void {
+    const existing = this.watchers.get(repoPath)
+    if (existing) {
+      existing.close()
+      this.watchers.delete(repoPath)
+    }
+    const timer = this.debounceTimers.get(repoPath)
+    if (timer) {
+      clearTimeout(timer)
+      this.debounceTimers.delete(repoPath)
+    }
+  }
+
+  dispose(): void {
+    for (const watcher of this.watchers.values()) {
+      watcher.close()
+    }
+    this.watchers.clear()
+    for (const timer of this.debounceTimers.values()) {
+      clearTimeout(timer)
+    }
+    this.debounceTimers.clear()
+    this.onReposChange = null
+    this.onFileTreeChange = null
+  }
+
+  private debounce(key: string, fn: () => void, delay: number): void {
+    const existing = this.debounceTimers.get(key)
+    if (existing) {
+      clearTimeout(existing)
+    }
+    this.debounceTimers.set(key, setTimeout(() => {
+      this.debounceTimers.delete(key)
+      fn()
+    }, delay))
   }
 
   async getFileTree(repoPath: string): Promise<FileTreeNode[]> {

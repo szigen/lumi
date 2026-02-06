@@ -94,6 +94,26 @@ export default function ProjectContext() {
 
   const activeRepoPath = activeRepo?.path
 
+  // Listen for file tree changes from file system watcher
+  useEffect(() => {
+    const cleanup = window.api.onFileTreeChanged((changedRepoPath: string) => {
+      setTreeCache(prev => {
+        if (!prev.has(changedRepoPath)) return prev
+        const next = new Map(prev)
+        next.delete(changedRepoPath)
+        return next
+      })
+    })
+    return cleanup
+  }, [])
+
+  // Watch/unwatch active repo file tree
+  useEffect(() => {
+    if (!activeRepoPath) return
+    window.api.watchFileTree(activeRepoPath)
+    return () => { window.api.unwatchFileTree(activeRepoPath) }
+  }, [activeRepoPath])
+
   useEffect(() => {
     if (!activeRepoPath) return
     if (treeCache.has(activeRepoPath)) return

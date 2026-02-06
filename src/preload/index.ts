@@ -30,6 +30,14 @@ const api = {
     invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_FILES, repoPath),
   getFileTree: (repoPath: string) =>
     invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_FILE_TREE, repoPath),
+  onReposChanged: (cb: () => void) =>
+    createIpcListener<[]>(IPC_CHANNELS.REPOS_CHANGED, cb),
+  onFileTreeChanged: (cb: (repoPath: string) => void) =>
+    createIpcListener<[string]>(IPC_CHANNELS.FILE_TREE_CHANGED, cb),
+  watchFileTree: (repoPath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.REPOS_WATCH_FILE_TREE, repoPath),
+  unwatchFileTree: (repoPath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.REPOS_UNWATCH_FILE_TREE, repoPath),
 
   // Git operations
   getCommits: (repoPath: string, branch?: string) =>
