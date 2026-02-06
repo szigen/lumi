@@ -205,7 +205,7 @@ export function setupIpcHandlers(): void {
       steps: [
         {
           type: 'write',
-          content: `claude "Help me create a new Quick Action. Ask me what I want to automate."\r`
+          content: `claude "."\r`
         }
       ]
     }
