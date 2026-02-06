@@ -1,5 +1,5 @@
-id: install-plugins
-label: Install Plugins
+id: sync-plugins
+label: Sync Plugins
 icon: Zap
 scope: user
 claude:

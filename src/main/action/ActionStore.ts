@@ -41,7 +41,7 @@ export class ActionStore {
     }
 
     // Remove deprecated defaults that no longer ship
-    const deprecated = ['new-terminal.yaml', 'create-action.yaml', 'git-pull.yaml', 'install-deps.yaml']
+    const deprecated = ['new-terminal.yaml', 'create-action.yaml', 'git-pull.yaml', 'install-deps.yaml', 'install-plugins.yaml']
     for (const file of deprecated) {
       if (!defaultNames.has(file)) {
         const filePath = path.join(this.userDir, file)
