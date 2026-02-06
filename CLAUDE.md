@@ -30,6 +30,8 @@ src/
 │   │   └── types.ts         # ManagedTerminal, SpawnResult interfaces
 │   ├── repo/
 │   │   └── RepoManager.ts   # simple-git operations
+│   ├── persona/
+│   │   └── PersonaStore.ts  # YAML persona loading & file watching
 │   ├── config/
 │   │   └── ConfigManager.ts # Config, UI state & codename collection persistence
 │   └── notification/
@@ -42,9 +44,9 @@ src/
 │   ├── components/
 │   │   ├── Header/          # Top bar, RepoSelector, RepoTab
 │   │   ├── Layout/          # Main layout wrapper
-│   │   ├── LeftSidebar/     # QuickActions, SessionList, CollectionProgress, ContextMenu
+│   │   ├── LeftSidebar/     # QuickActions, SessionList, CollectionProgress, ProjectContext, ContextMenu
 │   │   ├── RightSidebar/    # BranchSection, ChangesSection, CommitTree
-│   │   ├── TerminalPanel/   # Terminal container panel
+│   │   ├── TerminalPanel/   # Terminal container panel, PersonaDropdown
 │   │   ├── Terminal/        # xterm.js wrapper per session
 │   │   ├── QuitDialog/      # Quit confirmation when terminals active
 │   │   ├── Settings/        # Settings modal (General, Terminal, Appearance, Shortcuts)
@@ -68,12 +70,17 @@ src/
 │   ├── types.ts             # Core interfaces (Terminal, Repository, Commit, etc.)
 │   ├── ipc-channels.ts      # Centralized IPC channel constants
 │   ├── action-types.ts      # Action, ActionStep & ClaudeConfig types
+│   ├── persona-types.ts     # Persona type definitions
 │   └── constants.ts         # DEFAULT_UI_STATE, etc.
-└── default-actions/         # Bundled YAML action templates
-    ├── git-pull.yaml
-    ├── install-deps.yaml
-    ├── run-tests.yaml
-    └── update-claude-md.yaml
+├── default-actions/         # Bundled YAML action templates
+│   ├── run-tests.yaml
+│   ├── sync-plugins.yaml
+│   └── update-claude-md.yaml
+└── default-personas/        # Bundled YAML persona templates
+    ├── architect.yaml
+    ├── expert.yaml
+    ├── fixer.yaml
+    └── reviewer.yaml
 ```
 
 ## Geliştirme Komutları
@@ -113,6 +120,13 @@ npm run typecheck    # TypeScript check
 - Actions can include `claude:` config block for CLI flags (model, allowedTools, systemPrompt, permissionMode, maxTurns, etc.)
 - `build-claude-command.ts`: Injects CLI flags into commands starting with `claude `, writes system prompts to temp files
 - "Create Action" flow: Spawns a Claude terminal with `create-action-prompt.ts` to guide users through YAML action creation
+
+### Persona System
+- YAML-based persona definitions (name, description, systemPrompt)
+- PersonaStore: `~/.ai-orchestrator/personas` (user) + `<repo>/.ai-orchestrator/personas` (project) dizinlerini izler
+- Default persona'lar `default-personas/` klasöründen kopyalanır (architect, expert, fixer, reviewer)
+- PersonaDropdown: Terminal spawn sırasında persona seçimi
+- Seçilen persona'nın systemPrompt'u Claude CLI'a `--system-prompt` flag ile iletilir
 
 ### Terminal Codenames
 - Terminals get random adjective-noun codenames on spawn (e.g., "brave-alpaca")
@@ -171,6 +185,7 @@ npm run typecheck    # TypeScript check
 | `src/main/action/create-action-prompt.ts` | System prompt for Create Action flow |
 | `src/main/terminal/codenames.ts` | Random codename generator for terminal sessions |
 | `src/main/repo/RepoManager.ts` | Git operations |
+| `src/main/persona/PersonaStore.ts` | Persona YAML loading & file watching |
 | `src/main/config/ConfigManager.ts` | Config, UI state & codename collection persistence |
 | `src/preload/index.ts` | IPC API bridge (`window.api`) |
 | `src/renderer/stores/useTerminalStore.ts` | Terminal state management |
@@ -178,4 +193,5 @@ npm run typecheck    # TypeScript check
 | `src/renderer/components/Terminal/Terminal.tsx` | xterm.js integration |
 | `src/shared/ipc-channels.ts` | Centralized IPC channel constants |
 | `src/shared/types.ts` | Core TypeScript interfaces |
+| `src/shared/persona-types.ts` | Persona type definitions |
 | `electron.vite.config.ts` | Vite + Electron build config |
