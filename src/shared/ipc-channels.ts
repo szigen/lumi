@@ -56,6 +56,12 @@ export const IPC_CHANNELS = {
   ACTIONS_LOAD_PROJECT: 'actions:load-project',
   ACTIONS_CREATE_NEW: 'actions:create-new',
 
+  // Persona operations
+  PERSONAS_LIST: 'personas:list',
+  PERSONAS_SPAWN: 'personas:spawn',
+  PERSONAS_CHANGED: 'personas:changed',
+  PERSONAS_LOAD_PROJECT: 'personas:load-project',
+
   // Collection operations
   COLLECTION_GET: 'collection:get',
 

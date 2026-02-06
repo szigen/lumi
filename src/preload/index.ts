@@ -78,6 +78,16 @@ const api = {
   onActionsChanged: (callback: () => void) =>
     createIpcListener<[]>(IPC_CHANNELS.ACTIONS_CHANGED, callback),
 
+  // Persona operations
+  getPersonas: (repoPath?: string) =>
+    invokeIpc<unknown[]>(IPC_CHANNELS.PERSONAS_LIST, repoPath),
+  spawnPersona: (personaId: string, repoPath: string) =>
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.PERSONAS_SPAWN, personaId, repoPath),
+  loadProjectPersonas: (repoPath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.PERSONAS_LOAD_PROJECT, repoPath),
+  onPersonasChanged: (callback: () => void) =>
+    createIpcListener<[]>(IPC_CHANNELS.PERSONAS_CHANGED, callback),
+
   // Collection operations
   getCollection: () =>
     invokeIpc<{ discovered: number; total: number }>(IPC_CHANNELS.COLLECTION_GET),

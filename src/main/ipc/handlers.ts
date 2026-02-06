@@ -7,6 +7,8 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { ActionStore } from '../action/ActionStore'
 import { ActionEngine } from '../action/ActionEngine'
 import { CREATE_ACTION_PROMPT } from '../action/create-action-prompt'
+import { buildClaudeCommand } from '../action/build-claude-command'
+import { PersonaStore } from '../persona/PersonaStore'
 import { TOTAL_CODENAMES } from '../terminal/codenames'
 
 let mainWindow: BrowserWindow | null = null
@@ -14,6 +16,7 @@ let terminalManager: TerminalManager | null = null
 let repoManager: RepoManager | null = null
 let actionStore: ActionStore | null = null
 let actionEngine: ActionEngine | null = null
+let personaStore: PersonaStore | null = null
 
 export function setMainWindow(window: BrowserWindow): void {
   mainWindow = window
@@ -37,9 +40,16 @@ export function setupIpcHandlers(): void {
   actionStore = new ActionStore()
   actionEngine = new ActionEngine(terminalManager)
 
+  personaStore = new PersonaStore()
+
   // Send action changes to renderer
   actionStore.setOnChange(() => {
     mainWindow?.webContents.send(IPC_CHANNELS.ACTIONS_CHANGED)
+  })
+
+  // Send persona changes to renderer
+  personaStore.setOnChange(() => {
+    mainWindow?.webContents.send(IPC_CHANNELS.PERSONAS_CHANGED)
   })
 
   // Send repo/file-tree changes to renderer
@@ -240,4 +250,32 @@ export function setupIpcHandlers(): void {
     }
     return actionEngine!.execute(action, repoPath)
   })
+
+  // Persona handlers
+  ipcMain.handle(IPC_CHANNELS.PERSONAS_LIST, async (_, repoPath?: string) => {
+    return personaStore!.getPersonas(repoPath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PERSONAS_LOAD_PROJECT, async (_, repoPath: string) => {
+    personaStore!.loadProjectPersonas(repoPath)
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.PERSONAS_SPAWN,
+    async (_, personaId: string, repoPath: string) => {
+      if (!mainWindow) throw new Error('No main window')
+
+      const personas = personaStore!.getPersonas(repoPath)
+      const persona = personas.find((p) => p.id === personaId)
+      if (!persona) throw new Error(`Persona not found: ${personaId}`)
+
+      const result = terminalManager!.spawn(repoPath, mainWindow, false)
+      if (!result) return null
+
+      const command = buildClaudeCommand('claude ""\r', persona.claude)
+      terminalManager!.write(result.id, command)
+
+      return result
+    }
+  )
 }

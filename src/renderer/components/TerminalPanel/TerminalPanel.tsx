@@ -1,11 +1,13 @@
 import { useCallback } from 'react'
-import { TerminalSquare, Plus, FolderOpen } from 'lucide-react'
+import { TerminalSquare, FolderOpen } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import Terminal from '../Terminal'
-import { Button, EmptyState } from '../ui'
+import { EmptyState } from '../ui'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
+import PersonaDropdown from './PersonaDropdown'
+import type { Persona } from '../../../shared/persona-types'
 
 export default function TerminalPanel() {
   const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
@@ -39,6 +41,27 @@ export default function TerminalPanel() {
     }
   }, [activeRepo, addTerminal, getTerminalCount])
 
+  const handlePersonaSelect = useCallback(async (persona: Persona) => {
+    if (!activeRepo) return
+    if (getTerminalCount() >= DEFAULT_CONFIG.maxTerminals) {
+      alert(`Maximum ${DEFAULT_CONFIG.maxTerminals} terminals allowed`)
+      return
+    }
+
+    const result = await window.api.spawnPersona(persona.id, activeRepo.path)
+    if (result) {
+      addTerminal({
+        id: result.id,
+        name: result.name,
+        repoPath: activeRepo.path,
+        status: 'running',
+        task: persona.label,
+        isNew: result.isNew,
+        createdAt: new Date()
+      })
+    }
+  }, [activeRepo, addTerminal, getTerminalCount])
+
   const handleCloseTerminal = useCallback(async (terminalId: string) => {
     await window.api.killTerminal(terminalId)
     removeTerminal(terminalId)
@@ -64,13 +87,12 @@ export default function TerminalPanel() {
           {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
         </span>
         <div className="terminal-panel__actions">
-          <Button
-            leftIcon={<Plus size={14} />}
-            onClick={handleNewTerminal}
+          <PersonaDropdown
             disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
-          >
-            New Claude
-          </Button>
+            onNewClaude={handleNewTerminal}
+            onPersonaSelect={handlePersonaSelect}
+            repoPath={activeRepo?.path}
+          />
         </div>
       </div>
 
@@ -81,12 +103,11 @@ export default function TerminalPanel() {
             title="No terminals running"
             description="Spawn a new terminal to start coding with Claude"
             action={
-              <Button
-                leftIcon={<Plus size={14} />}
-                onClick={handleNewTerminal}
-              >
-                New Claude
-              </Button>
+              <PersonaDropdown
+                onNewClaude={handleNewTerminal}
+                onPersonaSelect={handlePersonaSelect}
+                repoPath={activeRepo?.path}
+              />
             }
           />
         </div>
