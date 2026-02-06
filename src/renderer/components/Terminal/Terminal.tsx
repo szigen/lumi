@@ -115,6 +115,22 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId, handleResize, fontSize])
 
+  // Refit xterm when terminal becomes visible (e.g. repo switch from display:none → block)
+  useEffect(() => {
+    const el = terminalRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) handleResize()
+      },
+      { threshold: 0.01 }
+    )
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [handleResize])
+
   useEffect(() => {
     const handleOutput = (id: string, data: string) => {
       if (id === terminalId && xtermRef.current) {

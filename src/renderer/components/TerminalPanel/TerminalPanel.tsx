@@ -96,7 +96,7 @@ export default function TerminalPanel() {
         </div>
       </div>
 
-      {repoTerminals.length === 0 ? (
+      {repoTerminals.length === 0 && (
         <div className="terminal-empty">
           <EmptyState
             icon={<TerminalSquare size={48} />}
@@ -111,8 +111,9 @@ export default function TerminalPanel() {
             }
           />
         </div>
-      ) : (
-        <div className="terminal-grid">
+      )}
+      {allTerminals.length > 0 && (
+        <div className="terminal-grid" style={{ display: repoTerminals.length > 0 ? undefined : 'none' }}>
           {allTerminals.map((terminal) => (
             <div
               key={terminal.id}
