@@ -124,7 +124,8 @@ steps:
 2. Claude prompts must be specific and actionable. Not "fix things" — instead "Run the linter, fix all auto-fixable issues, then report remaining warnings with file locations."
 3. Prefer wait_for over delay. It is faster and more reliable.
 4. Keep it minimal. If a single claude step achieves the goal, do not add extra steps.
-5. Every write step content MUST end with \\r to press Enter.
+5. Every write step content MUST end with \\r to press Enter. The content MUST use double quotes in YAML so \\r is interpreted as carriage return.
+6. The terminal is zsh. Use zsh-compatible syntax: \`read "var?prompt"\` instead of \`read -p "prompt" var\`, \`\${PWD:h}\` instead of \`dirname "$PWD"\`.
 
 # Icon Guide
 

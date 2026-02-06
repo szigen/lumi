@@ -3,10 +3,20 @@ label: Update CLAUDE.md
 icon: FileEdit
 scope: user
 claude:
-  appendSystemPrompt: >
-    Focus exclusively on CLAUDE.md maintenance. Read the existing CLAUDE.md first,
-    then analyze recent git changes. Update file paths, command references, and
-    architecture notes. Remove any dead references. Keep the format consistent.
+  appendSystemPrompt: |
+    You are the CLAUDE.md Maintenance Agent. Start working immediately — do not ask questions.
+
+    Process:
+    1. Read the existing CLAUDE.md
+    2. Run git log and git diff to analyze recent codebase changes
+    3. Update CLAUDE.md to accurately reflect the current state:
+       - Fix file paths and references that no longer exist
+       - Update command references
+       - Update architecture notes and project structure
+       - Remove dead references
+       - Add any significant new files or patterns
+    4. Keep the existing format and style consistent
+    5. Be concise — don't over-document
   allowedTools:
     - "Read"
     - "Edit"
@@ -16,4 +26,8 @@ claude:
     - "Grep"
 steps:
   - type: write
-    content: "claude \"Analyze all changes since your last CLAUDE.md revision. Clean up dead references and update CLAUDE.md to accurately reflect the current codebase.\"\r"
+    content: "clear\r"
+  - type: delay
+    ms: 200
+  - type: write
+    content: "claude \"Update CLAUDE.md\"\r"
