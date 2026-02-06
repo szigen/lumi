@@ -6,8 +6,12 @@ import { useRepoStore } from './useRepoStore'
 
 interface AppState extends UIState {
   settingsOpen: boolean
+  quitDialogOpen: boolean
+  quitTerminalCount: number
   openSettings: () => void
   closeSettings: () => void
+  showQuitDialog: (count: number) => void
+  hideQuitDialog: () => void
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
@@ -20,8 +24,12 @@ interface AppState extends UIState {
 export const useAppStore = create<AppState>((set, get) => ({
   ...DEFAULT_UI_STATE,
   settingsOpen: false,
+  quitDialogOpen: false,
+  quitTerminalCount: 0,
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  showQuitDialog: (count) => set({ quitDialogOpen: true, quitTerminalCount: count }),
+  hideQuitDialog: () => set({ quitDialogOpen: false, quitTerminalCount: 0 }),
 
   setActiveTab: (tab) => {
     set({ activeTab: tab })

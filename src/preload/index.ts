@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { createIpcListener, invokeIpc } from './ipc-utils'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import type { SpawnResult } from '../main/terminal/types'
@@ -75,6 +75,13 @@ const api = {
 
   // Window operations
   toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE),
+
+  // App lifecycle
+  onConfirmQuit: (callback: (terminalCount: number) => void) =>
+    createIpcListener<[number]>(IPC_CHANNELS.APP_CONFIRM_QUIT, callback),
+  confirmQuit: () => {
+    ipcRenderer.send(IPC_CHANNELS.APP_QUIT_CONFIRMED)
+  },
 
   // Shortcut events from menu
   onShortcut: (callback: (action: string) => void) =>

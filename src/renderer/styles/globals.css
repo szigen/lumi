@@ -1829,3 +1829,83 @@ a {
   cursor: not-allowed;
 }
 
+/* === QUIT DIALOG === */
+.quit-dialog {
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-2xl) var(--spacing-xl) var(--spacing-xl);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
+}
+
+.quit-dialog__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--accent-warning);
+  margin-bottom: var(--spacing-lg);
+}
+
+.quit-dialog__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.quit-dialog__message {
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-xl);
+}
+
+.quit-dialog__message strong {
+  color: var(--text-primary);
+}
+
+.quit-dialog__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.quit-dialog__cancel-btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.quit-dialog__cancel-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.quit-dialog__quit-btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--accent-vivid);
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.quit-dialog__quit-btn:hover {
+  background: var(--accent-deep);
+}
+

@@ -45,13 +45,17 @@ export class TerminalManager extends EventEmitter {
     }
 
     ptyProcess.onData((data) => {
-      window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
-      this.notificationManager.processPtyOutput(id, data, window, repoPath)
+      if (!window.isDestroyed()) {
+        window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
+        this.notificationManager.processPtyOutput(id, data, window, repoPath)
+      }
       this.emit('output', { terminalId: id, data })
     })
 
     ptyProcess.onExit(({ exitCode }) => {
-      window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
+      if (!window.isDestroyed()) {
+        window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
+      }
       this.terminals.delete(id)
       this.notificationManager.removeTerminal(id)
       this.emit('exit', { terminalId: id, exitCode })

@@ -50,7 +50,11 @@ export const IPC_CHANNELS = {
   ACTIONS_DELETE: 'actions:delete',
   ACTIONS_CHANGED: 'actions:changed',
   ACTIONS_LOAD_PROJECT: 'actions:load-project',
-  ACTIONS_CREATE_NEW: 'actions:create-new'
+  ACTIONS_CREATE_NEW: 'actions:create-new',
+
+  // App lifecycle
+  APP_CONFIRM_QUIT: 'app:confirm-quit',
+  APP_QUIT_CONFIRMED: 'app:quit-confirmed'
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

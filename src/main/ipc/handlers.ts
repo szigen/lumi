@@ -18,11 +18,10 @@ let actionEngine: ActionEngine | null = null
 export function setMainWindow(window: BrowserWindow): void {
   mainWindow = window
   actionEngine?.setWindow(window)
+}
 
-  // Cleanup on window close
-  window.on('close', () => {
-    terminalManager?.killAll()
-  })
+export function getTerminalManager(): TerminalManager | null {
+  return terminalManager
 }
 
 export function setupIpcHandlers(): void {

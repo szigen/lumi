@@ -1,8 +1,10 @@
-import { app, BrowserWindow, Menu } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { join } from 'path'
-import { setupIpcHandlers, setMainWindow } from './ipc/handlers'
+import { setupIpcHandlers, setMainWindow, getTerminalManager } from './ipc/handlers'
+import { IPC_CHANNELS } from '../shared/ipc-channels'
 
 let mainWindow: BrowserWindow | null = null
+let isQuitting = false
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -20,6 +22,19 @@ function createWindow(): void {
   })
 
   setMainWindow(mainWindow)
+
+  // Intercept window close when terminals are active
+  mainWindow.on('close', (e) => {
+    const terminalManager = getTerminalManager()
+    const terminalCount = terminalManager?.getCount() ?? 0
+
+    if (!isQuitting && terminalCount > 0) {
+      e.preventDefault()
+      mainWindow?.webContents.send(IPC_CHANNELS.APP_CONFIRM_QUIT, terminalCount)
+    } else {
+      terminalManager?.killAll()
+    }
+  })
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
@@ -46,7 +61,11 @@ function createMenu(): void {
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
+        {
+          label: 'Quit',
+          accelerator: 'CmdOrCtrl+Q',
+          click: () => mainWindow?.close()
+        }
       ]
     },
     {
@@ -127,10 +146,28 @@ function createMenu(): void {
   Menu.setApplicationMenu(menu)
 }
 
+// Crash recovery — kill zombie PTY processes
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception:', error)
+  getTerminalManager()?.killAll()
+  app.exit(1)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason)
+})
+
 app.whenReady().then(() => {
   setupIpcHandlers()
   createWindow()
   createMenu()
+
+  // Handle quit confirmation from renderer
+  ipcMain.on(IPC_CHANNELS.APP_QUIT_CONFIRMED, () => {
+    isQuitting = true
+    getTerminalManager()?.killAll()
+    app.quit()
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

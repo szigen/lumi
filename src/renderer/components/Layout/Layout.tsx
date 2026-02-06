@@ -10,13 +10,22 @@ import RightSidebar from '../RightSidebar/RightSidebar'
 import TerminalPanel from '../TerminalPanel/TerminalPanel'
 import { Logo } from '../icons'
 import { SettingsModal } from '../Settings'
+import { QuitDialog } from '../QuitDialog'
 
 export default function Layout() {
   useKeyboardShortcuts()
   useNotificationListener()
   const [isInitializing, setIsInitializing] = useState(true)
-  const { leftSidebarOpen, rightSidebarOpen, loadUIState } = useAppStore()
+  const { leftSidebarOpen, rightSidebarOpen, loadUIState, showQuitDialog } = useAppStore()
   const { loadRepos } = useRepoStore()
+
+  // Listen for quit confirmation request from main process
+  useEffect(() => {
+    const cleanup = window.api.onConfirmQuit((terminalCount: number) => {
+      showQuitDialog(terminalCount)
+    })
+    return cleanup
+  }, [showQuitDialog])
 
   useEffect(() => {
     const initialize = async () => {
@@ -72,6 +81,7 @@ export default function Layout() {
         </AnimatePresence>
       </div>
       <SettingsModal />
+      <QuitDialog />
       <ToastContainer />
     </div>
   )
