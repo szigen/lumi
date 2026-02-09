@@ -25,9 +25,9 @@ src/
 │   │   ├── build-claude-command.ts  # Claude CLI flag injection for actions
 │   │   └── create-action-prompt.ts  # System prompt for "Create Action" flow
 │   ├── terminal/
-│   │   ├── TerminalManager.ts # PTY process spawn/management
+│   │   ├── TerminalManager.ts # PTY process spawn/management, output buffering, state queries
 │   │   ├── codenames.ts     # Random adjective-noun codename generator
-│   │   └── types.ts         # ManagedTerminal, SpawnResult interfaces
+│   │   └── types.ts         # ManagedTerminal (with outputBuffer, task), SpawnResult interfaces
 │   ├── repo/
 │   │   └── RepoManager.ts   # simple-git operations
 │   ├── persona/
@@ -67,8 +67,8 @@ src/
 │   └── types/
 │       └── global.d.ts      # Global type declarations
 ├── shared/                  # Shared between main & renderer
-│   ├── types.ts             # Core interfaces (Terminal, Repository, Commit, etc.)
-│   ├── ipc-channels.ts      # Centralized IPC channel constants
+│   ├── types.ts             # Core interfaces (Terminal, TerminalInfo, Repository, Commit, etc.)
+│   ├── ipc-channels.ts      # Centralized IPC channel constants (incl. TERMINAL_LIST/BUFFER/SYNC)
 │   ├── action-types.ts      # Action, ActionStep & ClaudeConfig types
 │   ├── persona-types.ts     # Persona type definitions
 │   └── constants.ts         # DEFAULT_UI_STATE, etc.
@@ -102,7 +102,7 @@ npm run typecheck    # TypeScript check
 - Tüm handler'lar `src/main/ipc/handlers.ts` içinde kayıtlı
 
 ### State Management
-- **useTerminalStore**: Terminal sessions, outputs, active terminal tracking
+- **useTerminalStore**: Terminal sessions, outputs, active terminal tracking, syncFromMain reconciliation
 - **useAppStore**: UI layout (open tabs, active tab, sidebar visibility, settings modal, quit dialog)
 - **useRepoStore**: Available repositories
 - **useNotificationStore**: Toast notification queue
@@ -111,6 +111,11 @@ npm run typecheck    # TypeScript check
 - Her terminal session bir `node-pty` process (TerminalManager)
 - xterm.js frontend rendering (Terminal component)
 - Session ID ile tracking, max 12 terminal
+- **Main process = single source of truth**: TerminalManager owns all terminal metadata and output buffer
+- Output buffering: Main process keeps last 100KB per terminal for reconnection
+- `syncFromMain()`: Renderer syncs terminal state from main on startup, visibility change, and powerMonitor resume
+- `TERMINAL_LIST` / `TERMINAL_BUFFER` / `TERMINAL_SYNC` IPC channels for state reconciliation
+- Terminals support optional `task` field (set by actions, personas, or manual spawn)
 
 ### Action System
 - YAML-based action definitions (write/wait_for/delay steps)
@@ -178,7 +183,7 @@ npm run typecheck    # TypeScript check
 |-------|----------|
 | `src/main/index.ts` | Electron main entry, BrowserWindow, app menu |
 | `src/main/ipc/handlers.ts` | Tüm IPC handler kayıtları |
-| `src/main/terminal/TerminalManager.ts` | PTY process management |
+| `src/main/terminal/TerminalManager.ts` | PTY process management, output buffering, state queries |
 | `src/main/action/ActionStore.ts` | Action YAML loading & file watching |
 | `src/main/action/ActionEngine.ts` | Action step execution with Claude CLI flag injection |
 | `src/main/action/build-claude-command.ts` | Claude CLI flag builder for action commands |
@@ -192,6 +197,6 @@ npm run typecheck    # TypeScript check
 | `src/renderer/stores/useAppStore.ts` | App UI state management |
 | `src/renderer/components/Terminal/Terminal.tsx` | xterm.js integration |
 | `src/shared/ipc-channels.ts` | Centralized IPC channel constants |
-| `src/shared/types.ts` | Core TypeScript interfaces |
+| `src/shared/types.ts` | Core TypeScript interfaces (Terminal, TerminalInfo, Repository, etc.) |
 | `src/shared/persona-types.ts` | Persona type definitions |
 | `electron.vite.config.ts` | Vite + Electron build config |

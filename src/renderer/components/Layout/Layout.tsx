@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
+import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useKeyboardShortcuts, useNotificationListener } from '../../hooks'
 import { ToastContainer } from '../Notifications'
 import Header from '../Header/Header'
@@ -18,6 +19,7 @@ export default function Layout() {
   const [isInitializing, setIsInitializing] = useState(true)
   const { leftSidebarOpen, rightSidebarOpen, loadUIState, showQuitDialog } = useAppStore()
   const { loadRepos } = useRepoStore()
+  const { syncFromMain } = useTerminalStore()
 
   // Listen for quit confirmation request from main process
   useEffect(() => {
@@ -42,6 +44,8 @@ export default function Layout() {
           loadUIState(),
           loadRepos()
         ])
+        // Sync terminal state from main process on startup
+        await syncFromMain()
       } catch (error) {
         console.error('Failed to initialize:', error)
       } finally {
@@ -50,7 +54,34 @@ export default function Layout() {
     }
 
     initialize()
-  }, [loadUIState, loadRepos])
+  }, [loadUIState, loadRepos, syncFromMain])
+
+  // Re-sync terminals when app regains focus (covers macOS sleep/wake)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncFromMain()
+      }
+    }
+
+    const handleFocus = () => {
+      syncFromMain()
+    }
+
+    // Listen for main process sync signal (powerMonitor resume)
+    const cleanupSync = window.api.onTerminalSync(() => {
+      syncFromMain()
+    })
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+      cleanupSync()
+    }
+  }, [syncFromMain])
 
   if (isInitializing) {
     return (

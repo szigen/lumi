@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, powerMonitor } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
 import { tmpdir } from 'os'
@@ -178,6 +178,11 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
     }
+  })
+
+  // Notify renderer to re-sync terminal state after macOS sleep/wake
+  powerMonitor.on('resume', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.TERMINAL_SYNC)
   })
 })
 

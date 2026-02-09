@@ -12,4 +12,6 @@ export interface ManagedTerminal {
   pty: IPty
   repoPath: string
   createdAt: Date
+  task?: string
+  outputBuffer: string
 }

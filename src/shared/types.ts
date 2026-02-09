@@ -8,6 +8,15 @@ export interface Terminal {
   createdAt: Date
 }
 
+/** Serializable terminal info sent from main → renderer via IPC */
+export interface TerminalInfo {
+  id: string
+  name: string
+  repoPath: string
+  createdAt: string
+  task?: string
+}
+
 export interface Repository {
   name: string
   path: string

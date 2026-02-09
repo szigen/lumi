@@ -155,6 +155,25 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     }
   }, [terminalId, updateTerminal])
 
+  // Handle output buffer restoration from sync
+  const lastOutputLengthRef = useRef(0)
+
+  useEffect(() => {
+    if (!xtermRef.current) return
+
+    // If output grew significantly (sync happened), re-render
+    const currentLength = output.length
+    const lastLength = lastOutputLengthRef.current
+
+    if (currentLength > lastLength && lastLength === 0 && currentLength > 0) {
+      // Terminal was empty and got buffer from sync — write it
+      xtermRef.current.clear()
+      xtermRef.current.write(output)
+    }
+
+    lastOutputLengthRef.current = currentLength
+  }, [output])
+
   // Focus xterm when this terminal becomes active
   useEffect(() => {
     if (isActive && xtermRef.current) {

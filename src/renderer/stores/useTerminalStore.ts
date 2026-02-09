@@ -6,6 +6,7 @@ interface TerminalState {
   outputs: Map<string, string>
   activeTerminalId: string | null
   lastActiveByRepo: Map<string, string>
+  syncing: boolean
 
   addTerminal: (terminal: Terminal) => void
   removeTerminal: (id: string) => void
@@ -14,6 +15,7 @@ interface TerminalState {
   setActiveTerminal: (id: string | null) => void
   getTerminalsByRepo: (repoPath: string) => Terminal[]
   getTerminalCount: () => number
+  syncFromMain: () => Promise<void>
 }
 
 export const useTerminalStore = create<TerminalState>((set, get) => ({
@@ -21,13 +23,16 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   outputs: new Map(),
   activeTerminalId: null,
   lastActiveByRepo: new Map(),
+  syncing: false,
 
   addTerminal: (terminal) => {
     set((state) => {
       const newTerminals = new Map(state.terminals)
       newTerminals.set(terminal.id, terminal)
       const newOutputs = new Map(state.outputs)
-      newOutputs.set(terminal.id, '')
+      if (!newOutputs.has(terminal.id)) {
+        newOutputs.set(terminal.id, '')
+      }
       return { terminals: newTerminals, outputs: newOutputs, activeTerminalId: terminal.id }
     })
   },
@@ -40,7 +45,6 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       const newOutputs = new Map(state.outputs)
       newOutputs.delete(id)
 
-      // lastActiveByRepo cleanup
       const newLastActive = new Map(state.lastActiveByRepo)
       if (terminal) {
         const lastActiveForRepo = newLastActive.get(terminal.repoPath)
@@ -108,5 +112,73 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     return Array.from(get().terminals.values()).filter((t) => t.repoPath === repoPath)
   },
 
-  getTerminalCount: () => get().terminals.size
+  getTerminalCount: () => get().terminals.size,
+
+  syncFromMain: async () => {
+    if (get().syncing) return
+    set({ syncing: true })
+
+    try {
+      const mainTerminals = await window.api.listTerminals()
+      const mainIds = new Set(mainTerminals.map(t => t.id))
+      const currentTerminals = get().terminals
+      const currentOutputs = get().outputs
+
+      const newTerminals = new Map<string, Terminal>()
+      const newOutputs = new Map<string, string>()
+
+      // Add/update terminals that exist in main
+      for (const mt of mainTerminals) {
+        const existing = currentTerminals.get(mt.id)
+        if (existing) {
+          // Keep existing renderer-side state (status, isNew, etc.)
+          newTerminals.set(mt.id, existing)
+          newOutputs.set(mt.id, currentOutputs.get(mt.id) || '')
+        } else {
+          // Terminal exists in main but not in renderer — reconnect
+          const buffer = await window.api.getTerminalBuffer(mt.id)
+          newTerminals.set(mt.id, {
+            id: mt.id,
+            name: mt.name,
+            repoPath: mt.repoPath,
+            status: 'running',
+            task: mt.task,
+            createdAt: new Date(mt.createdAt)
+          })
+          newOutputs.set(mt.id, buffer || '')
+        }
+      }
+
+      // Terminals that exist in renderer but not in main are stale — remove them
+
+      // Fix active terminal if it was removed
+      const currentActive = get().activeTerminalId
+      const newActive = currentActive && mainIds.has(currentActive)
+        ? currentActive
+        : (newTerminals.size > 0 ? newTerminals.keys().next().value ?? null : null)
+
+      // Rebuild lastActiveByRepo
+      const newLastActive = new Map<string, string>()
+      for (const [id, t] of newTerminals) {
+        if (!newLastActive.has(t.repoPath)) {
+          newLastActive.set(t.repoPath, id)
+        }
+      }
+      // Preserve current active selections where still valid
+      for (const [repo, termId] of get().lastActiveByRepo) {
+        if (newTerminals.has(termId)) {
+          newLastActive.set(repo, termId)
+        }
+      }
+
+      set({
+        terminals: newTerminals,
+        outputs: newOutputs,
+        activeTerminalId: newActive,
+        lastActiveByRepo: newLastActive
+      })
+    } finally {
+      set({ syncing: false })
+    }
+  }
 }))

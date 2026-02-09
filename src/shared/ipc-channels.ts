@@ -10,6 +10,9 @@ export const IPC_CHANNELS = {
   TERMINAL_RESIZE: 'terminal:resize',
   TERMINAL_OUTPUT: 'terminal:output',
   TERMINAL_EXIT: 'terminal:exit',
+  TERMINAL_LIST: 'terminal:list',
+  TERMINAL_BUFFER: 'terminal:buffer',
+  TERMINAL_SYNC: 'terminal:sync',
 
   // Repository operations
   REPOS_LIST: 'repos:list',

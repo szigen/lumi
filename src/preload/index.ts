@@ -5,14 +5,18 @@ import type { SpawnResult } from '../main/terminal/types'
 
 const api = {
   // Terminal operations
-  spawnTerminal: (repoPath: string) =>
-    invokeIpc<SpawnResult | null>(IPC_CHANNELS.TERMINAL_SPAWN, repoPath),
+  spawnTerminal: (repoPath: string, task?: string) =>
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.TERMINAL_SPAWN, repoPath, task),
   writeTerminal: (terminalId: string, data: string) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_WRITE, terminalId, data),
   killTerminal: (terminalId: string) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_KILL, terminalId),
   resizeTerminal: (terminalId: string, cols: number, rows: number) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_RESIZE, terminalId, cols, rows),
+  listTerminals: () =>
+    invokeIpc<Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string }>>(IPC_CHANNELS.TERMINAL_LIST),
+  getTerminalBuffer: (terminalId: string) =>
+    invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_BUFFER, terminalId),
 
   // Terminal event listeners with auto-cleanup
   onTerminalOutput: (callback: (terminalId: string, data: string) => void) =>
@@ -23,6 +27,8 @@ const api = {
     createIpcListener<[string, string]>(IPC_CHANNELS.TERMINAL_BELL, callback),
   onNotificationClick: (callback: (terminalId: string) => void) =>
     createIpcListener<[string]>(IPC_CHANNELS.NOTIFICATION_CLICK, callback),
+  onTerminalSync: (callback: () => void) =>
+    createIpcListener<[]>(IPC_CHANNELS.TERMINAL_SYNC, callback),
 
   // Repository operations
   getRepos: () => invokeIpc<unknown[]>(IPC_CHANNELS.REPOS_LIST),

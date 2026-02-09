@@ -62,9 +62,13 @@ export function setupIpcHandlers(): void {
   repoManager.watchProjectsRoot()
 
   // Terminal handlers
-  ipcMain.handle(IPC_CHANNELS.TERMINAL_SPAWN, async (_, repoPath: string) => {
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_SPAWN, async (_, repoPath: string, task?: string) => {
     if (!mainWindow) throw new Error('No main window')
-    return terminalManager!.spawn(repoPath, mainWindow)
+    const result = terminalManager!.spawn(repoPath, mainWindow)
+    if (result && task) {
+      terminalManager!.setTask(result.id, task)
+    }
+    return result
   })
 
   ipcMain.handle(
@@ -84,6 +88,14 @@ export function setupIpcHandlers(): void {
       return terminalManager!.resize(terminalId, cols, rows)
     }
   )
+
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_LIST, async () => {
+    return terminalManager!.getTerminalList()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_BUFFER, async (_, terminalId: string) => {
+    return terminalManager!.getOutputBuffer(terminalId)
+  })
 
   // Repository handlers
   ipcMain.handle(IPC_CHANNELS.REPOS_LIST, async () => {
@@ -217,7 +229,11 @@ export function setupIpcHandlers(): void {
       const actions = actionStore!.getActions(repoPath)
       const action = actions.find((a) => a.id === actionId)
       if (!action) throw new Error(`Action not found: ${actionId}`)
-      return actionEngine!.execute(action, repoPath)
+      const result = await actionEngine!.execute(action, repoPath)
+      if (result) {
+        terminalManager!.setTask(result.id, action.label)
+      }
+      return result
     }
   )
 
@@ -248,7 +264,11 @@ export function setupIpcHandlers(): void {
         }
       ]
     }
-    return actionEngine!.execute(action, repoPath)
+    const result = await actionEngine!.execute(action, repoPath)
+    if (result) {
+      terminalManager!.setTask(result.id, 'Create Action')
+    }
+    return result
   })
 
   // Persona handlers
@@ -272,6 +292,7 @@ export function setupIpcHandlers(): void {
       const result = terminalManager!.spawn(repoPath, mainWindow, false)
       if (!result) return null
 
+      terminalManager!.setTask(result.id, persona.label)
       const command = buildClaudeCommand('claude ""\r', persona.claude)
       terminalManager!.write(result.id, command)
 

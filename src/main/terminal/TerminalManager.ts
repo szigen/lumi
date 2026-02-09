@@ -45,10 +45,17 @@ export class TerminalManager extends EventEmitter {
       name,
       pty: ptyProcess,
       repoPath,
-      createdAt: new Date()
+      createdAt: new Date(),
+      outputBuffer: ''
     }
 
     ptyProcess.onData((data) => {
+      // Append to output buffer (keep last 100KB)
+      terminal.outputBuffer += data
+      if (terminal.outputBuffer.length > 100_000) {
+        terminal.outputBuffer = terminal.outputBuffer.slice(-100_000)
+      }
+
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
         this.notificationManager.processPtyOutput(id, data, window, repoPath)
@@ -107,5 +114,25 @@ export class TerminalManager extends EventEmitter {
 
   setMaxTerminals(max: number): void {
     this.maxTerminals = max
+  }
+
+  setTask(terminalId: string, task: string): void {
+    const terminal = this.terminals.get(terminalId)
+    if (terminal) terminal.task = task
+  }
+
+  getTerminalList(): Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string }> {
+    return Array.from(this.terminals.values()).map(t => ({
+      id: t.id,
+      name: t.name,
+      repoPath: t.repoPath,
+      createdAt: t.createdAt.toISOString(),
+      task: t.task
+    }))
+  }
+
+  getOutputBuffer(terminalId: string): string | null {
+    const terminal = this.terminals.get(terminalId)
+    return terminal ? terminal.outputBuffer : null
   }
 }
