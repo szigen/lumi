@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import { TerminalSquare, FolderOpen, Grid2x2, LayoutGrid, Columns3 } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
@@ -8,6 +8,8 @@ import { EmptyState } from '../ui'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
 import PersonaDropdown from './PersonaDropdown'
 import type { Persona } from '../../../shared/persona-types'
+
+const GRID_GAP = 12 // --spacing-md
 
 export default function TerminalPanel() {
   const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
@@ -67,6 +69,20 @@ export default function TerminalPanel() {
     removeTerminal(terminalId)
   }, [removeTerminal])
 
+  const gridRef = useRef<HTMLDivElement>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
+
+  useEffect(() => {
+    const el = gridRef.current
+    if (!el) return
+
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [allTerminals.length > 0])
+
   const handleGridToggle = useCallback(() => {
     const cycle: Array<number | 'auto'> = ['auto', 2, 3]
     const currentIndex = cycle.indexOf(gridColumns)
@@ -76,8 +92,10 @@ export default function TerminalPanel() {
 
   const gridStyle = useMemo(() => {
     if (gridColumns === 'auto') return undefined
-    return { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }
-  }, [gridColumns])
+    if (!containerWidth) return { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }
+    const colWidth = Math.floor((containerWidth - (gridColumns - 1) * GRID_GAP) / gridColumns)
+    return { gridTemplateColumns: `repeat(${gridColumns}, ${colWidth}px)` }
+  }, [gridColumns, containerWidth])
 
   const GridIcon = gridColumns === 2 ? Grid2x2 : gridColumns === 3 ? Columns3 : LayoutGrid
   const gridTooltip = gridColumns === 'auto' ? 'Auto grid' : `${gridColumns} columns`
@@ -137,7 +155,7 @@ export default function TerminalPanel() {
         </div>
       )}
       {allTerminals.length > 0 && (
-        <div className="terminal-grid" style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...gridStyle }}>
+        <div ref={gridRef} className="terminal-grid" style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...gridStyle }}>
           {allTerminals.map((terminal) => (
             <div
               key={terminal.id}
