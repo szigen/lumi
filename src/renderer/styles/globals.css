@@ -1187,6 +1187,25 @@ a {
 
 .terminal-panel__actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.terminal-panel__grid-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.terminal-panel__grid-toggle:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-primary);
 }
 
 /* Persona Dropdown */

@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
-import { TerminalSquare, FolderOpen } from 'lucide-react'
+import { useCallback, useMemo } from 'react'
+import { TerminalSquare, FolderOpen, Grid2x2, LayoutGrid, Columns3 } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
@@ -11,7 +11,7 @@ import type { Persona } from '../../../shared/persona-types'
 
 export default function TerminalPanel() {
   const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
-  const { activeTab } = useAppStore()
+  const { activeTab, gridColumns, setGridColumns } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
@@ -67,6 +67,21 @@ export default function TerminalPanel() {
     removeTerminal(terminalId)
   }, [removeTerminal])
 
+  const handleGridToggle = useCallback(() => {
+    const cycle: Array<number | 'auto'> = ['auto', 2, 3]
+    const currentIndex = cycle.indexOf(gridColumns)
+    const nextIndex = (currentIndex + 1) % cycle.length
+    setGridColumns(cycle[nextIndex])
+  }, [gridColumns, setGridColumns])
+
+  const gridStyle = useMemo(() => {
+    if (gridColumns === 'auto') return undefined
+    return { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }
+  }, [gridColumns])
+
+  const GridIcon = gridColumns === 2 ? Grid2x2 : gridColumns === 3 ? Columns3 : LayoutGrid
+  const gridTooltip = gridColumns === 'auto' ? 'Auto grid' : `${gridColumns} columns`
+
   if (!activeTab) {
     return (
       <div className="terminal-panel terminal-empty">
@@ -88,6 +103,13 @@ export default function TerminalPanel() {
             {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
           </span>
           <div className="terminal-panel__actions">
+            <button
+              className="terminal-panel__grid-toggle"
+              onClick={handleGridToggle}
+              title={gridTooltip}
+            >
+              <GridIcon size={16} />
+            </button>
             <PersonaDropdown
               disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
               onNewClaude={handleNewTerminal}
@@ -115,7 +137,7 @@ export default function TerminalPanel() {
         </div>
       )}
       {allTerminals.length > 0 && (
-        <div className="terminal-grid" style={{ display: repoTerminals.length > 0 ? undefined : 'none' }}>
+        <div className="terminal-grid" style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...gridStyle }}>
           {allTerminals.map((terminal) => (
             <div
               key={terminal.id}

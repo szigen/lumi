@@ -48,6 +48,7 @@ export interface UIState {
   activeTab: string | null
   leftSidebarOpen: boolean
   rightSidebarOpen: boolean
+  gridColumns: number | 'auto'
 }
 
 export interface WorkLog {

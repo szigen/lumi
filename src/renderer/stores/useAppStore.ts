@@ -15,6 +15,7 @@ interface AppState extends UIState {
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
+  setGridColumns: (value: number | 'auto') => void
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
   loadUIState: () => Promise<void>
@@ -90,6 +91,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().saveUIState()
   },
 
+  setGridColumns: (value) => {
+    set({ gridColumns: value })
+    get().saveUIState()
+  },
+
   toggleLeftSidebar: () => {
     set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen }))
     get().saveUIState()
@@ -112,9 +118,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveUIState: async () => {
-    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen } = get()
+    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns } = get()
     try {
-      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen })
+      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns })
     } catch (error) {
       console.error('Failed to save UI state:', error)
     }

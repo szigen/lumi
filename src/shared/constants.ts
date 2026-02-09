@@ -9,5 +9,6 @@ export const DEFAULT_UI_STATE = {
   openTabs: [],
   activeTab: null,
   leftSidebarOpen: true,
-  rightSidebarOpen: false
+  rightSidebarOpen: false,
+  gridColumns: 'auto' as const
 }
