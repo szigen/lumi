@@ -10,9 +10,13 @@
     "lint:fix": "eslint src/ --fix",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["claude", "claude-code", "ai", "orchestrator", "electron", "terminal", "dashboard"],
+  "author": "Sezgin Sazliogullari",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sezginsazliogullari/ai-orchestrator.git"
+  },
   "description": "Desktop dashboard for managing multiple Claude Code CLI instances",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
