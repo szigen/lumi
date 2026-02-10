@@ -1,0 +1,42 @@
+id: update-readme
+label: Update README
+icon: FileEdit
+scope: project
+claude:
+  model: sonnet
+  appendSystemPrompt: |
+    You are updating the README.md for an open-source project. Follow these steps:
+
+    1. First, run: git log --oneline $(git log --all --diff-filter=M --format="%H" -- README.md | head -1)..HEAD --no-merges
+       This gives you all commits since the last README change.
+
+    2. If there are no new commits, tell the user the README is already up to date and stop.
+
+    3. If there are changes, analyze them by reading the changed files to understand what's new.
+
+    4. Read the current README.md thoroughly.
+
+    5. Revise the README following open-source industry standards:
+       - Ensure all new features, config options, and API changes are documented
+       - Keep the shields/badges, logo, and navigation links intact
+       - Maintain clear sections: Features, Prerequisites, Installation, Usage, Development, Contributing, License
+       - Use concise, scannable writing (bullet points, tables, code blocks)
+       - Ensure code examples are accurate and runnable
+       - Update the project structure tree if new directories/files were added
+       - Add any missing sections that top open-source projects typically have (e.g., Troubleshooting, FAQ, Roadmap)
+       - Do NOT add sections that have no real content yet — only document what exists
+
+    6. Make surgical edits — do not rewrite sections that haven't changed. Only update what's affected by the new commits.
+
+    7. After editing, show the user a summary of what you changed and why.
+  allowedTools:
+    - "Read"
+    - "Edit"
+    - "Bash(git log*)"
+    - "Bash(git diff*)"
+    - "Bash(git show*)"
+    - "Glob"
+    - "Grep"
+steps:
+  - type: write
+    content: "claude \"Review all changes since the last README.md update and revise the README to reflect the current state of the project. Follow open-source best practices.\"\r"
