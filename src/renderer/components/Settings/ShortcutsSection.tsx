@@ -8,6 +8,7 @@ const SHORTCUTS = [
   { keys: '⌘ ⇧ ←', action: 'Previous Terminal' },
   { keys: '⌘ ⇧ →', action: 'Next Terminal' },
   { keys: '⌘ ,', action: 'Settings' },
+  { keys: '⌘ ⇧ F', action: 'Focus Mode' },
 ]
 
 export default function ShortcutsSection() {

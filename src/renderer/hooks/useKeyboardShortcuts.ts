@@ -5,7 +5,7 @@ import { useTerminalStore } from '../stores/useTerminalStore'
 import { DEFAULT_CONFIG } from '../../shared/constants'
 
 export function useKeyboardShortcuts() {
-  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings } = useAppStore()
+  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings, toggleFocusMode } = useAppStore()
   const { repos, getRepoByName } = useRepoStore()
   const { addTerminal, getTerminalCount, activeTerminalId, removeTerminal, terminals, setActiveTerminal } = useTerminalStore()
 
@@ -60,6 +60,9 @@ export function useKeyboardShortcuts() {
         case 'open-settings':
           openSettings()
           break
+        case 'toggle-focus-mode':
+          useAppStore.getState().toggleFocusMode()
+          break
       }
     })
     return cleanup
@@ -89,6 +92,13 @@ export function useKeyboardShortcuts() {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     const isMeta = e.metaKey || e.ctrlKey
 
+    // Cmd+Shift+F: Toggle focus mode
+    if (isMeta && e.shiftKey && e.key === 'f') {
+      e.preventDefault()
+      toggleFocusMode()
+      return
+    }
+
     // Cmd+1-9: Switch to tab N
     if (isMeta && !e.shiftKey && e.key >= '1' && e.key <= '9') {
       e.preventDefault()
@@ -113,7 +123,7 @@ export function useKeyboardShortcuts() {
       return
     }
 
-  }, [openTabs, setActiveTab, navigateTerminal])
+  }, [openTabs, setActiveTab, navigateTerminal, toggleFocusMode])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

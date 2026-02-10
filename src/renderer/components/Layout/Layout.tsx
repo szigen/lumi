@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import { useTerminalStore } from '../../stores/useTerminalStore'
@@ -12,12 +12,13 @@ import TerminalPanel from '../TerminalPanel/TerminalPanel'
 import { Logo } from '../icons'
 import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
+import { FocusExitControl } from '../FocusMode'
 
 export default function Layout() {
   useKeyboardShortcuts()
   useNotificationListener()
   const [isInitializing, setIsInitializing] = useState(true)
-  const { leftSidebarOpen, rightSidebarOpen, loadUIState, showQuitDialog } = useAppStore()
+  const { leftSidebarOpen, rightSidebarOpen, focusModeActive, loadUIState, showQuitDialog } = useAppStore()
   const { loadRepos } = useRepoStore()
   const { syncFromMain } = useTerminalStore()
 
@@ -97,10 +98,25 @@ export default function Layout() {
 
   return (
     <div className="layout">
-      <Header />
+      <AnimatePresence>
+        {!focusModeActive && (
+          <motion.div
+            key="header"
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+          >
+            <Header />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {focusModeActive && <FocusExitControl />}
+
       <div className="layout-body">
         <AnimatePresence mode="wait">
-          {leftSidebarOpen && (
+          {!focusModeActive && leftSidebarOpen && (
             <aside className="sidebar sidebar-left">
               <LeftSidebar />
             </aside>
@@ -112,7 +128,7 @@ export default function Layout() {
         </main>
 
         <AnimatePresence mode="wait">
-          {rightSidebarOpen && (
+          {!focusModeActive && rightSidebarOpen && (
             <aside className="sidebar sidebar-right">
               <RightSidebar />
             </aside>

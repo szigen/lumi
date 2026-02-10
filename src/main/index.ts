@@ -123,6 +123,12 @@ function createMenu(): void {
           click: () => mainWindow?.webContents.send('shortcut', 'open-settings')
         },
         { type: 'separator' },
+        {
+          label: 'Focus Mode',
+          accelerator: 'CmdOrCtrl+Shift+F',
+          click: () => mainWindow?.webContents.send('shortcut', 'toggle-focus-mode')
+        },
+        { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },
         { role: 'toggleDevTools' },

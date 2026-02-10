@@ -8,6 +8,10 @@ interface AppState extends UIState {
   settingsOpen: boolean
   quitDialogOpen: boolean
   quitTerminalCount: number
+  focusModeActive: boolean
+  enterFocusMode: () => void
+  exitFocusMode: () => void
+  toggleFocusMode: () => void
   openSettings: () => void
   closeSettings: () => void
   showQuitDialog: (count: number) => void
@@ -31,6 +35,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   closeSettings: () => set({ settingsOpen: false }),
   showQuitDialog: (count) => set({ quitDialogOpen: true, quitTerminalCount: count }),
   hideQuitDialog: () => set({ quitDialogOpen: false, quitTerminalCount: 0 }),
+  focusModeActive: false,
+  enterFocusMode: () => set({ focusModeActive: true }),
+  exitFocusMode: () => set({ focusModeActive: false }),
+  toggleFocusMode: () => set((state) => ({ focusModeActive: !state.focusModeActive })),
 
   setActiveTab: (tab) => {
     set({ activeTab: tab })

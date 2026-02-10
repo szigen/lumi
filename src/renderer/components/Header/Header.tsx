@@ -1,4 +1,4 @@
-import { Menu, GitBranch, Settings } from 'lucide-react'
+import { Menu, GitBranch, Settings, Maximize2 } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { IconButton } from '../ui'
 import { Logo } from '../icons'
@@ -13,7 +13,8 @@ export default function Header() {
     closeTab,
     toggleLeftSidebar,
     toggleRightSidebar,
-    openSettings
+    openSettings,
+    enterFocusMode
   } = useAppStore()
 
   const handleDoubleClick = () => {
@@ -46,6 +47,11 @@ export default function Header() {
       </div>
 
       <div className="header-right">
+        <IconButton
+          icon={<Maximize2 size={18} />}
+          onClick={enterFocusMode}
+          tooltip="Focus Mode (⌘⇧F)"
+        />
         <IconButton
           icon={<GitBranch size={18} />}
           onClick={toggleRightSidebar}
