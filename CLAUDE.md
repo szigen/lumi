@@ -48,6 +48,7 @@ src/
 │   │   ├── RightSidebar/    # BranchSection, ChangesSection, CommitTree
 │   │   ├── TerminalPanel/   # Terminal container panel, PersonaDropdown
 │   │   ├── Terminal/        # xterm.js wrapper per session
+│   │   ├── FocusMode/       # Focus Mode UI (FocusExitControl)
 │   │   ├── QuitDialog/      # Quit confirmation when terminals active
 │   │   ├── Settings/        # Settings modal (General, Terminal, Appearance, Shortcuts)
 │   │   ├── Notifications/   # Toast notification system
@@ -72,15 +73,16 @@ src/
 │   ├── action-types.ts      # Action, ActionStep & ClaudeConfig types
 │   ├── persona-types.ts     # Persona type definitions
 │   └── constants.ts         # DEFAULT_UI_STATE, etc.
-├── default-actions/         # Bundled YAML action templates
-│   ├── run-tests.yaml
-│   ├── sync-plugins.yaml
-│   └── update-claude-md.yaml
-└── default-personas/        # Bundled YAML persona templates
-    ├── architect.yaml
-    ├── expert.yaml
-    ├── fixer.yaml
-    └── reviewer.yaml
+default-actions/             # Bundled YAML action templates
+├── run-tests.yaml
+├── sync-plugins.yaml
+└── update-claude-md.yaml
+default-personas/            # Bundled YAML persona templates
+├── architect.yaml
+├── expert.yaml
+├── fixer.yaml
+└── reviewer.yaml
+default-teams/               # Bundled YAML team templates
 ```
 
 ## Geliştirme Komutları
@@ -88,7 +90,7 @@ src/
 ```bash
 npm run dev          # Development mode (Vite + Electron)
 npm run build        # Production build
-npm run start        # Run production build
+npm run preview      # Preview production build
 npm run lint         # ESLint
 npm run typecheck    # TypeScript check
 ```
