@@ -6,7 +6,7 @@ Birden fazla Claude Code CLI instance'ı yönetmek için Electron tabanlı masa�
 
 - **Electron 40** + TypeScript
 - **React 19** + Zustand 5 (state management)
-- **Tailwind CSS 4** + Framer Motion 12 (animasyonlar)
+- **Custom CSS** (CSS variables + BEM) + Framer Motion 12 (animasyonlar)
 - **xterm.js 6** + node-pty (terminal emulation)
 - **simple-git** (git operations)
 - **Vite 7** + electron-vite 5 (bundling)
@@ -63,7 +63,7 @@ src/
 │   │   ├── useKeyboardShortcuts.ts   # Menu & app shortcuts
 │   │   └── useNotificationListener.ts # Terminal bell listener
 │   ├── styles/
-│   │   └── globals.css      # Tailwind global styles
+│   │   └── globals.css      # Global styles (CSS variables + BEM)
 │   └── types/
 │       └── global.d.ts      # Global type declarations
 ├── shared/                  # Shared between main & renderer
@@ -149,15 +149,15 @@ npm run typecheck    # TypeScript check
 
 ## Stil Kuralları
 
-### Tailwind Renk Şeması
-- Background: `bg-[#1a1a2e]`, `bg-[#0f0f1a]`
-- Accent: `bg-purple-600`, `text-purple-400`
-- Border: `border-gray-700/50`
+### Renk Şeması
+- Background: `--bg-deep`, `--bg-surface`, `--bg-elevated`
+- Accent: `--accent-primary`, `--accent-vivid`, `--accent-deep`
+- Border: `--border`, `--border-glow`
 
 ### Component Patterns
 - Framer Motion ile animasyonlar (`motion.div`)
 - Lucide React icons
-- Glass-morphism effects: `bg-white/5 backdrop-blur`
+- Glass-morphism effects: `.glass` class (`globals.css`)
 - Component'ler alt klasörlerde `index.ts` barrel export ile
 
 ## Dikkat Edilmesi Gerekenler

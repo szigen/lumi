@@ -22,7 +22,7 @@ npm run dev
 - TypeScript strict mode
 - Functional React components with hooks
 - Zustand for state management
-- Tailwind CSS for styling (no inline styles)
+- Custom CSS with CSS variables and BEM naming (no inline styles)
 - Framer Motion for animations
 
 ## Project Architecture

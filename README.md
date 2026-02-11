@@ -103,7 +103,7 @@ npm run typecheck    # TypeScript type checking
 | Layer | Technology |
 |-------|-----------|
 | Framework | Electron 40 + TypeScript |
-| UI | React 19 + Tailwind CSS 4 |
+| UI | React 19 + Custom CSS |
 | State | Zustand 5 |
 | Terminal | xterm.js 6 + node-pty |
 | Animations | Framer Motion 12 |
