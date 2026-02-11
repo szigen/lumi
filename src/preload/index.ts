@@ -81,6 +81,12 @@ const api = {
     invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
   createNewAction: (repoPath: string) =>
     invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_CREATE_NEW, repoPath),
+  getActionHistory: (actionId: string) =>
+    invokeIpc<string[]>(IPC_CHANNELS.ACTIONS_HISTORY, actionId),
+  restoreAction: (actionId: string, timestamp: string) =>
+    invokeIpc<boolean>(IPC_CHANNELS.ACTIONS_RESTORE, actionId, timestamp),
+  getDefaultActionIds: () =>
+    invokeIpc<string[]>(IPC_CHANNELS.ACTIONS_DEFAULT_IDS),
   onActionsChanged: (callback: () => void) =>
     createIpcListener<[]>(IPC_CHANNELS.ACTIONS_CHANGED, callback),
 

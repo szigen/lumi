@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
-  Zap, Terminal, TestTube, Package, GitBranch, FileEdit, Plus
+  Zap, Terminal, TestTube, Package, GitBranch, FileEdit, Plus,
+  Clock, Trash2, RotateCcw
 } from 'lucide-react'
 import type { Action } from '../../../shared/action-types'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
+import ContextMenu from './ContextMenu'
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   Terminal: <Terminal size={16} />,
@@ -17,13 +19,50 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Zap: <Zap size={16} />,
 }
 
+function formatTimestamp(filename: string): string {
+  // filename: 2026-02-11T14-30-00.yaml → parse to date
+  const name = filename.replace('.yaml', '')
+  const isoStr = name.replace(/T(\d{2})-(\d{2})-(\d{2})/, 'T$1:$2:$3') + 'Z'
+  const date = new Date(isoStr)
+  if (isNaN(date.getTime())) return name
+
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+
+  if (diffMin < 1) return 'Just now'
+  if (diffMin < 60) return `${diffMin} min ago`
+
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `${diffHours}h ago`
+
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays < 7) return `${diffDays}d ago`
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 export default function QuickActions() {
   const { addTerminal } = useTerminalStore()
   const { activeTab } = useAppStore()
   const { getRepoByName } = useRepoStore()
   const [actions, setActions] = useState<Action[]>([])
+  const [defaultIds, setDefaultIds] = useState<Set<string>>(new Set())
+  const [contextMenu, setContextMenu] = useState<{
+    action: Action
+    position: { x: number; y: number }
+  } | null>(null)
+  const [historyPanel, setHistoryPanel] = useState<{
+    actionId: string
+    entries: string[]
+    position: { x: number; y: number }
+  } | null>(null)
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
+
+  useEffect(() => {
+    window.api.getDefaultActionIds().then((ids) => setDefaultIds(new Set(ids)))
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -75,8 +114,52 @@ export default function QuickActions() {
   const handleAction = (action: Action) =>
     executeAndTrack(() => window.api.executeAction(action.id, activeRepo!.path), action.label)
 
+  const handleContextMenu = useCallback((e: React.MouseEvent, action: Action) => {
+    e.preventDefault()
+    setHistoryPanel(null)
+    setContextMenu({ action, position: { x: e.clientX, y: e.clientY } })
+  }, [])
+
+  const handleShowHistory = useCallback(async (action: Action, position: { x: number; y: number }) => {
+    setContextMenu(null)
+    const entries = await window.api.getActionHistory(action.id)
+    if (entries.length === 0) return
+    setHistoryPanel({ actionId: action.id, entries, position })
+  }, [])
+
+  const handleRestore = useCallback(async (actionId: string, timestamp: string) => {
+    await window.api.restoreAction(actionId, timestamp)
+    setHistoryPanel(null)
+  }, [])
+
+  const handleDelete = useCallback(async (action: Action) => {
+    setContextMenu(null)
+    if (defaultIds.has(action.id)) return
+    await window.api.deleteAction(action.id, action.scope, activeRepo?.path)
+  }, [defaultIds, activeRepo?.path])
+
+  const handleResetDefault = useCallback(async (action: Action) => {
+    setContextMenu(null)
+    // Deleting a default action triggers seedDefaults on next reload via watcher
+    await window.api.deleteAction(action.id, action.scope, activeRepo?.path)
+  }, [activeRepo?.path])
+
   const userActions = actions.filter((a) => a.scope === 'user')
   const projectActions = actions.filter((a) => a.scope === 'project')
+
+  const renderActionButton = (action: Action) => (
+    <button
+      key={action.id}
+      className="action-btn"
+      onClick={() => handleAction(action)}
+      onContextMenu={(e) => handleContextMenu(e, action)}
+      disabled={!activeRepo}
+      title={action.label}
+    >
+      {ICON_MAP[action.icon] || <Zap size={16} />}
+      <span>{action.label}</span>
+    </button>
+  )
 
   return (
     <div className="sidebar-section">
@@ -94,18 +177,7 @@ export default function QuickActions() {
       </div>
 
       <div className="quick-actions">
-        {userActions.map((action) => (
-          <button
-            key={action.id}
-            className="action-btn"
-            onClick={() => handleAction(action)}
-            disabled={!activeRepo}
-            title={action.label}
-          >
-            {ICON_MAP[action.icon] || <Zap size={16} />}
-            <span>{action.label}</span>
-          </button>
-        ))}
+        {userActions.map(renderActionButton)}
       </div>
 
       {projectActions.length > 0 && (
@@ -126,6 +198,44 @@ export default function QuickActions() {
             ))}
           </div>
         </>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              label: 'History',
+              icon: <Clock size={14} />,
+              onClick: () => handleShowHistory(contextMenu.action, contextMenu.position)
+            },
+            ...(defaultIds.has(contextMenu.action.id)
+              ? [{
+                  label: 'Reset to Default',
+                  icon: <RotateCcw size={14} />,
+                  onClick: () => handleResetDefault(contextMenu.action)
+                }]
+              : [{
+                  label: 'Delete',
+                  icon: <Trash2 size={14} />,
+                  onClick: () => handleDelete(contextMenu.action)
+                }]
+            )
+          ]}
+        />
+      )}
+
+      {historyPanel && (
+        <ContextMenu
+          position={historyPanel.position}
+          onClose={() => setHistoryPanel(null)}
+          items={historyPanel.entries.map((entry) => ({
+            label: formatTimestamp(entry),
+            icon: <Clock size={14} />,
+            onClick: () => handleRestore(historyPanel.actionId, entry)
+          }))}
+        />
       )}
     </div>
   )

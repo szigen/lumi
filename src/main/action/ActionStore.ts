@@ -5,16 +5,22 @@ import * as yaml from 'js-yaml'
 import { app } from 'electron'
 import type { Action } from '../../shared/action-types'
 
+const MAX_HISTORY = 20
+
 export class ActionStore {
   private userDir: string
+  private historyDir: string
   private watchers: Map<string, fs.FSWatcher> = new Map()
   private userActions: Action[] = []
   private projectActions: Map<string, Action[]> = new Map()
   private onChange: (() => void) | null = null
+  private defaultIds: Set<string> = new Set()
 
   constructor() {
     this.userDir = path.join(os.homedir(), '.ai-orchestrator', 'actions')
+    this.historyDir = path.join(this.userDir, '.history')
     this.ensureDir(this.userDir)
+    this.ensureDir(this.historyDir)
     this.seedDefaults()
     this.userActions = this.loadDir(this.userDir, 'user')
     this.watchDir(this.userDir, 'user')
@@ -38,6 +44,12 @@ export class ActionStore {
     // Always overwrite default action files with latest versions
     for (const file of defaults) {
       fs.copyFileSync(path.join(defaultsDir, file), path.join(this.userDir, file))
+      // Track default action IDs
+      try {
+        const content = fs.readFileSync(path.join(defaultsDir, file), 'utf-8')
+        const parsed = yaml.load(content) as Record<string, unknown>
+        if (parsed?.id) this.defaultIds.add(parsed.id as string)
+      } catch { /* skip */ }
     }
 
     // Remove deprecated defaults that no longer ship
@@ -84,7 +96,15 @@ export class ActionStore {
     if (this.watchers.has(dir)) return
 
     try {
-      const watcher = fs.watch(dir, () => {
+      const watcher = fs.watch(dir, (_event, filename) => {
+        // Backup user-scope YAML files before reloading
+        if (scope === 'user' && filename && (filename.endsWith('.yaml') || filename.endsWith('.yml'))) {
+          const filePath = path.join(dir, filename)
+          if (fs.existsSync(filePath)) {
+            this.backupAction(filePath)
+          }
+        }
+
         if (scope === 'user') {
           this.userActions = this.loadDir(dir, 'user')
         } else if (repoPath) {
@@ -95,6 +115,34 @@ export class ActionStore {
       this.watchers.set(dir, watcher)
     } catch {
       // Directory might not exist yet for project scope
+    }
+  }
+
+  private backupAction(filePath: string): void {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8')
+      const parsed = yaml.load(content) as Record<string, unknown>
+      if (!parsed?.id) return
+
+      const actionId = parsed.id as string
+      const actionHistoryDir = path.join(this.historyDir, actionId)
+      this.ensureDir(actionHistoryDir)
+
+      const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\.\d+Z$/, '')
+      fs.copyFileSync(filePath, path.join(actionHistoryDir, `${timestamp}.yaml`))
+
+      // Prune old backups beyond MAX_HISTORY
+      const backups = fs.readdirSync(actionHistoryDir)
+        .filter((f) => f.endsWith('.yaml'))
+        .sort()
+      if (backups.length > MAX_HISTORY) {
+        const toDelete = backups.slice(0, backups.length - MAX_HISTORY)
+        for (const file of toDelete) {
+          fs.unlinkSync(path.join(actionHistoryDir, file))
+        }
+      }
+    } catch {
+      // Best-effort backup
     }
   }
 
@@ -151,6 +199,43 @@ export class ActionStore {
 
   getProjectDir(repoPath: string): string {
     return path.join(repoPath, '.ai-orchestrator', 'actions')
+  }
+
+  getDefaultIds(): string[] {
+    return [...this.defaultIds]
+  }
+
+  getActionHistory(actionId: string): string[] {
+    const dir = path.join(this.historyDir, actionId)
+    if (!fs.existsSync(dir)) return []
+    return fs.readdirSync(dir)
+      .filter((f) => f.endsWith('.yaml'))
+      .sort()
+      .reverse()
+  }
+
+  restoreAction(actionId: string, timestamp: string): boolean {
+    const backupFile = path.join(this.historyDir, actionId, timestamp)
+    if (!fs.existsSync(backupFile)) return false
+
+    // Find the active file for this action
+    const files = fs.readdirSync(this.userDir).filter(
+      (f) => f.endsWith('.yaml') || f.endsWith('.yml')
+    )
+    for (const file of files) {
+      try {
+        const content = fs.readFileSync(path.join(this.userDir, file), 'utf-8')
+        const parsed = yaml.load(content) as Record<string, unknown>
+        if (parsed?.id === actionId) {
+          fs.copyFileSync(backupFile, path.join(this.userDir, file))
+          return true
+        }
+      } catch { /* skip */ }
+    }
+
+    // If no active file found, restore as <actionId>.yaml
+    fs.copyFileSync(backupFile, path.join(this.userDir, `${actionId}.yaml`))
+    return true
   }
 
   dispose(): void {

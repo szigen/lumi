@@ -248,6 +248,21 @@ export function setupIpcHandlers(): void {
     actionStore!.loadProjectActions(repoPath)
   })
 
+  ipcMain.handle(IPC_CHANNELS.ACTIONS_HISTORY, async (_, actionId: string) => {
+    return actionStore!.getActionHistory(actionId)
+  })
+
+  ipcMain.handle(
+    IPC_CHANNELS.ACTIONS_RESTORE,
+    async (_, actionId: string, timestamp: string) => {
+      return actionStore!.restoreAction(actionId, timestamp)
+    }
+  )
+
+  ipcMain.handle(IPC_CHANNELS.ACTIONS_DEFAULT_IDS, async () => {
+    return actionStore!.getDefaultIds()
+  })
+
   ipcMain.handle(IPC_CHANNELS.ACTIONS_CREATE_NEW, async (_, repoPath: string) => {
     const action: import('../../shared/action-types').Action = {
       id: '__create-action',

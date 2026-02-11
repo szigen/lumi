@@ -30,9 +30,15 @@ export function useKeyboardShortcuts() {
     })
   }, [activeTab, getRepoByName, getTerminalCount, addTerminal])
 
-  // Handle close terminal action
+  // Handle close terminal action (or close repo tab if no terminal)
   const handleCloseTerminal = useCallback(() => {
-    if (!activeTerminalId) return
+    if (!activeTerminalId) {
+      const { activeTab, closeTab } = useAppStore.getState()
+      if (activeTab) {
+        closeTab(activeTab)
+      }
+      return
+    }
     window.api.killTerminal(activeTerminalId).then(() => {
       removeTerminal(activeTerminalId)
     })
