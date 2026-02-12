@@ -14,6 +14,7 @@ Each component lives in its own directory with barrel export (`index.ts`). Major
 - **Setup** — multi-step onboarding wizard (welcome, system checks, projects root, ready). Wizard orchestrator in `SetupScreen.tsx`, step registry in `steps.ts`, step components in `steps/`, shared types in `types.ts`
 - **QuitDialog** — confirmation when closing with active terminals
 - **Notifications** — toast container with type-based styling (bell, error, success, info)
+- **BugTracker** — repo-scoped bug tracker with Claude integration. Split-panel: left has BugList, FixList, ClaudeInput; right has FixTerminal. Components: BugTracker (shell), BugList, BugForm, FixList, FixCard, ClaudeInput, FixTerminal
 - **WorkflowPanel** — workflow management UI
 - **ui/** — reusable primitives (Button, Badge, Card, IconButton, EmptyState)
 

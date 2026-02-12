@@ -11,5 +11,6 @@ export const DEFAULT_UI_STATE = {
   activeTab: null,
   leftSidebarOpen: true,
   rightSidebarOpen: false,
-  gridColumns: 'auto' as const
+  gridColumns: 'auto' as const,
+  activeView: 'terminals' as const
 }

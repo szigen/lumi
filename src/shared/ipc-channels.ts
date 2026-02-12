@@ -79,6 +79,16 @@ export const IPC_CHANNELS = {
   SYSTEM_CHECK_RUN: 'system:check-run',
   SYSTEM_CHECK_FIX: 'system:check-fix',
 
+  // Bug operations
+  BUGS_LIST: 'bugs:list',
+  BUGS_CREATE: 'bugs:create',
+  BUGS_UPDATE: 'bugs:update',
+  BUGS_DELETE: 'bugs:delete',
+  BUGS_ADD_FIX: 'bugs:add-fix',
+  BUGS_UPDATE_FIX: 'bugs:update-fix',
+  BUGS_ASK_CLAUDE: 'bugs:ask-claude',
+  BUGS_APPLY_FIX: 'bugs:apply-fix',
+
   // App lifecycle
   APP_CONFIRM_QUIT: 'app:confirm-quit',
   APP_QUIT_CONFIRMED: 'app:quit-confirmed'

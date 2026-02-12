@@ -21,6 +21,8 @@ interface AppState extends UIState {
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
   setGridColumns: (value: number | 'auto') => void
+  setActiveView: (view: 'terminals' | 'bugs') => void
+  toggleBugView: () => void
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
   toggleGroupCollapse: (groupKey: string) => void
@@ -107,6 +109,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().saveUIState()
   },
 
+  setActiveView: (view) => set({ activeView: view }),
+  toggleBugView: () => set((s) => ({
+    activeView: s.activeView === 'bugs' ? 'terminals' : 'bugs'
+  })),
+
   toggleLeftSidebar: () => {
     set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen }))
     get().saveUIState()
@@ -141,9 +148,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveUIState: async () => {
-    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns } = get()
+    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns, activeView } = get()
     try {
-      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns })
+      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns, activeView })
     } catch (error) {
       console.error('Failed to save UI state:', error)
     }

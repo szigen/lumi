@@ -11,6 +11,7 @@ import { CREATE_ACTION_PROMPT } from '../action/create-action-prompt'
 import { buildClaudeCommand } from '../action/build-claude-command'
 import { PersonaStore } from '../persona/PersonaStore'
 import { SystemChecker } from '../system/SystemChecker'
+import { BugStorage } from '../bug/bug-storage'
 import { TOTAL_CODENAMES } from '../terminal/codenames'
 
 let mainWindow: BrowserWindow | null = null
@@ -46,6 +47,7 @@ export function setupIpcHandlers(): void {
   personaStore = new PersonaStore()
 
   const systemChecker = new SystemChecker()
+  const bugStorage = new BugStorage()
 
   // Send action changes to renderer
   actionStore.setOnChange(() => {
@@ -352,4 +354,60 @@ export function setupIpcHandlers(): void {
       return result
     }
   )
+
+  // Bug handlers
+  ipcMain.handle(IPC_CHANNELS.BUGS_LIST, async (_, repoPath: string) => {
+    return bugStorage.list(repoPath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_CREATE, async (_, repoPath: string, title: string, description: string) => {
+    return bugStorage.create(repoPath, title, description)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_UPDATE, async (_, repoPath: string, bugId: string, updates: Record<string, unknown>) => {
+    return bugStorage.update(repoPath, bugId, updates)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_DELETE, async (_, repoPath: string, bugId: string) => {
+    return bugStorage.delete(repoPath, bugId)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_ADD_FIX, async (_, repoPath: string, bugId: string, fix: Record<string, unknown>) => {
+    return bugStorage.addFix(repoPath, bugId, fix as Omit<import('../../shared/bug-types').Fix, 'id'>)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_UPDATE_FIX, async (_, repoPath: string, bugId: string, fixId: string, updates: Record<string, unknown>) => {
+    return bugStorage.updateFix(repoPath, bugId, fixId, updates)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_ASK_CLAUDE, async (_, repoPath: string, prompt: string) => {
+    return new Promise<string>((resolve, reject) => {
+      const { spawn } = require('child_process') as typeof import('child_process')
+      const proc = spawn('claude', ['--print', prompt], {
+        cwd: repoPath,
+        env: process.env,
+        shell: true
+      })
+      let output = ''
+      let error = ''
+      proc.stdout.on('data', (data: Buffer) => { output += data.toString() })
+      proc.stderr.on('data', (data: Buffer) => { error += data.toString() })
+      proc.on('close', (code: number) => {
+        if (code === 0) resolve(output.trim())
+        else reject(new Error(error || `claude --print exited with code ${code}`))
+      })
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.BUGS_APPLY_FIX, async (_, repoPath: string, prompt: string) => {
+    if (!mainWindow) throw new Error('No main window')
+    const result = terminalManager!.spawn(repoPath, mainWindow, false)
+    if (result) {
+      terminalManager!.setTask(result.id, 'Applying fix')
+      setTimeout(() => {
+        terminalManager!.write(result.id, `claude "${prompt.replace(/"/g, '\\"')}"\r`)
+      }, 500)
+    }
+    return result
+  })
 }

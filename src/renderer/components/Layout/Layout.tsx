@@ -9,6 +9,7 @@ import Header from '../Header/Header'
 import LeftSidebar from '../LeftSidebar/LeftSidebar'
 import RightSidebar from '../RightSidebar/RightSidebar'
 import TerminalPanel from '../TerminalPanel/TerminalPanel'
+import { BugTracker } from '../BugTracker'
 import { Logo } from '../icons'
 import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
@@ -20,7 +21,7 @@ export default function Layout() {
   useNotificationListener()
   const [isInitializing, setIsInitializing] = useState(true)
   const [isSetupRequired, setIsSetupRequired] = useState(false)
-  const { leftSidebarOpen, rightSidebarOpen, focusModeActive, loadUIState, showQuitDialog } = useAppStore()
+  const { leftSidebarOpen, rightSidebarOpen, focusModeActive, activeView, loadUIState, showQuitDialog } = useAppStore()
   const { loadRepos, loadAdditionalPaths } = useRepoStore()
   const { syncFromMain } = useTerminalStore()
 
@@ -151,7 +152,7 @@ export default function Layout() {
         </AnimatePresence>
 
         <main className="main-content">
-          <TerminalPanel />
+          {activeView === 'bugs' ? <BugTracker /> : <TerminalPanel />}
         </main>
 
         <AnimatePresence mode="wait">

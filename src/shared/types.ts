@@ -68,6 +68,7 @@ export interface UIState {
   leftSidebarOpen: boolean
   rightSidebarOpen: boolean
   gridColumns: number | 'auto'
+  activeView: 'terminals' | 'bugs'
 }
 
 export interface WorkLog {

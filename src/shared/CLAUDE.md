@@ -6,6 +6,7 @@ Type definitions and constants shared between main and renderer processes.
 - **types.ts** — core interfaces: `Terminal`, `TerminalInfo`, `Repository`, `AdditionalPath`, `Commit`, `Branch`, `Config`, `UIState`, `WorkLog`, `FileTreeNode`, `FileChange`. Exports `ClaudeStatus` type (single source of truth for 6 terminal states: idle, working, waiting-unseen, waiting-focused, waiting-seen, error)
 - **ipc-channels.ts** — centralized IPC channel name constants (`IPC_CHANNELS` object + `IpcChannel` type). Includes `TERMINAL_STATUS` (main→renderer push), `TERMINAL_GET_STATUS` (renderer→main pull), `TERMINAL_FOCUS` (renderer→main focus notification), `SYSTEM_CHECK_RUN` and `SYSTEM_CHECK_FIX` (onboarding system health checks)
 - **action-types.ts** — `Action`, `ActionStep`, `ClaudeConfig` types
+- **bug-types.ts** — `Bug`, `Fix`, `BugFilter` types for the bug tracker feature
 - **persona-types.ts** — `Persona` type definition
 - **constants.ts** — `DEFAULT_CONFIG`, `DEFAULT_UI_STATE`
 

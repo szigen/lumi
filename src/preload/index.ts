@@ -111,6 +111,24 @@ const api = {
   getCollection: () =>
     invokeIpc<{ discovered: number; total: number }>(IPC_CHANNELS.COLLECTION_GET),
 
+  // Bug operations
+  listBugs: (repoPath: string) =>
+    invokeIpc<unknown[]>(IPC_CHANNELS.BUGS_LIST, repoPath),
+  createBug: (repoPath: string, title: string, description: string) =>
+    invokeIpc<unknown>(IPC_CHANNELS.BUGS_CREATE, repoPath, title, description),
+  updateBug: (repoPath: string, bugId: string, updates: Record<string, unknown>) =>
+    invokeIpc<unknown>(IPC_CHANNELS.BUGS_UPDATE, repoPath, bugId, updates),
+  deleteBug: (repoPath: string, bugId: string) =>
+    invokeIpc<boolean>(IPC_CHANNELS.BUGS_DELETE, repoPath, bugId),
+  addFix: (repoPath: string, bugId: string, fix: Record<string, unknown>) =>
+    invokeIpc<unknown>(IPC_CHANNELS.BUGS_ADD_FIX, repoPath, bugId, fix),
+  updateFix: (repoPath: string, bugId: string, fixId: string, updates: Record<string, unknown>) =>
+    invokeIpc<unknown>(IPC_CHANNELS.BUGS_UPDATE_FIX, repoPath, bugId, fixId, updates),
+  askClaude: (repoPath: string, prompt: string) =>
+    invokeIpc<string>(IPC_CHANNELS.BUGS_ASK_CLAUDE, repoPath, prompt),
+  applyFix: (repoPath: string, prompt: string) =>
+    invokeIpc<{ id: string; name: string; isNew: boolean } | null>(IPC_CHANNELS.BUGS_APPLY_FIX, repoPath, prompt),
+
   // System check operations
   runSystemChecks: () =>
     invokeIpc<Array<{ id: string; label: string; status: string; message: string; fixable?: boolean }>>(IPC_CHANNELS.SYSTEM_CHECK_RUN),

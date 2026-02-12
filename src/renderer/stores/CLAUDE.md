@@ -4,8 +4,9 @@ State management for the renderer process.
 
 ## Stores
 - **useTerminalStore** — terminal sessions, output buffers, active terminal tracking, per-repo last-active tracking
-- **useAppStore** — UI layout (open tabs, active tab, sidebars, settings modal, quit dialog, focus mode, grid columns, collapsedGroups for repo group collapse state)
+- **useAppStore** — UI layout (open tabs, active tab, sidebars, settings modal, quit dialog, focus mode, grid columns, collapsedGroups for repo group collapse state, activeView for terminals/bugs toggle)
 - **useRepoStore** — repository list and `additionalPaths` from main process; exports `groupReposBySource()` helper, `RepoGroup` interface, and `PathGroupInfo` minimal interface for grouped repo display. `loadAdditionalPaths()` fetches config and updates `additionalPaths` state.
+- **useBugStore** — bug tracker state: bugs list, selected bug, filter, Claude loading state, fix terminal tracking. Actions: loadBugs, createBug, updateBug, deleteBug, addFix, updateFix, askClaude, applyFix, markFixResult. Data persisted via BugStorage in main process.
 - **useNotificationStore** — toast notification queue with typed toasts (`ToastType`: bell, error, success, info). `addToast()` for bell notifications (deduplicates by terminalId), `notify(type, title, message)` for generic toasts. `NotificationToast` has `type`, `title` (was `repoName`), optional `terminalId`
 
 ## Rules
