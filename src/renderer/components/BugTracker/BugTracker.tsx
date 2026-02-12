@@ -10,7 +10,7 @@ import FixTerminal from './FixTerminal'
 export default function BugTracker() {
   const activeTab = useAppStore((s) => s.activeTab)
   const getRepoByName = useRepoStore((s) => s.getRepoByName)
-  const { loadBugs } = useBugStore()
+  const { loadBugs, subscribeToStream } = useBugStore()
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
 
@@ -19,6 +19,10 @@ export default function BugTracker() {
       loadBugs(activeRepo.path)
     }
   }, [activeRepo?.path, loadBugs])
+
+  useEffect(() => {
+    return subscribeToStream()
+  }, [subscribeToStream])
 
   if (!activeRepo) {
     return (

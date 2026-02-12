@@ -9,6 +9,10 @@ interface BugState {
   claudeLoading: boolean
   fixTerminalId: string | null
   applyingFixId: string | null
+  streamingBugId: string | null
+  streamingText: string
+  streamingRepoPath: string | null
+  streamingActivities: Array<{ type: string; tool?: string; timestamp: number }>
 
   loadBugs: (repoPath: string) => Promise<void>
   createBug: (repoPath: string, title: string, description: string) => Promise<void>
@@ -21,6 +25,7 @@ interface BugState {
   updateFix: (repoPath: string, bugId: string, fixId: string, updates: Partial<Fix>) => Promise<void>
   askClaude: (repoPath: string, bugId: string, userMessage: string) => Promise<void>
   applyFix: (repoPath: string, bugId: string, fixId: string) => Promise<void>
+  subscribeToStream: () => () => void
 
   markFixResult: (repoPath: string, bugId: string, fixId: string, success: boolean, note?: string) => Promise<void>
   clearFixTerminal: () => void
@@ -37,6 +42,10 @@ export const useBugStore = create<BugState>((set, get) => ({
   claudeLoading: false,
   fixTerminalId: null,
   applyingFixId: null,
+  streamingBugId: null,
+  streamingText: '',
+  streamingRepoPath: null,
+  streamingActivities: [],
 
   loadBugs: async (repoPath) => {
     set({ loading: true })
@@ -97,8 +106,6 @@ export const useBugStore = create<BugState>((set, get) => ({
     const bug = get().bugs.find(b => b.id === bugId)
     if (!bug) return
 
-    set({ claudeLoading: true })
-
     const failedFixes = bug.fixes
       .filter(f => f.status === 'failed')
       .map(f => `- ${f.summary} → FAILED${f.failedNote ? ': ' + f.failedNote : ''}`)
@@ -112,18 +119,13 @@ export const useBugStore = create<BugState>((set, get) => ({
       `\nSuggest a fix approach. Be specific about what files to change and how. Keep your response concise.`
     ].filter(Boolean).join('\n')
 
+    set({ claudeLoading: true, streamingBugId: bugId, streamingText: '', streamingRepoPath: repoPath, streamingActivities: [] })
+
     try {
-      const response = await window.api.askClaude(repoPath, prompt)
-      await get().addFix(repoPath, bugId, {
-        summary: response.slice(0, 120),
-        detail: response,
-        status: 'suggested',
-        suggestedBy: 'claude'
-      })
+      await window.api.askClaude(repoPath, bugId, prompt)
     } catch (error) {
       console.error('Claude ask failed:', error)
-    } finally {
-      set({ claudeLoading: false })
+      set({ claudeLoading: false, streamingBugId: null, streamingText: '', streamingRepoPath: null, streamingActivities: [] })
     }
   },
 
@@ -144,6 +146,46 @@ export const useBugStore = create<BugState>((set, get) => ({
     const result = await window.api.applyFix(repoPath, prompt)
     if (result) {
       set({ fixTerminalId: result.id, applyingFixId: fixId })
+    }
+  },
+
+  subscribeToStream: () => {
+    const cleanupDelta = window.api.onClaudeStreamDelta((bugId: string, text: string) => {
+      const state = get()
+      if (state.streamingBugId === bugId) {
+        set({ streamingText: state.streamingText + text })
+      }
+    })
+
+    const cleanupActivity = window.api.onClaudeStreamActivity((bugId: string, activity: { type: string; tool?: string }) => {
+      const state = get()
+      if (state.streamingBugId === bugId) {
+        set({ streamingActivities: [...state.streamingActivities, { ...activity, timestamp: Date.now() }] })
+      }
+    })
+
+    const cleanupDone = window.api.onClaudeStreamDone(async (bugId: string, fullText: string | null, error?: string) => {
+      const state = get()
+      if (state.streamingBugId !== bugId) return
+
+      if (fullText) {
+        await get().addFix(state.streamingRepoPath!, bugId, {
+          summary: fullText.slice(0, 120),
+          detail: fullText,
+          status: 'suggested',
+          suggestedBy: 'claude'
+        })
+      } else {
+        console.error('Claude stream failed:', error)
+      }
+
+      set({ claudeLoading: false, streamingBugId: null, streamingText: '', streamingRepoPath: null, streamingActivities: [] })
+    })
+
+    return () => {
+      cleanupDelta()
+      cleanupActivity()
+      cleanupDone()
     }
   },
 

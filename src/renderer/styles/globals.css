@@ -2649,6 +2649,71 @@ a {
   background: var(--accent-vivid);
 }
 
+/* Claude Input Wrapper */
+.claude-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Claude Stream Preview */
+.claude-stream-preview {
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  background: var(--bg-deep);
+}
+
+.claude-stream-preview__content {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Claude Stream Activities */
+.claude-stream-activities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.claude-stream-activities--inline {
+  margin-bottom: var(--spacing-sm);
+}
+
+.claude-stream-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.claude-stream-activity--active {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent-primary);
+  animation: subtle-pulse 1.5s ease-in-out infinite;
+}
+
+.claude-stream-activity--active svg {
+  flex-shrink: 0;
+}
+
+.claude-stream-activity--done {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
 /* Claude Input */
 .claude-input {
   display: flex;

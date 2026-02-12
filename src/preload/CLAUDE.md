@@ -19,6 +19,6 @@ Secure IPC bridge between main and renderer via `contextBridge`.
 - Config: get/set config and UI state
 - Actions: list, execute, delete, loadProject, createNew + change listener
 - Personas: list, spawn, loadProject + change listener
-- Bugs: listBugs, createBug, updateBug, deleteBug, addFix, updateFix, askClaude, applyFix
+- Bugs: listBugs, createBug, updateBug, deleteBug, addFix, updateFix, askClaude (streaming, returns `{ started }`, takes bugId), applyFix + event listeners (onClaudeStreamDelta, onClaudeStreamDone, onClaudeStreamActivity for tool usage events)
 - System Checks: runSystemChecks, fixSystemCheck (onboarding health checks)
 - App: confirm quit flow, shortcut events

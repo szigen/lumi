@@ -11,6 +11,7 @@ Central registration point for all main process IPC handlers.
 - Every new IPC handler must be registered here and its channel constant added to `ipc-channels.ts`
 - Handler groups: Terminal, Repository, Git, Config, UI State, Window, Dialog, Context Menu, System Checks, Actions, Personas, Collection, Bugs
 - Change events (`ACTIONS_CHANGED`, `PERSONAS_CHANGED`, `REPOS_CHANGED`) are sent via `mainWindow.webContents.send()`
+- `BUGS_ASK_CLAUDE` spawns `claude -p --output-format stream-json --include-partial-messages` and streams deltas via `BUGS_CLAUDE_STREAM_DELTA`/`BUGS_CLAUDE_STREAM_DONE` push channels, plus tool activity via `BUGS_CLAUDE_STREAM_ACTIVITY`. Parses `stream_event` types for live tool usage (content_block_start/stop) with fallback to `assistant` events. Returns `{ started: true }` immediately without blocking.
 
 ## Watch Out
 - `mainWindow` can be null — handlers that need it should check before use

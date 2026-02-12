@@ -380,23 +380,95 @@ export function setupIpcHandlers(): void {
     return bugStorage.updateFix(repoPath, bugId, fixId, updates)
   })
 
-  ipcMain.handle(IPC_CHANNELS.BUGS_ASK_CLAUDE, async (_, repoPath: string, prompt: string) => {
-    return new Promise<string>((resolve, reject) => {
-      const { spawn } = require('child_process') as typeof import('child_process')
-      const proc = spawn('claude', ['--print', prompt], {
-        cwd: repoPath,
-        env: process.env,
-        shell: true
-      })
-      let output = ''
-      let error = ''
-      proc.stdout.on('data', (data: Buffer) => { output += data.toString() })
-      proc.stderr.on('data', (data: Buffer) => { error += data.toString() })
-      proc.on('close', (code: number) => {
-        if (code === 0) resolve(output.trim())
-        else reject(new Error(error || `claude --print exited with code ${code}`))
-      })
+  ipcMain.handle(IPC_CHANNELS.BUGS_ASK_CLAUDE, async (_, repoPath: string, bugId: string, prompt: string) => {
+    if (!mainWindow) return { started: false }
+    const { spawn } = require('child_process') as typeof import('child_process')
+    console.log('[CLAUDE-STREAM] Starting stream for bug:', bugId)
+    // Pass prompt via stdin to avoid shell escaping issues with newlines/special chars
+    const proc = spawn('claude', ['-p', '--verbose', '--output-format', 'stream-json', '--include-partial-messages'], {
+      cwd: repoPath,
+      env: process.env
     })
+    proc.stdin.write(prompt)
+    proc.stdin.end()
+
+    let accumulated = ''
+    let error = ''
+    let buffer = ''
+    let currentToolName: string | null = null
+
+    proc.stdout.on('data', (data: Buffer) => {
+      buffer += data.toString()
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed) continue
+        try {
+          const event = JSON.parse(trimmed)
+
+          // Handle stream_event from --include-partial-messages
+          if (event.type === 'stream_event' && event.event) {
+            const streamEvent = event.event
+
+            if (streamEvent.type === 'content_block_start' && streamEvent.content_block) {
+              const block = streamEvent.content_block
+              if (block.type === 'tool_use' && block.name) {
+                currentToolName = block.name
+                mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_start', tool: block.name })
+              }
+            } else if (streamEvent.type === 'content_block_delta' && streamEvent.delta) {
+              if (streamEvent.delta.type === 'text_delta' && streamEvent.delta.text) {
+                accumulated += streamEvent.delta.text
+                mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, streamEvent.delta.text)
+              }
+            } else if (streamEvent.type === 'content_block_stop') {
+              if (currentToolName) {
+                mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_end' })
+                currentToolName = null
+              }
+            }
+            continue
+          }
+
+          // Fallback: handle assistant events (CLI versions without --include-partial-messages)
+          if (event.type === 'assistant' && event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === 'text' && block.text) {
+                const newText = block.text.slice(accumulated.length)
+                if (newText) {
+                  accumulated = block.text
+                  mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, newText)
+                }
+              }
+            }
+          }
+        } catch {
+          // skip non-JSON lines
+        }
+      }
+    })
+
+    proc.stderr.on('data', (data: Buffer) => {
+      error += data.toString()
+      console.log('[CLAUDE-STREAM] stderr:', data.toString().slice(0, 200))
+    })
+
+    proc.on('error', (err: Error) => {
+      console.log('[CLAUDE-STREAM] spawn error:', err.message)
+      mainWindow?.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, err.message)
+    })
+
+    proc.on('close', (code: number) => {
+      console.log('[CLAUDE-STREAM] Process closed with code:', code, 'accumulated length:', accumulated.length)
+      if (code === 0) {
+        mainWindow?.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, accumulated.trim())
+      } else {
+        mainWindow?.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, error || `claude exited with code ${code}`)
+      }
+    })
+
+    return { started: true }
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_APPLY_FIX, async (_, repoPath: string, prompt: string) => {
