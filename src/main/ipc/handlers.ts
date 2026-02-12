@@ -156,14 +156,22 @@ export function setupIpcHandlers(): void {
       configManager.setConfig(newConfig)
 
       // Update managers with new config
+      let reposAffected = false
       if (newConfig.maxTerminals) {
         terminalManager!.setMaxTerminals(newConfig.maxTerminals as number)
       }
       if (newConfig.projectsRoot) {
         repoManager!.setProjectsRoot(newConfig.projectsRoot as string)
+        reposAffected = true
       }
       if (newConfig.additionalPaths !== undefined) {
         repoManager!.setAdditionalPaths(newConfig.additionalPaths as import('../../shared/types').AdditionalPath[])
+        reposAffected = true
+      }
+
+      // Notify renderer to reload repo list
+      if (reposAffected) {
+        mainWindow?.webContents.send(IPC_CHANNELS.REPOS_CHANGED)
       }
 
       return true
