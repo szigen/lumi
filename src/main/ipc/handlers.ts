@@ -35,7 +35,7 @@ export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
   terminalManager = new TerminalManager(config.maxTerminals, configManager)
-  repoManager = new RepoManager(config.projectsRoot)
+  repoManager = new RepoManager(config.projectsRoot, config.additionalPaths || [])
 
   actionStore = new ActionStore()
   actionEngine = new ActionEngine(terminalManager)
@@ -161,6 +161,9 @@ export function setupIpcHandlers(): void {
       }
       if (newConfig.projectsRoot) {
         repoManager!.setProjectsRoot(newConfig.projectsRoot as string)
+      }
+      if (newConfig.additionalPaths !== undefined) {
+        repoManager!.setAdditionalPaths(newConfig.additionalPaths as import('../../shared/types').AdditionalPath[])
       }
 
       return true

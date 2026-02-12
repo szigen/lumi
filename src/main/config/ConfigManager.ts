@@ -33,12 +33,17 @@ export class ConfigManager {
     try {
       if (fs.existsSync(this.configPath)) {
         const data = fs.readFileSync(this.configPath, 'utf-8')
-        return { ...DEFAULT_CONFIG, ...JSON.parse(data) }
+        const parsed = JSON.parse(data)
+        // Migration: ensure additionalPaths exists
+        if (!Array.isArray(parsed.additionalPaths)) {
+          parsed.additionalPaths = []
+        }
+        return { ...DEFAULT_CONFIG, ...parsed }
       }
     } catch (error) {
       console.error('Failed to read config:', error)
     }
-    return DEFAULT_CONFIG
+    return { ...DEFAULT_CONFIG }
   }
 
   isFirstRun(): boolean {

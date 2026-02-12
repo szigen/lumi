@@ -9,6 +9,7 @@ interface AppState extends UIState {
   quitDialogOpen: boolean
   quitTerminalCount: number
   focusModeActive: boolean
+  collapsedGroups: Set<string>
   enterFocusMode: () => void
   exitFocusMode: () => void
   toggleFocusMode: () => void
@@ -22,6 +23,7 @@ interface AppState extends UIState {
   setGridColumns: (value: number | 'auto') => void
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
+  toggleGroupCollapse: (groupKey: string) => void
   loadUIState: () => Promise<void>
   saveUIState: () => Promise<void>
 }
@@ -36,6 +38,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   showQuitDialog: (count) => set({ quitDialogOpen: true, quitTerminalCount: count }),
   hideQuitDialog: () => set({ quitDialogOpen: false, quitTerminalCount: 0 }),
   focusModeActive: false,
+  collapsedGroups: new Set<string>(),
   enterFocusMode: () => set({ focusModeActive: true }),
   exitFocusMode: () => set({ focusModeActive: false }),
   toggleFocusMode: () => set((state) => ({ focusModeActive: !state.focusModeActive })),
@@ -112,6 +115,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleRightSidebar: () => {
     set((state) => ({ rightSidebarOpen: !state.rightSidebarOpen }))
     get().saveUIState()
+  },
+
+  toggleGroupCollapse: (groupKey: string) => {
+    set((state) => {
+      const next = new Set(state.collapsedGroups)
+      if (next.has(groupKey)) {
+        next.delete(groupKey)
+      } else {
+        next.add(groupKey)
+      }
+      return { collapsedGroups: next }
+    })
   },
 
   loadUIState: async () => {

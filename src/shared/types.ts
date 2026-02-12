@@ -21,6 +21,14 @@ export interface Repository {
   name: string
   path: string
   isGitRepo: boolean
+  source: string
+}
+
+export interface AdditionalPath {
+  id: string
+  path: string
+  type: 'root' | 'repo'
+  label?: string
 }
 
 export interface Commit {
@@ -38,6 +46,7 @@ export interface Branch {
 
 export interface Config {
   projectsRoot: string
+  additionalPaths: AdditionalPath[]
   maxTerminals: number
   theme: 'dark' | 'light'
   terminalFontSize: number

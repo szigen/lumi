@@ -1,5 +1,6 @@
 export const DEFAULT_CONFIG = {
   projectsRoot: '',
+  additionalPaths: [] as import('./types').AdditionalPath[],
   maxTerminals: 12,
   theme: 'dark' as const,
   terminalFontSize: 13

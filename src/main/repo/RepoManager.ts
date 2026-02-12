@@ -3,17 +3,19 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import ignore, { Ignore } from 'ignore'
-import type { Repository, Commit, Branch, FileTreeNode, FileChange } from '../../shared/types'
+import type { Repository, Commit, Branch, FileTreeNode, FileChange, AdditionalPath } from '../../shared/types'
 
 export class RepoManager {
   private projectsRoot: string
+  private additionalPaths: AdditionalPath[] = []
   private watchers: Map<string, fs.FSWatcher> = new Map()
   private debounceTimers: Map<string, NodeJS.Timeout> = new Map()
   private onReposChange: (() => void) | null = null
   private onFileTreeChange: ((repoPath: string) => void) | null = null
 
-  constructor(projectsRoot: string) {
+  constructor(projectsRoot: string, additionalPaths: AdditionalPath[] = []) {
     this.projectsRoot = this.expandPath(projectsRoot)
+    this.additionalPaths = additionalPaths
   }
 
   private expandPath(p: string): string {
@@ -25,27 +27,55 @@ export class RepoManager {
 
   async listRepos(): Promise<Repository[]> {
     const repos: Repository[] = []
+    const seenPaths = new Set<string>()
 
-    if (!this.projectsRoot || !fs.existsSync(this.projectsRoot)) {
-      console.warn(`Projects root does not exist: ${this.projectsRoot}`)
-      return repos
+    // 1. Scan projectsRoot
+    if (this.projectsRoot && fs.existsSync(this.projectsRoot)) {
+      const entries = fs.readdirSync(this.projectsRoot, { withFileTypes: true })
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue
+        if (entry.name.startsWith('.')) continue
+
+        const fullPath = path.join(this.projectsRoot, entry.name)
+        const isGitRepo = fs.existsSync(path.join(fullPath, '.git'))
+
+        repos.push({ name: entry.name, path: fullPath, isGitRepo, source: 'projectsRoot' })
+        seenPaths.add(fullPath)
+      }
     }
 
-    const entries = fs.readdirSync(this.projectsRoot, { withFileTypes: true })
+    // 2. Scan additionalPaths
+    for (const ap of this.additionalPaths) {
+      const expandedPath = this.expandPath(ap.path)
 
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue
-      if (entry.name.startsWith('.')) continue
+      if (ap.type === 'root') {
+        if (!fs.existsSync(expandedPath)) continue
+        const entries = fs.readdirSync(expandedPath, { withFileTypes: true })
+        for (const entry of entries) {
+          if (!entry.isDirectory()) continue
+          if (entry.name.startsWith('.')) continue
 
-      const fullPath = path.join(this.projectsRoot, entry.name)
-      const gitPath = path.join(fullPath, '.git')
-      const isGitRepo = fs.existsSync(gitPath)
+          const fullPath = path.join(expandedPath, entry.name)
+          if (seenPaths.has(fullPath)) continue
 
-      repos.push({
-        name: entry.name,
-        path: fullPath,
-        isGitRepo
-      })
+          const isGitRepo = fs.existsSync(path.join(fullPath, '.git'))
+          repos.push({ name: entry.name, path: fullPath, isGitRepo, source: ap.path })
+          seenPaths.add(fullPath)
+        }
+      } else {
+        // type === 'repo' — add directly
+        if (seenPaths.has(expandedPath)) continue
+        if (!fs.existsSync(expandedPath)) continue
+
+        const isGitRepo = fs.existsSync(path.join(expandedPath, '.git'))
+        repos.push({
+          name: path.basename(expandedPath),
+          path: expandedPath,
+          isGitRepo,
+          source: ap.path
+        })
+        seenPaths.add(expandedPath)
+      }
     }
 
     return repos
@@ -175,7 +205,12 @@ export class RepoManager {
 
   setProjectsRoot(root: string): void {
     this.projectsRoot = this.expandPath(root)
-    this.watchProjectsRoot()
+    this.watchAllRoots()
+  }
+
+  setAdditionalPaths(paths: AdditionalPath[]): void {
+    this.additionalPaths = paths
+    this.watchAllRoots()
   }
 
   setOnReposChange(cb: () => void): void {
@@ -187,33 +222,50 @@ export class RepoManager {
   }
 
   watchProjectsRoot(): void {
-    // Close existing root watcher
-    const existing = this.watchers.get('__root__')
-    if (existing) {
-      existing.close()
-      this.watchers.delete('__root__')
+    this.watchAllRoots()
+  }
+
+  private watchAllRoots(): void {
+    // Close all existing root watchers (prefixed with __root__)
+    for (const [key, watcher] of this.watchers.entries()) {
+      if (key.startsWith('__root')) {
+        watcher.close()
+        this.watchers.delete(key)
+      }
     }
-    // Clear pending debounce for old root
-    const pendingTimer = this.debounceTimers.get('__root__')
-    if (pendingTimer) {
-      clearTimeout(pendingTimer)
-      this.debounceTimers.delete('__root__')
+    for (const [key, timer] of this.debounceTimers.entries()) {
+      if (key.startsWith('__root')) {
+        clearTimeout(timer)
+        this.debounceTimers.delete(key)
+      }
     }
 
-    if (!this.projectsRoot || !fs.existsSync(this.projectsRoot)) return
+    // Watch projectsRoot
+    this.watchSingleRoot('__root__', this.projectsRoot)
+
+    // Watch additional root paths
+    for (const ap of this.additionalPaths) {
+      if (ap.type === 'root') {
+        this.watchSingleRoot(`__root_${ap.id}`, this.expandPath(ap.path))
+      }
+    }
+  }
+
+  private watchSingleRoot(key: string, dirPath: string): void {
+    if (!dirPath || !fs.existsSync(dirPath)) return
 
     try {
-      const watcher = fs.watch(this.projectsRoot, () => {
-        this.debounce('__root__', () => {
+      const watcher = fs.watch(dirPath, () => {
+        this.debounce(key, () => {
           this.onReposChange?.()
         }, 300)
       })
       watcher.on('error', (err) => {
-        console.error('Projects root watcher error:', err)
+        console.error(`Root watcher error (${key}):`, err)
       })
-      this.watchers.set('__root__', watcher)
+      this.watchers.set(key, watcher)
     } catch (error) {
-      console.error('Failed to watch projects root:', error)
+      console.error(`Failed to watch root (${key}):`, error)
     }
   }
 

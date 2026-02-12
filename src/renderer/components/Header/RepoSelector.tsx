@@ -1,19 +1,31 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { Plus, FolderGit2, Folder, Search } from 'lucide-react'
-import { useRepoStore } from '../../stores/useRepoStore'
+import { Plus, FolderGit2, Folder, Search, ChevronDown } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useRepoStore, groupReposBySource } from '../../stores/useRepoStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { IconButton } from '../ui'
+import type { Config, AdditionalPath } from '../../../shared/types'
 
 export default function RepoSelector() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [additionalPaths, setAdditionalPaths] = useState<AdditionalPath[]>([])
   const triggerRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { repos, loadRepos } = useRepoStore()
-  const { openTabs, openTab } = useAppStore()
+  const { openTabs, openTab, collapsedGroups, toggleGroupCollapse } = useAppStore()
+
+  // Load config for additionalPaths
+  useEffect(() => {
+    const load = async () => {
+      const config = await window.api.getConfig() as Config
+      setAdditionalPaths(config.additionalPaths || [])
+    }
+    load()
+  }, [isOpen])
 
   const availableRepos = useMemo(() =>
     repos
@@ -21,6 +33,22 @@ export default function RepoSelector() {
       .filter((r) => r.name.toLowerCase().includes(searchTerm.toLowerCase())),
     [repos, openTabs, searchTerm]
   )
+
+  const groups = useMemo(() =>
+    groupReposBySource(availableRepos, additionalPaths),
+    [availableRepos, additionalPaths]
+  )
+
+  // Flat list for keyboard navigation
+  const flatRepos = useMemo(() => {
+    const result: typeof availableRepos = []
+    for (const group of groups) {
+      if (!collapsedGroups.has(group.key)) {
+        result.push(...group.repos)
+      }
+    }
+    return result
+  }, [groups, collapsedGroups])
 
   useEffect(() => {
     loadRepos()
@@ -48,7 +76,7 @@ export default function RepoSelector() {
           break
         case 'ArrowDown':
           e.preventDefault()
-          setSelectedIndex(i => Math.min(i + 1, availableRepos.length - 1))
+          setSelectedIndex(i => Math.min(i + 1, flatRepos.length - 1))
           break
         case 'ArrowUp':
           e.preventDefault()
@@ -56,8 +84,8 @@ export default function RepoSelector() {
           break
         case 'Enter':
           e.preventDefault()
-          if (availableRepos[selectedIndex]) {
-            openTab(availableRepos[selectedIndex].name)
+          if (flatRepos[selectedIndex]) {
+            openTab(flatRepos[selectedIndex].name)
             setIsOpen(false)
             setSearchTerm('')
             setSelectedIndex(0)
@@ -72,7 +100,7 @@ export default function RepoSelector() {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, availableRepos, selectedIndex, openTab])
+  }, [isOpen, flatRepos, selectedIndex, openTab])
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -89,6 +117,8 @@ export default function RepoSelector() {
     window.addEventListener('open-repo-selector', handleOpenEvent)
     return () => window.removeEventListener('open-repo-selector', handleOpenEvent)
   }, [])
+
+  const hasMultipleGroups = groups.length > 1
 
   const dropdown = isOpen && (
     <div ref={dropdownRef} className="repo-dropdown">
@@ -112,22 +142,75 @@ export default function RepoSelector() {
         </div>
       ) : (
         <div className="repo-dropdown__list">
-          {availableRepos.map((repo, index) => (
-            <button
-              key={repo.path}
-              className={`repo-dropdown__item ${index === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
-              onClick={() => {
-                openTab(repo.name)
-                setIsOpen(false)
-                setSearchTerm('')
-                setSelectedIndex(0)
-              }}
-            >
-              {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
-              <span className="repo-dropdown__item-name">{repo.name}</span>
-              {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
-            </button>
-          ))}
+          {hasMultipleGroups ? (
+            groups.map((group) => (
+              <div key={group.key} className="repo-group">
+                <div
+                  className="repo-group__header"
+                  onClick={() => toggleGroupCollapse(group.key)}
+                >
+                  <ChevronDown
+                    size={12}
+                    className={`repo-group__chevron ${collapsedGroups.has(group.key) ? 'repo-group__chevron--collapsed' : ''}`}
+                  />
+                  <span className="repo-group__label">{group.label}</span>
+                  <span className="repo-group__count">{group.repos.length}</span>
+                </div>
+                <AnimatePresence initial={false}>
+                  {!collapsedGroups.has(group.key) && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      {group.repos.length === 0 ? (
+                        <div className="repo-group__empty">No repositories found</div>
+                      ) : (
+                        group.repos.map((repo) => {
+                          const flatIndex = flatRepos.indexOf(repo)
+                          return (
+                            <button
+                              key={repo.path}
+                              className={`repo-dropdown__item ${flatIndex === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
+                              onClick={() => {
+                                openTab(repo.name)
+                                setIsOpen(false)
+                                setSearchTerm('')
+                                setSelectedIndex(0)
+                              }}
+                            >
+                              {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
+                              <span className="repo-dropdown__item-name">{repo.name}</span>
+                              {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
+                            </button>
+                          )
+                        })
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))
+          ) : (
+            availableRepos.map((repo, index) => (
+              <button
+                key={repo.path}
+                className={`repo-dropdown__item ${index === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
+                onClick={() => {
+                  openTab(repo.name)
+                  setIsOpen(false)
+                  setSearchTerm('')
+                  setSelectedIndex(0)
+                }}
+              >
+                {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
+                <span className="repo-dropdown__item-name">{repo.name}</span>
+                {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
+              </button>
+            ))
+          )}
         </div>
       )}
     </div>

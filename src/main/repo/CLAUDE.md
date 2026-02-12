@@ -3,14 +3,15 @@
 Git operations and file tree management via `simple-git`.
 
 ## Architecture
-- **RepoManager** — scans `projectsRoot` for directories, provides git operations (commits, branches, status), file tree with ignore filtering
+- **RepoManager** — scans `projectsRoot` and `additionalPaths` for directories, provides git operations (commits, branches, status), file tree with ignore filtering
 - Supports `~` expansion in paths
 - File tree uses `.gitignore` + hardcoded excludes (node_modules, dist, .git, .env, etc.)
-- Watches `projectsRoot` for new/removed repos and individual repo file trees
+- Watches `projectsRoot` and additional root paths for new/removed repos, individual repo file trees
+- `additionalPaths` support two types: `root` (scanned like projectsRoot) and `repo` (added directly)
 
 ## Rules
 - All git operations are async via `simple-git`
-- `listRepos()` returns all non-hidden directories in projectsRoot (doesn't require .git)
+- `listRepos()` returns repos from projectsRoot + additionalPaths, with duplicate detection by absolute path. Each repo has a `source` field.
 - Commit log: branch-specific shows `main..<branch>` (only branch-unique commits), main/master shows all
 - File tree sorted: folders first, then files, alphabetically
 

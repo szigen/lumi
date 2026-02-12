@@ -3,7 +3,7 @@
 Type definitions and constants shared between main and renderer processes.
 
 ## Files
-- **types.ts** — core interfaces: `Terminal`, `TerminalInfo`, `Repository`, `Commit`, `Branch`, `Config`, `UIState`, `WorkLog`, `FileTreeNode`, `FileChange`
+- **types.ts** — core interfaces: `Terminal`, `TerminalInfo`, `Repository`, `AdditionalPath`, `Commit`, `Branch`, `Config`, `UIState`, `WorkLog`, `FileTreeNode`, `FileChange`
 - **ipc-channels.ts** — centralized IPC channel name constants (`IPC_CHANNELS` object + `IpcChannel` type)
 - **action-types.ts** — `Action`, `ActionStep`, `ClaudeConfig` types
 - **persona-types.ts** — `Persona` type definition

@@ -1,5 +1,55 @@
 import { create } from 'zustand'
-import type { Repository, Commit, Branch, FileChange } from '../../shared/types'
+import type { Repository, Commit, Branch, FileChange, AdditionalPath } from '../../shared/types'
+
+export interface RepoGroup {
+  key: string
+  label: string
+  repos: Repository[]
+}
+
+export function groupReposBySource(repos: Repository[], additionalPaths: AdditionalPath[]): RepoGroup[] {
+  const groupMap = new Map<string, Repository[]>()
+
+  for (const repo of repos) {
+    const key = repo.source
+    if (!groupMap.has(key)) groupMap.set(key, [])
+    groupMap.get(key)!.push(repo)
+  }
+
+  const groups: RepoGroup[] = []
+
+  // projectsRoot first
+  const rootRepos = groupMap.get('projectsRoot')
+  if (rootRepos && rootRepos.length > 0) {
+    groups.push({ key: 'projectsRoot', label: 'Projects Root', repos: rootRepos })
+  }
+
+  // Additional root paths in order
+  const standaloneRepos: Repository[] = []
+  for (const ap of additionalPaths) {
+    if (ap.type === 'root') {
+      const apRepos = groupMap.get(ap.path)
+      if (apRepos && apRepos.length > 0) {
+        const label = ap.label || ap.path.split('/').pop() || ap.path
+        groups.push({ key: ap.path, label, repos: apRepos })
+      } else {
+        const label = ap.label || ap.path.split('/').pop() || ap.path
+        groups.push({ key: ap.path, label, repos: [] })
+      }
+    } else {
+      // Collect standalone repos
+      const apRepos = groupMap.get(ap.path)
+      if (apRepos) standaloneRepos.push(...apRepos)
+    }
+  }
+
+  // Standalone repos group
+  if (standaloneRepos.length > 0) {
+    groups.push({ key: '__standalone__', label: 'Standalone Repos', repos: standaloneRepos })
+  }
+
+  return groups
+}
 
 interface RepoState {
   repos: Repository[]
