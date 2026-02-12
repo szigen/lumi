@@ -1,4 +1,4 @@
-export type ClaudeStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
+import type { ClaudeStatus } from '../../shared/types'
 
 export class StatusStateMachine {
   private status: ClaudeStatus = 'idle'
@@ -39,9 +39,9 @@ export class StatusStateMachine {
     }
   }
 
-  /** Called when PTY process exits */
-  onExit(): void {
-    this.transition('error')
+  /** Called when PTY process exits — normal exit goes idle, abnormal goes error */
+  onExit(exitCode: number): void {
+    this.transition(exitCode === 0 ? 'idle' : 'error')
   }
 
   /** Called on restart/respawn */

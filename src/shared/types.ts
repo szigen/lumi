@@ -4,11 +4,14 @@ export interface SpawnResult {
   isNew: boolean
 }
 
+/** Single source of truth for Claude terminal status */
+export type ClaudeStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
+
 export interface Terminal {
   id: string
   name: string
   repoPath: string
-  status: 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
+  status: ClaudeStatus
   task?: string
   isNew?: boolean
   createdAt: Date

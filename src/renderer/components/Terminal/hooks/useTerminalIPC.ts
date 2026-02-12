@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { Terminal as XTerm } from '@xterm/xterm'
 import { useTerminalStore } from '../../../stores/useTerminalStore'
 import { writeChunked } from '../utils'
-import type { Terminal } from '../../../../shared/types'
+import type { ClaudeStatus } from '../../../../shared/types'
 
 export function useTerminalIPC(
   terminalId: string,
@@ -19,14 +19,16 @@ export function useTerminalIPC(
     }
 
     const handleExit = (id: string, _code: number) => {
+      // Status machine in main process handles exit code → status mapping via IPC push.
+      // This is a fallback for edge cases where the status event arrives after cleanup.
       if (id === terminalId) {
-        updateTerminal(terminalId, { status: 'error' })
+        updateTerminal(terminalId, { status: _code === 0 ? 'idle' : 'error' })
       }
     }
 
     const handleStatus = (id: string, status: string) => {
       if (id === terminalId) {
-        updateTerminal(terminalId, { status: status as Terminal['status'] })
+        updateTerminal(terminalId, { status: status as ClaudeStatus })
       }
     }
 
@@ -37,7 +39,7 @@ export function useTerminalIPC(
     // Query current status to catch any events fired before listener setup
     window.api.getTerminalStatus(terminalId).then((status) => {
       if (status) {
-        updateTerminal(terminalId, { status: status as Terminal['status'] })
+        updateTerminal(terminalId, { status: status as ClaudeStatus })
       }
     })
 

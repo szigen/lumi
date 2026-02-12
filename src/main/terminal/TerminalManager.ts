@@ -7,10 +7,11 @@ import type { ManagedTerminal, SpawnResult, ITerminalNotifier, ICodenameTracker 
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { generateCodename } from './codenames'
 import { StatusStateMachine } from './StatusStateMachine'
+import { OscTitleParser } from './OscTitleParser'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
-  private oscBuffers: Map<string, string> = new Map()
+  private oscParser = new OscTitleParser()
   private maxTerminals: number
   private notifier: ITerminalNotifier
   private codenameTracker: ICodenameTracker
@@ -64,7 +65,7 @@ export class TerminalManager extends EventEmitter {
     })
 
     ptyProcess.onData((data) => {
-      this.parseOscTitle(id, data, statusMachine)
+      this.oscParser.parse(id, data, (isWorking) => statusMachine.onTitleChange(isWorking))
 
       terminal.outputBuffer.append(data)
 
@@ -76,8 +77,8 @@ export class TerminalManager extends EventEmitter {
     })
 
     ptyProcess.onExit(({ exitCode }) => {
-      terminal.statusMachine.onExit()
-      this.oscBuffers.delete(id)
+      terminal.statusMachine.onExit(exitCode)
+      this.oscParser.delete(id)
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       }
@@ -110,7 +111,7 @@ export class TerminalManager extends EventEmitter {
     if (!terminal) return false
     terminal.pty.kill()
     this.terminals.delete(terminalId)
-    this.oscBuffers.delete(terminalId)
+    this.oscParser.delete(terminalId)
     this.notifier.removeTerminal(terminalId)
     return true
   }
@@ -121,7 +122,7 @@ export class TerminalManager extends EventEmitter {
       this.notifier.removeTerminal(id)
     }
     this.terminals.clear()
-    this.oscBuffers.clear()
+    this.oscParser.clear()
   }
 
   getCount(): number {
@@ -168,47 +169,4 @@ export class TerminalManager extends EventEmitter {
     return terminal ? terminal.outputBuffer.get() : null
   }
 
-  /** Buffer partial OSC sequences across PTY chunks and parse complete ones */
-  private parseOscTitle(id: string, data: string, statusMachine: StatusStateMachine): void {
-    let buf = this.oscBuffers.get(id) || ''
-    buf += data
-
-    // Process all complete OSC sequences in the buffer
-    while (true) { // eslint-disable-line no-constant-condition
-      const oscStart = buf.indexOf('\x1b]0;')
-      if (oscStart === -1) {
-        // No OSC start — clear buffer (nothing to accumulate)
-        this.oscBuffers.delete(id)
-        return
-      }
-
-      // Look for terminator: BEL (\x07) or ST (\x1b\\)
-      const afterOsc = oscStart + 4
-      const belIdx = buf.indexOf('\x07', afterOsc)
-      const stIdx = buf.indexOf('\x1b\\', afterOsc)
-
-      let endIdx = -1
-      let endLen = 0
-      if (belIdx !== -1 && (stIdx === -1 || belIdx < stIdx)) {
-        endIdx = belIdx
-        endLen = 1
-      } else if (stIdx !== -1) {
-        endIdx = stIdx
-        endLen = 2
-      }
-
-      if (endIdx === -1) {
-        // Incomplete sequence — keep from oscStart onward
-        this.oscBuffers.set(id, buf.slice(oscStart))
-        return
-      }
-
-      const title = buf.slice(afterOsc, endIdx)
-      const isWorking = !title.startsWith('\u2733')
-      statusMachine.onTitleChange(isWorking)
-
-      // Continue parsing after this sequence
-      buf = buf.slice(endIdx + endLen)
-    }
-  }
 }

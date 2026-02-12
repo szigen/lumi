@@ -1,7 +1,7 @@
-type StatusType = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
+import type { ClaudeStatus } from '../../../shared/types'
 
 interface StatusDotProps {
-  status: StatusType
+  status: ClaudeStatus
   className?: string
 }
 
