@@ -10,7 +10,7 @@ Each component lives in its own directory with barrel export (`index.ts`). Major
 - **TerminalPanel** — terminal grid container, persona dropdown for spawn
 - **Terminal** — xterm.js wrapper per session
 - **FocusMode / FocusHoverBar** — distraction-free terminal view
-- **Settings** — modal with tabbed navigation (General, Terminal, Appearance, Shortcuts)
+- **Settings** — modal with tabbed navigation (General, Terminal, Appearance, Shortcuts). GeneralSection delegates Additional Paths CRUD to `AdditionalPathsField` child component.
 - **Setup** — first-run setup screen for selecting projects root folder
 - **QuitDialog** — confirmation when closing with active terminals
 - **Notifications** — toast container

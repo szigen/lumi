@@ -5,27 +5,17 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useRepoStore, groupReposBySource } from '../../stores/useRepoStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { IconButton } from '../ui'
-import type { Config, AdditionalPath } from '../../../shared/types'
+import type { Repository } from '../../../shared/types'
 
 export default function RepoSelector() {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [additionalPaths, setAdditionalPaths] = useState<AdditionalPath[]>([])
   const triggerRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const { repos, loadRepos } = useRepoStore()
+  const { repos, additionalPaths, loadRepos } = useRepoStore()
   const { openTabs, openTab, collapsedGroups, toggleGroupCollapse } = useAppStore()
-
-  // Load config for additionalPaths
-  useEffect(() => {
-    const load = async () => {
-      const config = await window.api.getConfig() as Config
-      setAdditionalPaths(config.additionalPaths || [])
-    }
-    load()
-  }, [isOpen])
 
   const availableRepos = useMemo(() =>
     repos
@@ -120,6 +110,18 @@ export default function RepoSelector() {
 
   const hasMultipleGroups = groups.length > 1
 
+  const renderRepoItem = (repo: Repository, index: number) => (
+    <button
+      key={repo.path}
+      className={`repo-dropdown__item ${index === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
+      onClick={() => { openTab(repo.name); setIsOpen(false); setSearchTerm(''); setSelectedIndex(0) }}
+    >
+      {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
+      <span className="repo-dropdown__item-name">{repo.name}</span>
+      {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
+    </button>
+  )
+
   const dropdown = isOpen && (
     <div ref={dropdownRef} className="repo-dropdown">
       <div className="repo-dropdown__search">
@@ -168,25 +170,7 @@ export default function RepoSelector() {
                       {group.repos.length === 0 ? (
                         <div className="repo-group__empty">No repositories found</div>
                       ) : (
-                        group.repos.map((repo) => {
-                          const flatIndex = flatRepos.indexOf(repo)
-                          return (
-                            <button
-                              key={repo.path}
-                              className={`repo-dropdown__item ${flatIndex === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
-                              onClick={() => {
-                                openTab(repo.name)
-                                setIsOpen(false)
-                                setSearchTerm('')
-                                setSelectedIndex(0)
-                              }}
-                            >
-                              {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
-                              <span className="repo-dropdown__item-name">{repo.name}</span>
-                              {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
-                            </button>
-                          )
-                        })
+                        group.repos.map((repo) => renderRepoItem(repo, flatRepos.indexOf(repo)))
                       )}
                     </motion.div>
                   )}
@@ -194,22 +178,7 @@ export default function RepoSelector() {
               </div>
             ))
           ) : (
-            availableRepos.map((repo, index) => (
-              <button
-                key={repo.path}
-                className={`repo-dropdown__item ${index === selectedIndex ? 'repo-dropdown__item--selected' : ''}`}
-                onClick={() => {
-                  openTab(repo.name)
-                  setIsOpen(false)
-                  setSearchTerm('')
-                  setSelectedIndex(0)
-                }}
-              >
-                {repo.isGitRepo ? <FolderGit2 size={16} /> : <Folder size={16} />}
-                <span className="repo-dropdown__item-name">{repo.name}</span>
-                {repo.isGitRepo && <span className="repo-dropdown__item-badge">git</span>}
-              </button>
-            ))
+            availableRepos.map((repo, index) => renderRepoItem(repo, index))
           )}
         </div>
       )}

@@ -10,7 +10,7 @@ Persistent configuration, UI state, work logs, and codename collection tracking.
   - `discovered-codenames.json` — array of discovered terminal codenames
 
 ## Rules
-- Config reads merge with defaults (`DEFAULT_CONFIG`, `DEFAULT_UI_STATE` from `shared/constants.ts`)
+- Config reads merge with defaults (`DEFAULT_CONFIG`, `DEFAULT_UI_STATE` from `shared/constants.ts`) via `migrateConfig()` private method
 - Directories are auto-created on construction
 - Work logs are organized by date subdirectories
 

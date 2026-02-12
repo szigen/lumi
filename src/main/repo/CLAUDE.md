@@ -11,7 +11,7 @@ Git operations and file tree management via `simple-git`.
 
 ## Rules
 - All git operations are async via `simple-git`
-- `listRepos()` returns repos from projectsRoot + additionalPaths, with duplicate detection by absolute path. Each repo has a `source` field.
+- `listRepos()` uses private `scanDirectory()` helper for DRY directory scanning. Returns repos from projectsRoot + additionalPaths, with duplicate detection by absolute path. Each repo has a `source` field.
 - Commit log: branch-specific shows `main..<branch>` (only branch-unique commits), main/master shows all
 - File tree sorted: folders first, then files, alphabetically
 

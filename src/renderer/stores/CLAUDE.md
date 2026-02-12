@@ -5,7 +5,7 @@ State management for the renderer process.
 ## Stores
 - **useTerminalStore** — terminal sessions, output buffers, active terminal tracking, per-repo last-active tracking
 - **useAppStore** — UI layout (open tabs, active tab, sidebars, settings modal, quit dialog, focus mode, grid columns, collapsedGroups for repo group collapse state)
-- **useRepoStore** — repository list from main process; exports `groupReposBySource()` helper and `RepoGroup` interface for grouped repo display
+- **useRepoStore** — repository list and `additionalPaths` from main process; exports `groupReposBySource()` helper, `RepoGroup` interface, and `PathGroupInfo` minimal interface for grouped repo display. `loadAdditionalPaths()` fetches config and updates `additionalPaths` state.
 - **useNotificationStore** — toast notification queue
 
 ## Rules

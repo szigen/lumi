@@ -25,56 +25,38 @@ export class RepoManager {
     return p
   }
 
-  async listRepos(): Promise<Repository[]> {
+  private scanDirectory(dirPath: string, source: string, seenPaths: Set<string>): Repository[] {
+    if (!dirPath || !fs.existsSync(dirPath)) return []
     const repos: Repository[] = []
-    const seenPaths = new Set<string>()
-
-    // 1. Scan projectsRoot
-    if (this.projectsRoot && fs.existsSync(this.projectsRoot)) {
-      const entries = fs.readdirSync(this.projectsRoot, { withFileTypes: true })
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue
-        if (entry.name.startsWith('.')) continue
-
-        const fullPath = path.join(this.projectsRoot, entry.name)
-        const isGitRepo = fs.existsSync(path.join(fullPath, '.git'))
-
-        repos.push({ name: entry.name, path: fullPath, isGitRepo, source: 'projectsRoot' })
-        seenPaths.add(fullPath)
-      }
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue
+      const fullPath = path.join(dirPath, entry.name)
+      if (seenPaths.has(fullPath)) continue
+      const isGitRepo = fs.existsSync(path.join(fullPath, '.git'))
+      repos.push({ name: entry.name, path: fullPath, isGitRepo, source })
+      seenPaths.add(fullPath)
     }
+    return repos
+  }
 
-    // 2. Scan additionalPaths
+  async listRepos(): Promise<Repository[]> {
+    const seenPaths = new Set<string>()
+    const repos = [...this.scanDirectory(this.projectsRoot, 'projectsRoot', seenPaths)]
+
     for (const ap of this.additionalPaths) {
-      const expandedPath = this.expandPath(ap.path)
-
+      const expanded = this.expandPath(ap.path)
       if (ap.type === 'root') {
-        if (!fs.existsSync(expandedPath)) continue
-        const entries = fs.readdirSync(expandedPath, { withFileTypes: true })
-        for (const entry of entries) {
-          if (!entry.isDirectory()) continue
-          if (entry.name.startsWith('.')) continue
-
-          const fullPath = path.join(expandedPath, entry.name)
-          if (seenPaths.has(fullPath)) continue
-
-          const isGitRepo = fs.existsSync(path.join(fullPath, '.git'))
-          repos.push({ name: entry.name, path: fullPath, isGitRepo, source: ap.path })
-          seenPaths.add(fullPath)
-        }
+        repos.push(...this.scanDirectory(expanded, ap.path, seenPaths))
       } else {
-        // type === 'repo' — add directly
-        if (seenPaths.has(expandedPath)) continue
-        if (!fs.existsSync(expandedPath)) continue
-
-        const isGitRepo = fs.existsSync(path.join(expandedPath, '.git'))
+        if (seenPaths.has(expanded) || !fs.existsSync(expanded)) continue
         repos.push({
-          name: path.basename(expandedPath),
-          path: expandedPath,
-          isGitRepo,
+          name: path.basename(expanded),
+          path: expanded,
+          isGitRepo: fs.existsSync(path.join(expanded, '.git')),
           source: ap.path
         })
-        seenPaths.add(expandedPath)
+        seenPaths.add(expanded)
       }
     }
 

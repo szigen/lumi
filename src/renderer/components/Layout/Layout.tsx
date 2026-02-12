@@ -21,7 +21,7 @@ export default function Layout() {
   const [isInitializing, setIsInitializing] = useState(true)
   const [isSetupRequired, setIsSetupRequired] = useState(false)
   const { leftSidebarOpen, rightSidebarOpen, focusModeActive, loadUIState, showQuitDialog } = useAppStore()
-  const { loadRepos } = useRepoStore()
+  const { loadRepos, loadAdditionalPaths } = useRepoStore()
   const { syncFromMain } = useTerminalStore()
 
   // Listen for quit confirmation request from main process
@@ -36,9 +36,10 @@ export default function Layout() {
   useEffect(() => {
     const cleanup = window.api.onReposChanged(() => {
       loadRepos()
+      loadAdditionalPaths()
     })
     return cleanup
-  }, [loadRepos])
+  }, [loadRepos, loadAdditionalPaths])
 
   useEffect(() => {
     const initialize = async () => {
@@ -51,7 +52,8 @@ export default function Layout() {
         }
         await Promise.all([
           loadUIState(),
-          loadRepos()
+          loadRepos(),
+          loadAdditionalPaths()
         ])
         // Sync terminal state from main process on startup
         await syncFromMain()
@@ -63,7 +65,7 @@ export default function Layout() {
     }
 
     initialize()
-  }, [loadUIState, loadRepos, syncFromMain])
+  }, [loadUIState, loadRepos, loadAdditionalPaths, syncFromMain])
 
   // Re-sync terminals when app regains focus (covers macOS sleep/wake)
   useEffect(() => {
@@ -96,7 +98,7 @@ export default function Layout() {
     setIsSetupRequired(false)
     setIsInitializing(true)
     try {
-      await Promise.all([loadUIState(), loadRepos()])
+      await Promise.all([loadUIState(), loadRepos(), loadAdditionalPaths()])
       await syncFromMain()
     } catch (error) {
       console.error('Failed to initialize after setup:', error)

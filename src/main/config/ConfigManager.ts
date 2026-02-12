@@ -29,16 +29,18 @@ export class ConfigManager {
     }
   }
 
+  private migrateConfig(config: Record<string, unknown>): Config {
+    if (!Array.isArray(config.additionalPaths)) {
+      config.additionalPaths = []
+    }
+    return { ...DEFAULT_CONFIG, ...config } as Config
+  }
+
   getConfig(): Config {
     try {
       if (fs.existsSync(this.configPath)) {
         const data = fs.readFileSync(this.configPath, 'utf-8')
-        const parsed = JSON.parse(data)
-        // Migration: ensure additionalPaths exists
-        if (!Array.isArray(parsed.additionalPaths)) {
-          parsed.additionalPaths = []
-        }
-        return { ...DEFAULT_CONFIG, ...parsed }
+        return this.migrateConfig(JSON.parse(data))
       }
     } catch (error) {
       console.error('Failed to read config:', error)

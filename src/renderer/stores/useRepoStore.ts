@@ -1,5 +1,11 @@
 import { create } from 'zustand'
-import type { Repository, Commit, Branch, FileChange, AdditionalPath } from '../../shared/types'
+import type { Repository, Commit, Branch, FileChange, AdditionalPath, Config } from '../../shared/types'
+
+export interface PathGroupInfo {
+  path: string
+  type: 'root' | 'repo'
+  label?: string
+}
 
 export interface RepoGroup {
   key: string
@@ -7,7 +13,7 @@ export interface RepoGroup {
   repos: Repository[]
 }
 
-export function groupReposBySource(repos: Repository[], additionalPaths: AdditionalPath[]): RepoGroup[] {
+export function groupReposBySource(repos: Repository[], additionalPaths: PathGroupInfo[]): RepoGroup[] {
   const groupMap = new Map<string, Repository[]>()
 
   for (const repo of repos) {
@@ -53,12 +59,14 @@ export function groupReposBySource(repos: Repository[], additionalPaths: Additio
 
 interface RepoState {
   repos: Repository[]
+  additionalPaths: AdditionalPath[]
   commits: Map<string, Map<string, Commit[]>>
   branches: Map<string, Branch[]>
   changes: Map<string, FileChange[]>
   selectedFiles: Map<string, Set<string>>
 
   loadRepos: () => Promise<void>
+  loadAdditionalPaths: () => Promise<void>
   loadCommits: (repoPath: string, branch: string) => Promise<void>
   loadAllBranchCommits: (repoPath: string) => Promise<void>
   loadBranches: (repoPath: string) => Promise<void>
@@ -73,6 +81,7 @@ interface RepoState {
 
 export const useRepoStore = create<RepoState>((set, get) => ({
   repos: [],
+  additionalPaths: [],
   commits: new Map(),
   branches: new Map(),
   changes: new Map(),
@@ -84,6 +93,15 @@ export const useRepoStore = create<RepoState>((set, get) => ({
       set({ repos })
     } catch (error) {
       console.error('Failed to load repos:', error)
+    }
+  },
+
+  loadAdditionalPaths: async () => {
+    try {
+      const config = await window.api.getConfig() as Config
+      set({ additionalPaths: config.additionalPaths || [] })
+    } catch (error) {
+      console.error('Failed to load additional paths:', error)
     }
   },
 
