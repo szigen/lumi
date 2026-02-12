@@ -1,6 +1,5 @@
 import { ipcMain, BrowserWindow, shell, dialog } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
-import { PtyRawLogger } from '../terminal/PtyRawLogger'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
 import { NotificationManager } from '../notification/NotificationManager'
@@ -15,7 +14,6 @@ import { TOTAL_CODENAMES } from '../terminal/codenames'
 
 let mainWindow: BrowserWindow | null = null
 let terminalManager: TerminalManager | null = null
-let ptyInspector: PtyRawLogger | null = null
 let repoManager: RepoManager | null = null
 let actionStore: ActionStore | null = null
 let actionEngine: ActionEngine | null = null
@@ -38,8 +36,7 @@ export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
   const notificationManager = new NotificationManager()
-  ptyInspector = new PtyRawLogger()
-  terminalManager = new TerminalManager(config.maxTerminals, notificationManager, configManager, ptyInspector)
+  terminalManager = new TerminalManager(config.maxTerminals, notificationManager, configManager)
   repoManager = new RepoManager(config.projectsRoot, config.additionalPaths || [])
 
   actionStore = new ActionStore()
@@ -304,19 +301,6 @@ export function setupIpcHandlers(): void {
       terminalManager!.setTask(result.id, 'Create Action')
     }
     return result
-  })
-
-  // PTY Inspector handlers
-  ipcMain.handle(IPC_CHANNELS.PTY_INSPECTOR_SET_ENABLED, async (_, enabled: boolean) => {
-    ptyInspector!.setEnabled(enabled)
-  })
-
-  ipcMain.handle(IPC_CHANNELS.PTY_INSPECTOR_LOG_PATH, async () => {
-    return ptyInspector!.getLogPath()
-  })
-
-  ipcMain.handle(IPC_CHANNELS.PTY_INSPECTOR_STATS, async () => {
-    return ptyInspector!.getStats()
   })
 
   // Persona handlers

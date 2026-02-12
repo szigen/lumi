@@ -24,11 +24,3 @@ export interface ITerminalNotifier {
 export interface ICodenameTracker {
   addDiscoveredCodename(name: string): boolean
 }
-
-/** Abstracts PTY data inspection/logging for debug tooling */
-export interface IPtyDataInspector {
-  inspect(terminalId: string, data: string): void
-  setEnabled(enabled: boolean): void
-  onTerminalExit(terminalId: string): void
-  getLogPath(): string | null
-}

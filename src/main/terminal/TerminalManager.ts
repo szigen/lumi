@@ -3,7 +3,7 @@ import { BrowserWindow } from 'electron'
 import { v4 as uuidv4 } from 'uuid'
 import { EventEmitter } from 'events'
 import { OutputBuffer } from './OutputBuffer'
-import type { ManagedTerminal, SpawnResult, ITerminalNotifier, ICodenameTracker, IPtyDataInspector } from './types'
+import type { ManagedTerminal, SpawnResult, ITerminalNotifier, ICodenameTracker } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { generateCodename } from './codenames'
 
@@ -12,19 +12,16 @@ export class TerminalManager extends EventEmitter {
   private maxTerminals: number
   private notifier: ITerminalNotifier
   private codenameTracker: ICodenameTracker
-  private inspector?: IPtyDataInspector
 
   constructor(
     maxTerminals: number = 12,
     notifier: ITerminalNotifier,
-    codenameTracker: ICodenameTracker,
-    inspector?: IPtyDataInspector
+    codenameTracker: ICodenameTracker
   ) {
     super()
     this.maxTerminals = maxTerminals
     this.notifier = notifier
     this.codenameTracker = codenameTracker
-    this.inspector = inspector
   }
 
   spawn(repoPath: string, window: BrowserWindow, trackCollection = true): SpawnResult | null {
@@ -57,7 +54,6 @@ export class TerminalManager extends EventEmitter {
 
     ptyProcess.onData((data) => {
       terminal.outputBuffer.append(data)
-      this.inspector?.inspect(id, data)
 
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
@@ -70,7 +66,6 @@ export class TerminalManager extends EventEmitter {
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       }
-      this.inspector?.onTerminalExit(id)
       this.terminals.delete(id)
       this.notifier.removeTerminal(id)
       this.emit('exit', { terminalId: id, exitCode })
