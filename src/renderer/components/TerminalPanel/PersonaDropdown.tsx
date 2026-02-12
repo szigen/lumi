@@ -9,13 +9,15 @@ interface PersonaDropdownProps {
   onNewClaude: () => void
   onPersonaSelect: (persona: Persona) => void
   repoPath?: string
+  onOpenChange?: (open: boolean) => void
 }
 
 export default function PersonaDropdown({
   disabled,
   onNewClaude,
   onPersonaSelect,
-  repoPath
+  repoPath,
+  onOpenChange
 }: PersonaDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [personas, setPersonas] = useState<Persona[]>([])
@@ -42,6 +44,10 @@ export default function PersonaDropdown({
       window.api.loadProjectPersonas(repoPath)
     }
   }, [repoPath])
+
+  useEffect(() => {
+    onOpenChange?.(isOpen)
+  }, [isOpen, onOpenChange])
 
   const handleMouseEnter = () => {
     if (closeTimerRef.current) {

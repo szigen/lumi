@@ -27,6 +27,11 @@ export default function FocusExitControl() {
   const { getRepoByName } = useRepoStore()
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isDropdownOpenRef = useRef(false)
+
+  const handleDropdownOpenChange = useCallback((open: boolean) => {
+    isDropdownOpenRef.current = open
+  }, [])
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
   const allTerminals = Array.from(terminals.values())
@@ -59,7 +64,9 @@ export default function FocusExitControl() {
         clearTimeout(timerRef.current)
         timerRef.current = null
       }
-      setVisible(false)
+      if (!isDropdownOpenRef.current) {
+        setVisible(false)
+      }
     }
   }, [])
 
@@ -157,6 +164,7 @@ export default function FocusExitControl() {
               onNewClaude={handleNewTerminal}
               onPersonaSelect={handlePersonaSelect}
               repoPath={activeRepo?.path}
+              onOpenChange={handleDropdownOpenChange}
             />
           </div>
           <button

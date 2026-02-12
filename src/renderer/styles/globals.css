@@ -1268,6 +1268,14 @@ a {
   overflow-y: auto;
 }
 
+.terminal-grid--focus {
+  overflow-y: hidden;
+}
+.terminal-grid--focus .terminal-card {
+  min-height: 0;
+  height: 100%;
+}
+
 .terminal-empty {
   flex: 1;
   display: flex;

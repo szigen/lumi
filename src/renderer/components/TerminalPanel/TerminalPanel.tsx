@@ -88,6 +88,7 @@ export default function TerminalPanel() {
 
   const gridRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
+  const [containerHeight, setContainerHeight] = useState(0)
 
   useEffect(() => {
     const el = gridRef.current
@@ -95,6 +96,7 @@ export default function TerminalPanel() {
 
     const ro = new ResizeObserver(([entry]) => {
       setContainerWidth(entry.contentRect.width)
+      setContainerHeight(entry.contentRect.height)
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -107,12 +109,31 @@ export default function TerminalPanel() {
     setGridColumns(cycle[nextIndex])
   }, [gridColumns, setGridColumns])
 
+  const computedColumns = useMemo(() => {
+    if (gridColumns !== 'auto') return gridColumns
+    if (!containerWidth) return 1
+    return Math.max(1, Math.floor((containerWidth + GRID_GAP) / (400 + GRID_GAP)))
+  }, [gridColumns, containerWidth])
+
   const gridStyle = useMemo(() => {
     if (gridColumns === 'auto') return undefined
     if (!containerWidth) return { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }
     const colWidth = Math.floor((containerWidth - (gridColumns - 1) * GRID_GAP) / gridColumns)
     return { gridTemplateColumns: `repeat(${gridColumns}, ${colWidth}px)` }
   }, [gridColumns, containerWidth])
+
+  const focusGridStyle = useMemo(() => {
+    if (!focusModeActive || !containerHeight || repoTerminals.length === 0) return undefined
+    const cols = gridColumns === 'auto' ? computedColumns : gridColumns
+    const colTemplate = gridColumns === 'auto'
+      ? `repeat(auto-fit, minmax(400px, 1fr))`
+      : (!containerWidth
+          ? `repeat(${gridColumns}, 1fr)`
+          : `repeat(${gridColumns}, ${Math.floor((containerWidth - (gridColumns - 1) * GRID_GAP) / gridColumns)}px)`)
+    const rows = Math.ceil(repoTerminals.length / cols)
+    const rowHeight = Math.floor((containerHeight - (rows - 1) * GRID_GAP) / rows)
+    return { gridTemplateColumns: colTemplate, gridTemplateRows: `repeat(${rows}, ${rowHeight}px)` }
+  }, [focusModeActive, containerHeight, containerWidth, repoTerminals.length, computedColumns, gridColumns])
 
   const GridIcon = gridColumns === 2 ? Grid2x2 : gridColumns === 3 ? Columns3 : LayoutGrid
   const gridTooltip = gridColumns === 'auto' ? 'Auto grid' : `${gridColumns} columns`
@@ -172,7 +193,7 @@ export default function TerminalPanel() {
         </div>
       )}
       {allTerminals.length > 0 && (
-        <div ref={gridRef} className="terminal-grid" style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...gridStyle }}>
+        <div ref={gridRef} className={`terminal-grid${focusModeActive ? ' terminal-grid--focus' : ''}`} style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...(focusModeActive ? focusGridStyle : gridStyle) }}>
           {allTerminals.map((terminal) => (
             <div
               key={terminal.id}
