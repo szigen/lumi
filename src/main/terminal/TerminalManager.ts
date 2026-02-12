@@ -50,10 +50,17 @@ export class TerminalManager extends EventEmitter {
     }
 
     ptyProcess.onData((data) => {
-      // Append to output buffer (keep last 100KB)
+      // Append to output buffer (keep last 100KB, cut at newline to preserve ANSI sequences)
       terminal.outputBuffer += data
       if (terminal.outputBuffer.length > 100_000) {
-        terminal.outputBuffer = terminal.outputBuffer.slice(-100_000)
+        let cutIndex = terminal.outputBuffer.length - 100_000
+        // Look forward up to 1KB for the nearest newline to avoid splitting ANSI escape codes
+        const searchEnd = Math.min(cutIndex + 1024, terminal.outputBuffer.length)
+        const newlinePos = terminal.outputBuffer.indexOf('\n', cutIndex)
+        if (newlinePos !== -1 && newlinePos < searchEnd) {
+          cutIndex = newlinePos + 1
+        }
+        terminal.outputBuffer = terminal.outputBuffer.slice(cutIndex)
       }
 
       if (!window.isDestroyed()) {

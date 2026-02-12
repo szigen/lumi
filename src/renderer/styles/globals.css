@@ -1325,6 +1325,7 @@ a {
   flex: 1;
   position: relative;
   overflow: hidden;
+  padding: var(--spacing-sm);
 }
 
 .terminal-card__body > div {
@@ -1613,7 +1614,7 @@ a {
 
 /* === XTERM === */
 .xterm {
-  padding: var(--spacing-sm);
+  padding: 0;
   height: 100%;
 }
 
