@@ -9,7 +9,11 @@ interface FixTerminalProps {
 }
 
 export default function FixTerminal({ repoPath }: FixTerminalProps) {
-  const { fixTerminalId, selectedBugId, applyingFixId, markFixResult, clearFixTerminal } = useBugStore()
+  const fixTerminalId = useBugStore((s) => s.fixTerminalId)
+  const selectedBugId = useBugStore((s) => s.selectedBugId)
+  const applyingFixId = useBugStore((s) => s.applyingFixId)
+  const markFixResult = useBugStore((s) => s.markFixResult)
+  const clearFixTerminal = useBugStore((s) => s.clearFixTerminal)
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const [showNote, setShowNote] = useState(false)
   const [note, setNote] = useState('')
@@ -24,9 +28,13 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
 
   const handleSuccess = async () => {
     if (!selectedBugId || !applyingFixId) return
-    await markFixResult(repoPath, selectedBugId, applyingFixId, true)
-    window.api.killTerminal(fixTerminalId)
-    removeTerminal(fixTerminalId)
+    try {
+      await markFixResult(repoPath, selectedBugId, applyingFixId, true)
+      window.api.killTerminal(fixTerminalId)
+      removeTerminal(fixTerminalId)
+    } catch (err) {
+      console.error('Failed to mark fix as success:', err)
+    }
   }
 
   const handleFail = async () => {
@@ -35,11 +43,15 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
       setShowNote(true)
       return
     }
-    await markFixResult(repoPath, selectedBugId, applyingFixId, false, note || undefined)
-    window.api.killTerminal(fixTerminalId)
-    removeTerminal(fixTerminalId)
-    setShowNote(false)
-    setNote('')
+    try {
+      await markFixResult(repoPath, selectedBugId, applyingFixId, false, note || undefined)
+      window.api.killTerminal(fixTerminalId)
+      removeTerminal(fixTerminalId)
+      setShowNote(false)
+      setNote('')
+    } catch (err) {
+      console.error('Failed to mark fix as failed:', err)
+    }
   }
 
   const handleClose = () => {
@@ -51,16 +63,18 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
   return (
     <div className="fix-terminal">
       <div className="fix-terminal__controls">
-        <button className="fix-terminal__btn fix-terminal__btn--success" onClick={handleSuccess}>
+        <button className="fix-terminal__btn fix-terminal__btn--success" onClick={handleSuccess} aria-label="Mark fix as successful">
           <CheckCircle size={14} /> Fixed
         </button>
-        <button className="fix-terminal__btn fix-terminal__btn--fail" onClick={handleFail}>
+        <button className="fix-terminal__btn fix-terminal__btn--fail" onClick={handleFail} aria-label="Mark fix as failed">
           <XCircle size={14} /> Not Fixed
         </button>
       </div>
       {showNote && (
         <div className="fix-terminal__note">
+          <label htmlFor="fix-note-input" className="visually-hidden">Why didn&apos;t it work?</label>
           <input
+            id="fix-note-input"
             className="fix-terminal__note-input"
             placeholder="Why didn't it work? (optional)"
             value={note}

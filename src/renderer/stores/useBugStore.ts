@@ -29,9 +29,23 @@ interface BugState {
 
   markFixResult: (repoPath: string, bugId: string, fixId: string, success: boolean, note?: string) => Promise<void>
   clearFixTerminal: () => void
+}
 
-  filteredBugs: () => Bug[]
-  selectedBug: () => Bug | undefined
+// Memoized selectors
+let _cachedFilteredBugs: Bug[] = []
+let _cachedFilterKey = ''
+
+export function selectFilteredBugs(state: BugState): Bug[] {
+  const key = `${state.filter}:${state.bugs.length}:${state.bugs.map(b => `${b.id}:${b.status}`).join(',')}`
+  if (key !== _cachedFilterKey) {
+    _cachedFilterKey = key
+    _cachedFilteredBugs = state.filter === 'all' ? state.bugs : state.bugs.filter(b => b.status === state.filter)
+  }
+  return _cachedFilteredBugs
+}
+
+export function selectSelectedBug(state: BugState): Bug | undefined {
+  return state.bugs.find(b => b.id === state.selectedBugId)
 }
 
 export const useBugStore = create<BugState>((set, get) => ({
@@ -151,25 +165,25 @@ export const useBugStore = create<BugState>((set, get) => ({
 
   subscribeToStream: () => {
     const cleanupDelta = window.api.onClaudeStreamDelta((bugId: string, text: string) => {
-      const state = get()
+      const state = useBugStore.getState()
       if (state.streamingBugId === bugId) {
         set({ streamingText: state.streamingText + text })
       }
     })
 
     const cleanupActivity = window.api.onClaudeStreamActivity((bugId: string, activity: { type: string; tool?: string }) => {
-      const state = get()
+      const state = useBugStore.getState()
       if (state.streamingBugId === bugId) {
         set({ streamingActivities: [...state.streamingActivities, { ...activity, timestamp: Date.now() }] })
       }
     })
 
     const cleanupDone = window.api.onClaudeStreamDone(async (bugId: string, fullText: string | null, error?: string) => {
-      const state = get()
+      const state = useBugStore.getState()
       if (state.streamingBugId !== bugId) return
 
       if (fullText) {
-        await get().addFix(state.streamingRepoPath!, bugId, {
+        await useBugStore.getState().addFix(state.streamingRepoPath!, bugId, {
           summary: fullText.slice(0, 120),
           detail: fullText,
           status: 'suggested',
@@ -200,15 +214,4 @@ export const useBugStore = create<BugState>((set, get) => ({
   },
 
   clearFixTerminal: () => set({ fixTerminalId: null, applyingFixId: null }),
-
-  filteredBugs: () => {
-    const { bugs, filter } = get()
-    if (filter === 'all') return bugs
-    return bugs.filter(b => b.status === filter)
-  },
-
-  selectedBug: () => {
-    const { bugs, selectedBugId } = get()
-    return bugs.find(b => b.id === selectedBugId)
-  }
 }))

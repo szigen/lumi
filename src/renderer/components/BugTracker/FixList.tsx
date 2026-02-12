@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { useBugStore } from '../../stores/useBugStore'
+import { useBugStore, selectSelectedBug } from '../../stores/useBugStore'
 import FixCard from './FixCard'
 
 interface FixListProps {
@@ -8,40 +8,55 @@ interface FixListProps {
 }
 
 export default function FixList({ repoPath }: FixListProps) {
-  const { selectedBug, applyFix, applyingFixId } = useBugStore()
+  const bug = useBugStore(selectSelectedBug)
+  const applyFix = useBugStore((s) => s.applyFix)
+  const applyingFixId = useBugStore((s) => s.applyingFixId)
   const addFix = useBugStore((s) => s.addFix)
   const [showManual, setShowManual] = useState(false)
   const [manualSummary, setManualSummary] = useState('')
 
-  const bug = selectedBug()
   if (!bug) {
     return <div className="fix-list__empty">Select a bug to see fixes</div>
   }
 
   const handleManualAdd = async () => {
     if (!manualSummary.trim()) return
-    await addFix(repoPath, bug.id, {
-      summary: manualSummary.trim(),
-      detail: manualSummary.trim(),
-      status: 'suggested',
-      suggestedBy: 'user'
-    })
-    setManualSummary('')
-    setShowManual(false)
+    try {
+      await addFix(repoPath, bug.id, {
+        summary: manualSummary.trim(),
+        detail: manualSummary.trim(),
+        status: 'suggested',
+        suggestedBy: 'user'
+      })
+      setManualSummary('')
+      setShowManual(false)
+    } catch (err) {
+      console.error('Failed to add fix:', err)
+    }
+  }
+
+  const handleApply = async (fixId: string) => {
+    try {
+      await applyFix(repoPath, bug.id, fixId)
+    } catch (err) {
+      console.error('Failed to apply fix:', err)
+    }
   }
 
   return (
     <div className="fix-list">
       <div className="fix-list__header">
         <h4>Fix Suggestions</h4>
-        <button className="fix-list__add-btn" onClick={() => setShowManual(true)} title="Add manual fix">
+        <button className="fix-list__add-btn" onClick={() => setShowManual(true)} title="Add manual fix" aria-label="Add manual fix">
           <Plus size={14} />
         </button>
       </div>
 
       {showManual && (
         <div className="fix-list__manual">
+          <label htmlFor="fix-manual-input" className="visually-hidden">Describe the fix approach</label>
           <input
+            id="fix-manual-input"
             className="fix-list__manual-input"
             placeholder="Describe the fix approach..."
             value={manualSummary}
@@ -57,7 +72,7 @@ export default function FixList({ repoPath }: FixListProps) {
           <FixCard
             key={fix.id}
             fix={fix}
-            onApply={() => applyFix(repoPath, bug.id, fix.id)}
+            onApply={() => handleApply(fix.id)}
             isApplying={applyingFixId === fix.id}
           />
         ))}

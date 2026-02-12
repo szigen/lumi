@@ -17,13 +17,38 @@ function getToolDisplay(tool?: string) {
   return TOOL_LABELS[tool] || { label: `Using ${tool}`, icon: Terminal }
 }
 
+function ToolActivityItem({ tool, index }: { tool: string; index: number }) {
+  const display = getToolDisplay(tool)
+  if (!display) return null
+  const Icon = display.icon
+  return (
+    <motion.span
+      key={`${tool}-${index}`}
+      className="claude-stream-activity claude-stream-activity--active"
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.15 }}
+    >
+      <Icon size={12} />
+      {display.label}...
+    </motion.span>
+  )
+}
+
 interface ClaudeInputProps {
   repoPath: string
 }
 
+const DISPLAY_TEXT_LIMIT = 300
+
 export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
   const [input, setInput] = useState('')
-  const { selectedBugId, claudeLoading, askClaude, streamingBugId, streamingText, streamingActivities } = useBugStore()
+  const selectedBugId = useBugStore((s) => s.selectedBugId)
+  const claudeLoading = useBugStore((s) => s.claudeLoading)
+  const askClaude = useBugStore((s) => s.askClaude)
+  const streamingBugId = useBugStore((s) => s.streamingBugId)
+  const streamingText = useBugStore((s) => s.streamingText)
+  const streamingActivities = useBugStore((s) => s.streamingActivities)
   const previewRef = useRef<HTMLDivElement>(null)
 
   const showPreview = streamingBugId === selectedBugId && (streamingText.length > 0 || streamingActivities.length > 0)
@@ -39,27 +64,25 @@ export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
     if (!input.trim() || !selectedBugId || claudeLoading) return
     const msg = input.trim()
     setInput('')
-    await askClaude(repoPath, selectedBugId, msg)
+    try {
+      await askClaude(repoPath, selectedBugId, msg)
+    } catch (err) {
+      console.error('Failed to ask Claude:', err)
+    }
   }
 
-  const displayText = streamingText.length > 300 ? '…' + streamingText.slice(-300) : streamingText
+  const displayText = streamingText.length > DISPLAY_TEXT_LIMIT ? '…' + streamingText.slice(-DISPLAY_TEXT_LIMIT) : streamingText
 
   // Build a list of active tools (tool_start without a matching tool_end)
-  const activeTools: string[] = []
   const toolStack: string[] = []
+  let completedToolCount = 0
   for (const activity of streamingActivities) {
     if (activity.type === 'tool_start' && activity.tool) {
       toolStack.push(activity.tool)
     } else if (activity.type === 'tool_end') {
       toolStack.pop()
+      completedToolCount++
     }
-  }
-  activeTools.push(...toolStack)
-
-  // Count completed tools
-  let completedToolCount = 0
-  for (const activity of streamingActivities) {
-    if (activity.type === 'tool_end') completedToolCount++
   }
 
   return (
@@ -81,46 +104,18 @@ export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
                       {completedToolCount} tool{completedToolCount > 1 ? 's' : ''} used
                     </span>
                   )}
-                  {activeTools.map((tool, i) => {
-                    const display = getToolDisplay(tool)
-                    if (!display) return null
-                    const Icon = display.icon
-                    return (
-                      <motion.span
-                        key={`${tool}-${i}`}
-                        className="claude-stream-activity claude-stream-activity--active"
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <Icon size={12} />
-                        {display.label}...
-                      </motion.span>
-                    )
-                  })}
+                  {toolStack.map((tool, i) => (
+                    <ToolActivityItem key={`${tool}-${i}`} tool={tool} index={i} />
+                  ))}
                 </div>
               )}
               {streamingText && (
                 <>
-                  {activeTools.length > 0 && (
+                  {toolStack.length > 0 && (
                     <div className="claude-stream-activities claude-stream-activities--inline">
-                      {activeTools.map((tool, i) => {
-                        const display = getToolDisplay(tool)
-                        if (!display) return null
-                        const Icon = display.icon
-                        return (
-                          <motion.span
-                            key={`${tool}-${i}`}
-                            className="claude-stream-activity claude-stream-activity--active"
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.15 }}
-                          >
-                            <Icon size={12} />
-                            {display.label}...
-                          </motion.span>
-                        )
-                      })}
+                      {toolStack.map((tool, i) => (
+                        <ToolActivityItem key={`${tool}-${i}`} tool={tool} index={i} />
+                      ))}
                     </div>
                   )}
                   {displayText}
@@ -131,7 +126,9 @@ export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
         )}
       </AnimatePresence>
       <form className="claude-input" onSubmit={handleSubmit}>
+        <label htmlFor="claude-input-field" className="visually-hidden">Ask Claude about this bug</label>
         <input
+          id="claude-input-field"
           className="claude-input__field"
           placeholder={selectedBugId ? 'Ask Claude about this bug...' : 'Select a bug first...'}
           value={input}
@@ -142,6 +139,7 @@ export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
           type="submit"
           className="claude-input__btn"
           disabled={!input.trim() || !selectedBugId || claudeLoading}
+          aria-label={claudeLoading ? 'Claude is thinking...' : 'Send message to Claude'}
         >
           {claudeLoading ? <Loader size={16} className="claude-input__spinner" /> : <Send size={16} />}
         </button>

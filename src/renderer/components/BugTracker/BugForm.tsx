@@ -20,14 +20,18 @@ export default function BugForm({ onSubmit, onCancel }: BugFormProps) {
 
   return (
     <form className="bug-form" onSubmit={handleSubmit}>
+      <label htmlFor="bug-form-title" className="visually-hidden">Bug title</label>
       <input
+        id="bug-form-title"
         className="bug-form__input"
         placeholder="Bug title..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         autoFocus
       />
+      <label htmlFor="bug-form-desc" className="visually-hidden">Bug description</label>
       <textarea
+        id="bug-form-desc"
         className="bug-form__textarea"
         placeholder="Description (optional)..."
         value={description}

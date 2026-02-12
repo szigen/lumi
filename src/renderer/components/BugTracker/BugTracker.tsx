@@ -10,7 +10,7 @@ import FixTerminal from './FixTerminal'
 export default function BugTracker() {
   const activeTab = useAppStore((s) => s.activeTab)
   const getRepoByName = useRepoStore((s) => s.getRepoByName)
-  const { loadBugs, subscribeToStream } = useBugStore()
+  const loadBugs = useBugStore((s) => s.loadBugs)
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
 
@@ -20,9 +20,10 @@ export default function BugTracker() {
     }
   }, [activeRepo?.path, loadBugs])
 
+  // Use getState() to get a stable reference, with [] dependency to subscribe once
   useEffect(() => {
-    return subscribeToStream()
-  }, [subscribeToStream])
+    return useBugStore.getState().subscribeToStream()
+  }, [])
 
   if (!activeRepo) {
     return (

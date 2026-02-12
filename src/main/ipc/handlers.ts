@@ -13,6 +13,23 @@ import { PersonaStore } from '../persona/PersonaStore'
 import { SystemChecker } from '../system/SystemChecker'
 import { BugStorage } from '../bug/bug-storage'
 import { TOTAL_CODENAMES } from '../terminal/codenames'
+import { existsSync } from 'fs'
+import { spawn } from 'child_process'
+import type { ChildProcess } from 'child_process'
+
+const MAX_CLAUDE_PROCESSES = 2
+const CLAUDE_PROCESS_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
+const MAX_BUFFER_SIZE = 1024 * 1024 // 1MB
+const activeClaudeProcesses = new Map<string, ChildProcess>()
+
+function isValidRepoPath(repoPath: string): boolean {
+  return (
+    typeof repoPath === 'string' &&
+    path.isAbsolute(repoPath) &&
+    !repoPath.includes('..') &&
+    existsSync(repoPath)
+  )
+}
 
 let mainWindow: BrowserWindow | null = null
 let terminalManager: TerminalManager | null = null
@@ -357,38 +374,52 @@ export function setupIpcHandlers(): void {
 
   // Bug handlers
   ipcMain.handle(IPC_CHANNELS.BUGS_LIST, async (_, repoPath: string) => {
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     return bugStorage.list(repoPath)
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_CREATE, async (_, repoPath: string, title: string, description: string) => {
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     return bugStorage.create(repoPath, title, description)
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_UPDATE, async (_, repoPath: string, bugId: string, updates: Record<string, unknown>) => {
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     return bugStorage.update(repoPath, bugId, updates)
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_DELETE, async (_, repoPath: string, bugId: string) => {
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     return bugStorage.delete(repoPath, bugId)
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_ADD_FIX, async (_, repoPath: string, bugId: string, fix: Record<string, unknown>) => {
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     return bugStorage.addFix(repoPath, bugId, fix as Omit<import('../../shared/bug-types').Fix, 'id'>)
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_UPDATE_FIX, async (_, repoPath: string, bugId: string, fixId: string, updates: Record<string, unknown>) => {
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     return bugStorage.updateFix(repoPath, bugId, fixId, updates)
   })
 
   ipcMain.handle(IPC_CHANNELS.BUGS_ASK_CLAUDE, async (_, repoPath: string, bugId: string, prompt: string) => {
     if (!mainWindow) return { started: false }
-    const { spawn } = require('child_process') as typeof import('child_process')
+    if (!isValidRepoPath(repoPath)) return { started: false, error: 'Invalid repo path' }
+
+    // Enforce concurrent process limit
+    if (activeClaudeProcesses.size >= MAX_CLAUDE_PROCESSES) {
+      return { started: false, error: 'Too many concurrent Claude processes. Please wait for one to finish.' }
+    }
+
     console.log('[CLAUDE-STREAM] Starting stream for bug:', bugId)
-    // Pass prompt via stdin to avoid shell escaping issues with newlines/special chars
+
     const proc = spawn('claude', ['-p', '--verbose', '--output-format', 'stream-json', '--include-partial-messages'], {
       cwd: repoPath,
       env: process.env
     })
+    activeClaudeProcesses.set(bugId, proc)
+
     proc.stdin.write(prompt)
     proc.stdin.end()
 
@@ -396,8 +427,40 @@ export function setupIpcHandlers(): void {
     let error = ''
     let buffer = ''
     let currentToolName: string | null = null
+    let killed = false
+
+    const sendToRenderer = (channel: string, ...args: unknown[]) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(channel, ...args)
+      }
+    }
+
+    // Timeout: kill process after 5 minutes
+    const timeout = setTimeout(() => {
+      if (!killed) {
+        killed = true
+        proc.kill('SIGTERM')
+        sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, 'Claude process timed out after 5 minutes')
+      }
+    }, CLAUDE_PROCESS_TIMEOUT_MS)
+
+    const cleanup = () => {
+      clearTimeout(timeout)
+      activeClaudeProcesses.delete(bugId)
+    }
 
     proc.stdout.on('data', (data: Buffer) => {
+      // Buffer size limit check
+      if (accumulated.length > MAX_BUFFER_SIZE) {
+        if (!killed) {
+          killed = true
+          proc.kill('SIGTERM')
+          sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, 'Response exceeded maximum size limit')
+          cleanup()
+        }
+        return
+      }
+
       buffer += data.toString()
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
@@ -407,7 +470,6 @@ export function setupIpcHandlers(): void {
         try {
           const event = JSON.parse(trimmed)
 
-          // Handle stream_event from --include-partial-messages
           if (event.type === 'stream_event' && event.event) {
             const streamEvent = event.event
 
@@ -415,30 +477,29 @@ export function setupIpcHandlers(): void {
               const block = streamEvent.content_block
               if (block.type === 'tool_use' && block.name) {
                 currentToolName = block.name
-                mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_start', tool: block.name })
+                sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_start', tool: block.name })
               }
             } else if (streamEvent.type === 'content_block_delta' && streamEvent.delta) {
               if (streamEvent.delta.type === 'text_delta' && streamEvent.delta.text) {
                 accumulated += streamEvent.delta.text
-                mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, streamEvent.delta.text)
+                sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, streamEvent.delta.text)
               }
             } else if (streamEvent.type === 'content_block_stop') {
               if (currentToolName) {
-                mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_end' })
+                sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_end' })
                 currentToolName = null
               }
             }
             continue
           }
 
-          // Fallback: handle assistant events (CLI versions without --include-partial-messages)
           if (event.type === 'assistant' && event.message?.content) {
             for (const block of event.message.content) {
               if (block.type === 'text' && block.text) {
                 const newText = block.text.slice(accumulated.length)
                 if (newText) {
                   accumulated = block.text
-                  mainWindow!.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, newText)
+                  sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, newText)
                 }
               }
             }
@@ -456,16 +517,20 @@ export function setupIpcHandlers(): void {
 
     proc.on('error', (err: Error) => {
       console.log('[CLAUDE-STREAM] spawn error:', err.message)
-      mainWindow?.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, err.message)
+      sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, err.message)
+      cleanup()
     })
 
     proc.on('close', (code: number) => {
       console.log('[CLAUDE-STREAM] Process closed with code:', code, 'accumulated length:', accumulated.length)
-      if (code === 0) {
-        mainWindow?.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, accumulated.trim())
-      } else {
-        mainWindow?.webContents.send(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, error || `claude exited with code ${code}`)
+      if (!killed) {
+        if (code === 0) {
+          sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, accumulated.trim())
+        } else {
+          sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, error || `claude exited with code ${code}`)
+        }
       }
+      cleanup()
     })
 
     return { started: true }
@@ -473,11 +538,13 @@ export function setupIpcHandlers(): void {
 
   ipcMain.handle(IPC_CHANNELS.BUGS_APPLY_FIX, async (_, repoPath: string, prompt: string) => {
     if (!mainWindow) throw new Error('No main window')
+    if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
     const result = terminalManager!.spawn(repoPath, mainWindow, false)
     if (result) {
       terminalManager!.setTask(result.id, 'Applying fix')
+      // Use stdin via heredoc to avoid command injection
       setTimeout(() => {
-        terminalManager!.write(result.id, `claude "${prompt.replace(/"/g, '\\"')}"\r`)
+        terminalManager!.write(result.id, `claude -p <<'__EOF__'\n${prompt}\n__EOF__\r`)
       }, 500)
     }
     return result

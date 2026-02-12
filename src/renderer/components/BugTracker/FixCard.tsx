@@ -19,7 +19,7 @@ export default function FixCard({ fix, onApply, isApplying }: FixCardProps) {
   const StatusIcon = config.icon
 
   return (
-    <div className={`fix-card ${config.className}`}>
+    <div className={`fix-card ${config.className}`} aria-busy={fix.status === 'applying'}>
       <div className="fix-card__header">
         <div className="fix-card__source">
           {fix.suggestedBy === 'claude' ? <Bot size={12} /> : <User size={12} />}
