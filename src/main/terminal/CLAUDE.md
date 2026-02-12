@@ -17,11 +17,14 @@ PTY process spawn/management, output buffering, state queries.
 - Terminals support an optional `task` field set by actions, personas, or manual spawn
 - TerminalManager uses dependency injection: `ITerminalNotifier` and `ICodenameTracker` interfaces (DIP)
 - Status detection uses OSC title sequences: `✳` prefix = idle/finished, anything else = working
+- OSC title sequences are buffered across PTY data chunks (`oscBuffers` map) — partial sequences accumulate until BEL/ST terminator is received
 - Focus/blur events from renderer drive waiting-* state transitions
+- `getTerminalList()` includes current `status` from StatusStateMachine for sync
+- `getStatus(id)` allows renderer to query current status on demand (used by useTerminalIPC on mount)
 
 ## Watch Out
 - `syncFromMain()` in renderer reconciles state on startup, visibility change, and powerMonitor resume
-- IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`
+- IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS`
 - PTY spawns `zsh` on macOS, `powershell.exe` on Windows
 - Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
 - Terminal exit handler cleans up from both the Map and notifier

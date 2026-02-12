@@ -10,6 +10,7 @@ import { StatusStateMachine } from './StatusStateMachine'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
+  private oscBuffers: Map<string, string> = new Map()
   private maxTerminals: number
   private notifier: ITerminalNotifier
   private codenameTracker: ICodenameTracker
@@ -63,14 +64,7 @@ export class TerminalManager extends EventEmitter {
     })
 
     ptyProcess.onData((data) => {
-      // Parse OSC title sequences: ]0;{title}
-      // eslint-disable-next-line no-control-regex
-      const titleMatch = data.match(/\]0;([^\x07\x1b]+)/)
-      if (titleMatch) {
-        const title = titleMatch[1]
-        const isWorking = !title.startsWith('\u2733')
-        statusMachine.onTitleChange(isWorking)
-      }
+      this.parseOscTitle(id, data, statusMachine)
 
       terminal.outputBuffer.append(data)
 
@@ -83,6 +77,7 @@ export class TerminalManager extends EventEmitter {
 
     ptyProcess.onExit(({ exitCode }) => {
       terminal.statusMachine.onExit()
+      this.oscBuffers.delete(id)
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       }
@@ -115,6 +110,7 @@ export class TerminalManager extends EventEmitter {
     if (!terminal) return false
     terminal.pty.kill()
     this.terminals.delete(terminalId)
+    this.oscBuffers.delete(terminalId)
     this.notifier.removeTerminal(terminalId)
     return true
   }
@@ -125,6 +121,7 @@ export class TerminalManager extends EventEmitter {
       this.notifier.removeTerminal(id)
     }
     this.terminals.clear()
+    this.oscBuffers.clear()
   }
 
   getCount(): number {
@@ -140,14 +137,20 @@ export class TerminalManager extends EventEmitter {
     if (terminal) terminal.task = task
   }
 
-  getTerminalList(): Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string }> {
+  getTerminalList(): Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string; status: string }> {
     return Array.from(this.terminals.values()).map(t => ({
       id: t.id,
       name: t.name,
       repoPath: t.repoPath,
       createdAt: t.createdAt.toISOString(),
-      task: t.task
+      task: t.task,
+      status: t.statusMachine.getStatus()
     }))
+  }
+
+  getStatus(terminalId: string): string | null {
+    const terminal = this.terminals.get(terminalId)
+    return terminal ? terminal.statusMachine.getStatus() : null
   }
 
   setFocused(terminalId: string | null): void {
@@ -163,5 +166,49 @@ export class TerminalManager extends EventEmitter {
   getOutputBuffer(terminalId: string): string | null {
     const terminal = this.terminals.get(terminalId)
     return terminal ? terminal.outputBuffer.get() : null
+  }
+
+  /** Buffer partial OSC sequences across PTY chunks and parse complete ones */
+  private parseOscTitle(id: string, data: string, statusMachine: StatusStateMachine): void {
+    let buf = this.oscBuffers.get(id) || ''
+    buf += data
+
+    // Process all complete OSC sequences in the buffer
+    while (true) { // eslint-disable-line no-constant-condition
+      const oscStart = buf.indexOf('\x1b]0;')
+      if (oscStart === -1) {
+        // No OSC start — clear buffer (nothing to accumulate)
+        this.oscBuffers.delete(id)
+        return
+      }
+
+      // Look for terminator: BEL (\x07) or ST (\x1b\\)
+      const afterOsc = oscStart + 4
+      const belIdx = buf.indexOf('\x07', afterOsc)
+      const stIdx = buf.indexOf('\x1b\\', afterOsc)
+
+      let endIdx = -1
+      let endLen = 0
+      if (belIdx !== -1 && (stIdx === -1 || belIdx < stIdx)) {
+        endIdx = belIdx
+        endLen = 1
+      } else if (stIdx !== -1) {
+        endIdx = stIdx
+        endLen = 2
+      }
+
+      if (endIdx === -1) {
+        // Incomplete sequence — keep from oscStart onward
+        this.oscBuffers.set(id, buf.slice(oscStart))
+        return
+      }
+
+      const title = buf.slice(afterOsc, endIdx)
+      const isWorking = !title.startsWith('\u2733')
+      statusMachine.onTitleChange(isWorking)
+
+      // Continue parsing after this sequence
+      buf = buf.slice(endIdx + endLen)
+    }
   }
 }

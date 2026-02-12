@@ -14,6 +14,7 @@ export const IPC_CHANNELS = {
   TERMINAL_BUFFER: 'terminal:buffer',
   TERMINAL_SYNC: 'terminal:sync',
   TERMINAL_STATUS: 'terminal:status',
+  TERMINAL_GET_STATUS: 'terminal:get-status',
   TERMINAL_FOCUS: 'terminal:focus',
 
   // Repository operations

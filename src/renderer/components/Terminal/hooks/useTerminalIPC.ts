@@ -34,6 +34,13 @@ export function useTerminalIPC(
     const cleanupExit = window.api.onTerminalExit(handleExit)
     const cleanupStatus = window.api.onTerminalStatus(handleStatus)
 
+    // Query current status to catch any events fired before listener setup
+    window.api.getTerminalStatus(terminalId).then((status) => {
+      if (status) {
+        updateTerminal(terminalId, { status: status as Terminal['status'] })
+      }
+    })
+
     return () => {
       cleanupOutput()
       cleanupExit()

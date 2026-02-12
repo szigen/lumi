@@ -14,9 +14,11 @@ const api = {
   resizeTerminal: (terminalId: string, cols: number, rows: number) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_RESIZE, terminalId, cols, rows),
   listTerminals: () =>
-    invokeIpc<Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string }>>(IPC_CHANNELS.TERMINAL_LIST),
+    invokeIpc<Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string; status: string }>>(IPC_CHANNELS.TERMINAL_LIST),
   getTerminalBuffer: (terminalId: string) =>
     invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_BUFFER, terminalId),
+  getTerminalStatus: (terminalId: string) =>
+    invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_GET_STATUS, terminalId),
 
   // Terminal event listeners with auto-cleanup
   onTerminalOutput: (callback: (terminalId: string, data: string) => void) =>

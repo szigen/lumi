@@ -99,6 +99,10 @@ export function setupIpcHandlers(): void {
     return terminalManager!.getOutputBuffer(terminalId)
   })
 
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_GET_STATUS, async (_, terminalId: string) => {
+    return terminalManager!.getStatus(terminalId)
+  })
+
   ipcMain.handle(IPC_CHANNELS.TERMINAL_FOCUS, (_event, terminalId: string | null) => {
     if (!terminalManager) return
     terminalManager.setFocused(terminalId)

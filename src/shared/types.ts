@@ -21,6 +21,7 @@ export interface TerminalInfo {
   repoPath: string
   createdAt: string
   task?: string
+  status: Terminal['status']
 }
 
 export interface Repository {

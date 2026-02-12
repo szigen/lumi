@@ -1501,6 +1501,7 @@ a {
 
 .status-dot--waiting-unseen {
   background: var(--accent-warning);
+  box-shadow: 0 0 8px var(--accent-warning);
   animation: subtle-pulse 1.5s ease-in-out infinite;
 }
 
