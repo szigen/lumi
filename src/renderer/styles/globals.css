@@ -2857,13 +2857,3 @@ a {
   color: var(--accent-primary);
 }
 
-.known-bugs-btn__badge {
-  margin-left: auto;
-  background: var(--accent-error);
-  color: white;
-  padding: 0 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 18px;
-}
