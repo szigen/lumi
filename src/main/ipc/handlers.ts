@@ -244,6 +244,16 @@ export function setupIpcHandlers(): void {
     }
   )
 
+  ipcMain.handle(
+    IPC_CHANNELS.ACTIONS_OPEN_FILE,
+    async (_, actionId: string, scope: 'user' | 'project', repoPath?: string) => {
+      const filePath = actionStore!.getActionFilePath(actionId, scope, repoPath)
+      if (!filePath) return false
+      await shell.openPath(filePath)
+      return true
+    }
+  )
+
   ipcMain.handle(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, async (_, repoPath: string) => {
     actionStore!.loadProjectActions(repoPath)
   })

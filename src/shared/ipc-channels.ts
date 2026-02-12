@@ -55,6 +55,7 @@ export const IPC_CHANNELS = {
   ACTIONS_LIST: 'actions:list',
   ACTIONS_EXECUTE: 'actions:execute',
   ACTIONS_DELETE: 'actions:delete',
+  ACTIONS_OPEN_FILE: 'actions:open-file',
   ACTIONS_CHANGED: 'actions:changed',
   ACTIONS_LOAD_PROJECT: 'actions:load-project',
   ACTIONS_CREATE_NEW: 'actions:create-new',

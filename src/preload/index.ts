@@ -77,6 +77,8 @@ const api = {
     invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_EXECUTE, actionId, repoPath),
   deleteAction: (actionId: string, scope: 'user' | 'project', repoPath?: string) =>
     invokeIpc<boolean>(IPC_CHANNELS.ACTIONS_DELETE, actionId, scope, repoPath),
+  openActionFile: (actionId: string, scope: 'user' | 'project', repoPath?: string) =>
+    invokeIpc<boolean>(IPC_CHANNELS.ACTIONS_OPEN_FILE, actionId, scope, repoPath),
   loadProjectActions: (repoPath: string) =>
     invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
   createNewAction: (repoPath: string) =>

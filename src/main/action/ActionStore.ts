@@ -145,6 +145,26 @@ export class ActionStore {
     return false
   }
 
+  getActionFilePath(actionId: string, scope: 'user' | 'project', repoPath?: string): string | null {
+    const dir = scope === 'user' ? this.userDir : path.join(repoPath!, '.ai-orchestrator', 'actions')
+    const files = fs.existsSync(dir)
+      ? fs.readdirSync(dir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
+      : []
+
+    for (const file of files) {
+      try {
+        const content = fs.readFileSync(path.join(dir, file), 'utf-8')
+        const parsed = yaml.load(content) as Record<string, unknown>
+        if (parsed?.id === actionId) {
+          return path.join(dir, file)
+        }
+      } catch {
+        // skip
+      }
+    }
+    return null
+  }
+
   getUserDir(): string {
     return this.userDir
   }
