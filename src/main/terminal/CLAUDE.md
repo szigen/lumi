@@ -24,6 +24,7 @@ PTY process spawn/management, output buffering, state queries.
 - `getStatus(id)` allows renderer to query current status on demand (used by useTerminalIPC on mount)
 
 ## Watch Out
+- `write()` strips focus reporting events (`\x1b[I`, `\x1b[O`) before forwarding to PTY — Claude CLI enables focus reporting (`\x1b[?1004h`) and stops spinner animation on focus-out, which breaks status detection. We manage focus ourselves via StatusStateMachine
 - `syncFromMain()` in renderer reconciles state on startup, visibility change, and powerMonitor resume
 - IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS`
 - PTY spawns `zsh` on macOS, `powershell.exe` on Windows

@@ -95,7 +95,13 @@ export class TerminalManager extends EventEmitter {
   write(terminalId: string, data: string): boolean {
     const terminal = this.terminals.get(terminalId)
     if (!terminal) return false
-    terminal.pty.write(data)
+    // Strip focus reporting events (\x1b[I = focus-in, \x1b[O = focus-out)
+    // Claude CLI enables focus reporting via \x1b[?1004h and stops spinner
+    // animation on focus-out. We manage focus state ourselves via StatusStateMachine,
+    // so Claude CLI should always behave as if focused to emit spinner titles.
+    const filtered = data.replace(/\x1b\[[IO]/g, '')
+    if (filtered.length === 0) return true
+    terminal.pty.write(filtered)
     return true
   }
 
