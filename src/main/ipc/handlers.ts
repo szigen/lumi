@@ -142,6 +142,10 @@ export function setupIpcHandlers(): void {
   )
 
   // Config handlers
+  ipcMain.handle(IPC_CHANNELS.CONFIG_IS_FIRST_RUN, async () => {
+    return configManager.isFirstRun()
+  })
+
   ipcMain.handle(IPC_CHANNELS.CONFIG_GET, async () => {
     return configManager.getConfig()
   })

@@ -13,11 +13,13 @@ import { Logo } from '../icons'
 import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
 import { FocusExitControl } from '../FocusMode'
+import { SetupScreen } from '../Setup'
 
 export default function Layout() {
   useKeyboardShortcuts()
   useNotificationListener()
   const [isInitializing, setIsInitializing] = useState(true)
+  const [isSetupRequired, setIsSetupRequired] = useState(false)
   const { leftSidebarOpen, rightSidebarOpen, focusModeActive, loadUIState, showQuitDialog } = useAppStore()
   const { loadRepos } = useRepoStore()
   const { syncFromMain } = useTerminalStore()
@@ -41,6 +43,12 @@ export default function Layout() {
   useEffect(() => {
     const initialize = async () => {
       try {
+        const firstRun = await window.api.isFirstRun()
+        if (firstRun) {
+          setIsSetupRequired(true)
+          setIsInitializing(false)
+          return
+        }
         await Promise.all([
           loadUIState(),
           loadRepos()
@@ -83,6 +91,23 @@ export default function Layout() {
       cleanupSync()
     }
   }, [syncFromMain])
+
+  const handleSetupComplete = async () => {
+    setIsSetupRequired(false)
+    setIsInitializing(true)
+    try {
+      await Promise.all([loadUIState(), loadRepos()])
+      await syncFromMain()
+    } catch (error) {
+      console.error('Failed to initialize after setup:', error)
+    } finally {
+      setIsInitializing(false)
+    }
+  }
+
+  if (isSetupRequired) {
+    return <SetupScreen onComplete={handleSetupComplete} />
+  }
 
   if (isInitializing) {
     return (

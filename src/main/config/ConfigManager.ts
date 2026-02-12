@@ -41,6 +41,19 @@ export class ConfigManager {
     return DEFAULT_CONFIG
   }
 
+  isFirstRun(): boolean {
+    try {
+      if (fs.existsSync(this.configPath)) {
+        const data = fs.readFileSync(this.configPath, 'utf-8')
+        const config = JSON.parse(data)
+        return !config.projectsRoot
+      }
+    } catch {
+      // If config can't be read, treat as first run
+    }
+    return true
+  }
+
   setConfig(config: Partial<Config>): void {
     const current = this.getConfig()
     const updated = { ...current, ...config }

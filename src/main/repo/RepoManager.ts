@@ -26,7 +26,7 @@ export class RepoManager {
   async listRepos(): Promise<Repository[]> {
     const repos: Repository[] = []
 
-    if (!fs.existsSync(this.projectsRoot)) {
+    if (!this.projectsRoot || !fs.existsSync(this.projectsRoot)) {
       console.warn(`Projects root does not exist: ${this.projectsRoot}`)
       return repos
     }
@@ -200,7 +200,7 @@ export class RepoManager {
       this.debounceTimers.delete('__root__')
     }
 
-    if (!fs.existsSync(this.projectsRoot)) return
+    if (!this.projectsRoot || !fs.existsSync(this.projectsRoot)) return
 
     try {
       const watcher = fs.watch(this.projectsRoot, () => {

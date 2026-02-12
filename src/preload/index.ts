@@ -56,6 +56,7 @@ const api = {
     invokeIpc<{ success: boolean; error?: string }>(IPC_CHANNELS.GIT_COMMIT, repoPath, files, message),
 
   // Config operations
+  isFirstRun: () => invokeIpc<boolean>(IPC_CHANNELS.CONFIG_IS_FIRST_RUN),
   getConfig: () => invokeIpc<Record<string, unknown>>(IPC_CHANNELS.CONFIG_GET),
   setConfig: (config: Record<string, unknown>) =>
     invokeIpc<boolean>(IPC_CHANNELS.CONFIG_SET, config),

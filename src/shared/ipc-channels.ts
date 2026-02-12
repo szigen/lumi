@@ -32,6 +32,7 @@ export const IPC_CHANNELS = {
   // Config operations
   CONFIG_GET: 'config:get',
   CONFIG_SET: 'config:set',
+  CONFIG_IS_FIRST_RUN: 'config:is-first-run',
 
   // UI State operations
   UI_STATE_GET: 'ui-state:get',

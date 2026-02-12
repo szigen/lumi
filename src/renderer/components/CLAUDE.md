@@ -11,6 +11,7 @@ Each component lives in its own directory with barrel export (`index.ts`). Major
 - **Terminal** — xterm.js wrapper per session
 - **FocusMode / FocusHoverBar** — distraction-free terminal view
 - **Settings** — modal with tabbed navigation (General, Terminal, Appearance, Shortcuts)
+- **Setup** — first-run setup screen for selecting projects root folder
 - **QuitDialog** — confirmation when closing with active terminals
 - **Notifications** — toast container
 - **WorkflowPanel** — workflow management UI

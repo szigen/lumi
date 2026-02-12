@@ -1,5 +1,5 @@
 export const DEFAULT_CONFIG = {
-  projectsRoot: '~/Desktop/AiApps',
+  projectsRoot: '',
   maxTerminals: 12,
   theme: 'dark' as const,
   terminalFontSize: 13
