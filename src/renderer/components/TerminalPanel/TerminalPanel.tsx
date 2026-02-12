@@ -41,7 +41,7 @@ export default function TerminalPanel() {
       id: result.id,
       name: result.name,
       repoPath,
-      status: 'running',
+      status: 'idle',
       task: options?.task,
       isNew: result.isNew,
       createdAt: new Date()

@@ -53,6 +53,13 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     }
   }, [isActive, xtermRef])
 
+  // Notify main process of focus changes for status dot
+  useEffect(() => {
+    if (isActive) {
+      window.api.focusTerminal(terminalId)
+    }
+  }, [isActive, terminalId])
+
   return (
     <div
       className={`terminal-card ${isDragOver ? 'terminal-card--drag' : ''} ${isActive ? 'terminal-card--focused' : ''}`}
@@ -60,7 +67,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       onClick={() => setActiveTerminal(terminalId)}
     >
       <div className="terminal-card__header">
-        <StatusDot status={status === 'idle' ? 'idle' : status} />
+        <StatusDot status={status} />
         <span className="terminal-card__title">{terminal?.task || terminal?.name || 'Terminal'}</span>
         <button
           className="terminal-card__close"

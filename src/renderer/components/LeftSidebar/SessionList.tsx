@@ -35,11 +35,7 @@ export default function SessionList() {
               className={`session-item ${activeTerminalId === terminal.id ? 'session-item--active' : ''}`}
               onClick={() => setActiveTerminal(terminal.id)}
             >
-              <StatusDot
-                status={terminal.status === 'running' ? 'running' :
-                        terminal.status === 'completed' ? 'completed' :
-                        terminal.status === 'error' ? 'error' : 'idle'}
-              />
+              <StatusDot status={terminal.status} />
               <span className="session-item__name">
                 {terminal.task || terminal.name}
               </span>

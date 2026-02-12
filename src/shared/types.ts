@@ -8,7 +8,7 @@ export interface Terminal {
   id: string
   name: string
   repoPath: string
-  status: 'idle' | 'running' | 'completed' | 'error'
+  status: 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
   task?: string
   isNew?: boolean
   createdAt: Date

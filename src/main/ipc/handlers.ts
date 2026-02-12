@@ -99,6 +99,11 @@ export function setupIpcHandlers(): void {
     return terminalManager!.getOutputBuffer(terminalId)
   })
 
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_FOCUS, (_event, terminalId: string | null) => {
+    if (!terminalManager) return
+    terminalManager.setFocused(terminalId)
+  })
+
   // Repository handlers
   ipcMain.handle(IPC_CHANNELS.REPOS_LIST, async () => {
     return repoManager!.listRepos()

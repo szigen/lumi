@@ -3,8 +3,8 @@
 Type definitions and constants shared between main and renderer processes.
 
 ## Files
-- **types.ts** — core interfaces: `Terminal`, `TerminalInfo`, `Repository`, `AdditionalPath`, `Commit`, `Branch`, `Config`, `UIState`, `WorkLog`, `FileTreeNode`, `FileChange`
-- **ipc-channels.ts** — centralized IPC channel name constants (`IPC_CHANNELS` object + `IpcChannel` type)
+- **types.ts** — core interfaces: `Terminal`, `TerminalInfo`, `Repository`, `AdditionalPath`, `Commit`, `Branch`, `Config`, `UIState`, `WorkLog`, `FileTreeNode`, `FileChange`. Terminal.status uses 6 states: idle, working, waiting-unseen, waiting-focused, waiting-seen, error
+- **ipc-channels.ts** — centralized IPC channel name constants (`IPC_CHANNELS` object + `IpcChannel` type). Includes `TERMINAL_STATUS` (main→renderer status change) and `TERMINAL_FOCUS` (renderer→main focus notification)
 - **action-types.ts** — `Action`, `ActionStep`, `ClaudeConfig` types
 - **persona-types.ts** — `Persona` type definition
 - **constants.ts** — `DEFAULT_CONFIG`, `DEFAULT_UI_STATE`

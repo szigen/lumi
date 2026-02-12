@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { Terminal as XTerm } from '@xterm/xterm'
 import { useTerminalStore } from '../../../stores/useTerminalStore'
 import { writeChunked } from '../utils'
+import type { Terminal } from '../../../../shared/types'
 
 export function useTerminalIPC(
   terminalId: string,
@@ -9,7 +10,7 @@ export function useTerminalIPC(
 ) {
   const { updateTerminal } = useTerminalStore()
 
-  // Handle real-time output and exit events
+  // Handle real-time output, exit, and status events
   useEffect(() => {
     const handleOutput = (id: string, data: string) => {
       if (id === terminalId && xtermRef.current) {
@@ -17,20 +18,26 @@ export function useTerminalIPC(
       }
     }
 
-    const handleExit = (id: string, code: number) => {
+    const handleExit = (id: string, _code: number) => {
       if (id === terminalId) {
-        updateTerminal(terminalId, {
-          status: code === 0 ? 'completed' : 'error'
-        })
+        updateTerminal(terminalId, { status: 'error' })
+      }
+    }
+
+    const handleStatus = (id: string, status: string) => {
+      if (id === terminalId) {
+        updateTerminal(terminalId, { status: status as Terminal['status'] })
       }
     }
 
     const cleanupOutput = window.api.onTerminalOutput(handleOutput)
     const cleanupExit = window.api.onTerminalExit(handleExit)
+    const cleanupStatus = window.api.onTerminalStatus(handleStatus)
 
     return () => {
       cleanupOutput()
       cleanupExit()
+      cleanupStatus()
     }
   }, [terminalId, updateTerminal, xtermRef])
 

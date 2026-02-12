@@ -6,6 +6,7 @@ import { OutputBuffer } from './OutputBuffer'
 import type { ManagedTerminal, SpawnResult, ITerminalNotifier, ICodenameTracker } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { generateCodename } from './codenames'
+import { StatusStateMachine } from './StatusStateMachine'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
@@ -43,16 +44,34 @@ export class TerminalManager extends EventEmitter {
       env: process.env as Record<string, string>
     })
 
+    const statusMachine = new StatusStateMachine()
+
     const terminal: ManagedTerminal = {
       id,
       name,
       pty: ptyProcess,
       repoPath,
       createdAt: new Date(),
-      outputBuffer: new OutputBuffer()
+      outputBuffer: new OutputBuffer(),
+      statusMachine
     }
 
+    statusMachine.setOnChange((status) => {
+      if (!window.isDestroyed()) {
+        window.webContents.send(IPC_CHANNELS.TERMINAL_STATUS, id, status)
+      }
+    })
+
     ptyProcess.onData((data) => {
+      // Parse OSC title sequences: ]0;{title}
+      // eslint-disable-next-line no-control-regex
+      const titleMatch = data.match(/\]0;([^\x07\x1b]+)/)
+      if (titleMatch) {
+        const title = titleMatch[1]
+        const isWorking = !title.startsWith('\u2733')
+        statusMachine.onTitleChange(isWorking)
+      }
+
       terminal.outputBuffer.append(data)
 
       if (!window.isDestroyed()) {
@@ -63,6 +82,7 @@ export class TerminalManager extends EventEmitter {
     })
 
     ptyProcess.onExit(({ exitCode }) => {
+      terminal.statusMachine.onExit()
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       }
@@ -128,6 +148,16 @@ export class TerminalManager extends EventEmitter {
       createdAt: t.createdAt.toISOString(),
       task: t.task
     }))
+  }
+
+  setFocused(terminalId: string | null): void {
+    for (const [id, terminal] of this.terminals) {
+      if (id === terminalId) {
+        terminal.statusMachine.onFocus()
+      } else {
+        terminal.statusMachine.onBlur()
+      }
+    }
   }
 
   getOutputBuffer(terminalId: string): string | null {

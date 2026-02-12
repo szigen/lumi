@@ -38,7 +38,7 @@ async function reconcileTerminals(
         id: mt.id,
         name: mt.name,
         repoPath: mt.repoPath,
-        status: 'running',
+        status: 'idle',
         task: mt.task,
         createdAt: new Date(mt.createdAt)
       })

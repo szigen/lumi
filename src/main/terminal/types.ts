@@ -1,6 +1,7 @@
 import type { IPty } from 'node-pty'
 import type { BrowserWindow } from 'electron'
 import type { OutputBuffer } from './OutputBuffer'
+import type { StatusStateMachine } from './StatusStateMachine'
 
 export type { SpawnResult } from '../../shared/types'
 
@@ -12,6 +13,7 @@ export interface ManagedTerminal {
   createdAt: Date
   task?: string
   outputBuffer: OutputBuffer
+  statusMachine: StatusStateMachine
 }
 
 /** Abstracts notification dispatch so TerminalManager doesn't depend on concrete NotificationManager */
