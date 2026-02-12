@@ -118,6 +118,14 @@ const api = {
     ipcRenderer.send(IPC_CHANNELS.APP_QUIT_CONFIRMED)
   },
 
+  // PTY Inspector
+  setPtyInspectorEnabled: (enabled: boolean) =>
+    invokeIpc<void>(IPC_CHANNELS.PTY_INSPECTOR_SET_ENABLED, enabled),
+  getPtyInspectorLogPath: () =>
+    invokeIpc<string | null>(IPC_CHANNELS.PTY_INSPECTOR_LOG_PATH),
+  getPtyInspectorStats: () =>
+    invokeIpc<{ activeStreams: number; totalChunks: number }>(IPC_CHANNELS.PTY_INSPECTOR_STATS),
+
   // Shortcut events from menu
   onShortcut: (callback: (action: string) => void) =>
     createIpcListener<[string]>('shortcut', callback)

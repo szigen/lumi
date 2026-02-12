@@ -14,6 +14,7 @@ import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
 import { FocusExitControl } from '../FocusMode'
 import { SetupScreen } from '../Setup'
+import { PtyInspector } from '../PtyInspector'
 
 export default function Layout() {
   useKeyboardShortcuts()
@@ -165,6 +166,7 @@ export default function Layout() {
       <SettingsModal />
       <QuitDialog />
       <ToastContainer />
+      <PtyInspector />
     </div>
   )
 }

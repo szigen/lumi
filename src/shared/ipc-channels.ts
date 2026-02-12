@@ -72,6 +72,11 @@ export const IPC_CHANNELS = {
   // Collection operations
   COLLECTION_GET: 'collection:get',
 
+  // PTY Inspector
+  PTY_INSPECTOR_SET_ENABLED: 'pty-inspector:set-enabled',
+  PTY_INSPECTOR_LOG_PATH: 'pty-inspector:log-path',
+  PTY_INSPECTOR_STATS: 'pty-inspector:stats',
+
   // App lifecycle
   APP_CONFIRM_QUIT: 'app:confirm-quit',
   APP_QUIT_CONFIRMED: 'app:quit-confirmed'

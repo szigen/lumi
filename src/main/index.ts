@@ -129,6 +129,12 @@ function createMenu(): void {
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-focus-mode')
         },
         { type: 'separator' },
+        {
+          label: 'PTY Inspector',
+          accelerator: 'CmdOrCtrl+Shift+D',
+          click: () => mainWindow?.webContents.send('shortcut', 'toggle-pty-inspector')
+        },
+        { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },
         { role: 'toggleDevTools' },

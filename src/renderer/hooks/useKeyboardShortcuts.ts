@@ -69,6 +69,9 @@ export function useKeyboardShortcuts() {
         case 'toggle-focus-mode':
           useAppStore.getState().toggleFocusMode()
           break
+        case 'toggle-pty-inspector':
+          window.dispatchEvent(new CustomEvent('toggle-pty-inspector'))
+          break
       }
     })
     return cleanup
