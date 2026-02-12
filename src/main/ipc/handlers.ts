@@ -2,6 +2,7 @@ import { ipcMain, BrowserWindow, shell, dialog } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
+import { NotificationManager } from '../notification/NotificationManager'
 import * as path from 'path'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { ActionStore } from '../action/ActionStore'
@@ -34,7 +35,8 @@ export function getRepoManager(): RepoManager | null {
 export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
-  terminalManager = new TerminalManager(config.maxTerminals, configManager)
+  const notificationManager = new NotificationManager()
+  terminalManager = new TerminalManager(config.maxTerminals, notificationManager, configManager)
   repoManager = new RepoManager(config.projectsRoot, config.additionalPaths || [])
 
   actionStore = new ActionStore()

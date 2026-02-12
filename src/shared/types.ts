@@ -1,3 +1,9 @@
+export interface SpawnResult {
+  id: string
+  name: string
+  isNew: boolean
+}
+
 export interface Terminal {
   id: string
   name: string

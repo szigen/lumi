@@ -11,6 +11,7 @@ State management for the renderer process.
 ## Rules
 - Main process is source of truth for terminal data — renderer syncs via `syncFromMain()`
 - `syncFromMain()` guards against concurrent calls with `syncing` flag
+- `syncFromMain()` logic decomposed into pure helper functions: `reconcileTerminals`, `resolveActiveTerminal`, `rebuildLastActiveByRepo`
 - Tab switching auto-selects the last active terminal for that repo (`lastActiveByRepo` map)
 - Closing a tab kills all terminals for that repo and unwatches file tree
 - UI state persists to main process via `saveUIState()` on every layout change

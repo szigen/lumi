@@ -8,7 +8,7 @@ Each component lives in its own directory with barrel export (`index.ts`). Major
 - **LeftSidebar** — quick actions, session list, codename collection progress, project file tree, context menu
 - **RightSidebar** — branch list, file changes, commit tree
 - **TerminalPanel** — terminal grid container, persona dropdown for spawn
-- **Terminal** — xterm.js wrapper per session
+- **Terminal** — xterm.js wrapper per session. Logic split into custom hooks (`hooks/`), constants (`constants.ts`), and utils (`utils.ts`)
 - **FocusMode / FocusHoverBar** — distraction-free terminal view
 - **Settings** — modal with tabbed navigation (General, Terminal, Appearance, Shortcuts). GeneralSection delegates Additional Paths CRUD to `AdditionalPathsField` child component.
 - **Setup** — first-run setup screen for selecting projects root folder

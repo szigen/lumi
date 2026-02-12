@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Terminal } from '../../shared/types'
+import type { Terminal, TerminalInfo } from '../../shared/types'
 
 interface TerminalState {
   terminals: Map<string, Terminal>
@@ -16,6 +16,71 @@ interface TerminalState {
   getTerminalsByRepo: (repoPath: string) => Terminal[]
   getTerminalCount: () => number
   syncFromMain: () => Promise<void>
+}
+
+/** Reconcile main process terminal list with renderer state */
+async function reconcileTerminals(
+  mainTerminals: TerminalInfo[],
+  currentTerminals: Map<string, Terminal>,
+  currentOutputs: Map<string, string>
+) {
+  const terminals = new Map<string, Terminal>()
+  const outputs = new Map<string, string>()
+
+  for (const mt of mainTerminals) {
+    const existing = currentTerminals.get(mt.id)
+    if (existing) {
+      terminals.set(mt.id, existing)
+      outputs.set(mt.id, currentOutputs.get(mt.id) || '')
+    } else {
+      const buffer = await window.api.getTerminalBuffer(mt.id)
+      terminals.set(mt.id, {
+        id: mt.id,
+        name: mt.name,
+        repoPath: mt.repoPath,
+        status: 'running',
+        task: mt.task,
+        createdAt: new Date(mt.createdAt)
+      })
+      outputs.set(mt.id, buffer || '')
+    }
+  }
+
+  return { terminals, outputs }
+}
+
+/** Pick the active terminal: keep current if still valid, otherwise pick first available */
+function resolveActiveTerminal(
+  currentActive: string | null,
+  validIds: Set<string>,
+  terminals: Map<string, Terminal>
+): string | null {
+  if (currentActive && validIds.has(currentActive)) return currentActive
+  return terminals.size > 0 ? terminals.keys().next().value ?? null : null
+}
+
+/** Rebuild per-repo last-active map, preserving valid previous selections */
+function rebuildLastActiveByRepo(
+  terminals: Map<string, Terminal>,
+  previousLastActive: Map<string, string>
+): Map<string, string> {
+  const lastActive = new Map<string, string>()
+
+  // Default: first terminal per repo
+  for (const [id, t] of terminals) {
+    if (!lastActive.has(t.repoPath)) {
+      lastActive.set(t.repoPath, id)
+    }
+  }
+
+  // Preserve valid previous selections
+  for (const [repo, termId] of previousLastActive) {
+    if (terminals.has(termId)) {
+      lastActive.set(repo, termId)
+    }
+  }
+
+  return lastActive
 }
 
 export const useTerminalStore = create<TerminalState>((set, get) => ({
@@ -121,62 +186,25 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     try {
       const mainTerminals = await window.api.listTerminals()
       const mainIds = new Set(mainTerminals.map(t => t.id))
-      const currentTerminals = get().terminals
-      const currentOutputs = get().outputs
 
-      const newTerminals = new Map<string, Terminal>()
-      const newOutputs = new Map<string, string>()
+      const { terminals, outputs } = await reconcileTerminals(
+        mainTerminals,
+        get().terminals,
+        get().outputs
+      )
 
-      // Add/update terminals that exist in main
-      for (const mt of mainTerminals) {
-        const existing = currentTerminals.get(mt.id)
-        if (existing) {
-          // Keep existing renderer-side state (status, isNew, etc.)
-          newTerminals.set(mt.id, existing)
-          newOutputs.set(mt.id, currentOutputs.get(mt.id) || '')
-        } else {
-          // Terminal exists in main but not in renderer — reconnect
-          const buffer = await window.api.getTerminalBuffer(mt.id)
-          newTerminals.set(mt.id, {
-            id: mt.id,
-            name: mt.name,
-            repoPath: mt.repoPath,
-            status: 'running',
-            task: mt.task,
-            createdAt: new Date(mt.createdAt)
-          })
-          newOutputs.set(mt.id, buffer || '')
-        }
-      }
+      const activeTerminalId = resolveActiveTerminal(
+        get().activeTerminalId,
+        mainIds,
+        terminals
+      )
 
-      // Terminals that exist in renderer but not in main are stale — remove them
+      const lastActiveByRepo = rebuildLastActiveByRepo(
+        terminals,
+        get().lastActiveByRepo
+      )
 
-      // Fix active terminal if it was removed
-      const currentActive = get().activeTerminalId
-      const newActive = currentActive && mainIds.has(currentActive)
-        ? currentActive
-        : (newTerminals.size > 0 ? newTerminals.keys().next().value ?? null : null)
-
-      // Rebuild lastActiveByRepo
-      const newLastActive = new Map<string, string>()
-      for (const [id, t] of newTerminals) {
-        if (!newLastActive.has(t.repoPath)) {
-          newLastActive.set(t.repoPath, id)
-        }
-      }
-      // Preserve current active selections where still valid
-      for (const [repo, termId] of get().lastActiveByRepo) {
-        if (newTerminals.has(termId)) {
-          newLastActive.set(repo, termId)
-        }
-      }
-
-      set({
-        terminals: newTerminals,
-        outputs: newOutputs,
-        activeTerminalId: newActive,
-        lastActiveByRepo: newLastActive
-      })
+      set({ terminals, outputs, activeTerminalId, lastActiveByRepo })
     } finally {
       set({ syncing: false })
     }
