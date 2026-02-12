@@ -412,8 +412,6 @@ export function setupIpcHandlers(): void {
       return { started: false, error: 'Too many concurrent Claude processes. Please wait for one to finish.' }
     }
 
-    console.log('[CLAUDE-STREAM] Starting stream for bug:', bugId)
-
     const proc = spawn('claude', ['-p', '--verbose', '--output-format', 'stream-json', '--include-partial-messages'], {
       cwd: repoPath,
       env: process.env
@@ -512,17 +510,16 @@ export function setupIpcHandlers(): void {
 
     proc.stderr.on('data', (data: Buffer) => {
       error += data.toString()
-      console.log('[CLAUDE-STREAM] stderr:', data.toString().slice(0, 200))
+      console.error('[CLAUDE-STREAM] stderr:', data.toString().slice(0, 200))
     })
 
     proc.on('error', (err: Error) => {
-      console.log('[CLAUDE-STREAM] spawn error:', err.message)
+      console.error('[CLAUDE-STREAM] spawn error:', err.message)
       sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, err.message)
       cleanup()
     })
 
     proc.on('close', (code: number) => {
-      console.log('[CLAUDE-STREAM] Process closed with code:', code, 'accumulated length:', accumulated.length)
       if (!killed) {
         if (code === 0) {
           sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, accumulated.trim())
