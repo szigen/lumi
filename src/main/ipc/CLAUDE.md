@@ -3,13 +3,13 @@
 Central registration point for all main process IPC handlers.
 
 ## Architecture
-- `setupIpcHandlers()` initializes all managers (TerminalManager, RepoManager, ConfigManager, ActionStore, ActionEngine, PersonaStore) and registers all `ipcMain.handle` calls
+- `setupIpcHandlers()` initializes all managers (TerminalManager, RepoManager, ConfigManager, ActionStore, ActionEngine, PersonaStore, SystemChecker) and registers all `ipcMain.handle` calls
 - `setMainWindow()` and getter functions expose managers to `index.ts`
 - All channel names come from `src/shared/ipc-channels.ts`
 
 ## Rules
 - Every new IPC handler must be registered here and its channel constant added to `ipc-channels.ts`
-- Handler groups: Terminal, Repository, Git, Config, UI State, Window, Dialog, Context Menu, Actions, Personas, Collection
+- Handler groups: Terminal, Repository, Git, Config, UI State, Window, Dialog, Context Menu, System Checks, Actions, Personas, Collection
 - Change events (`ACTIONS_CHANGED`, `PERSONAS_CHANGED`, `REPOS_CHANGED`) are sent via `mainWindow.webContents.send()`
 
 ## Watch Out

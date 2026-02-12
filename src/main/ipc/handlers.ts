@@ -10,6 +10,7 @@ import { ActionEngine } from '../action/ActionEngine'
 import { CREATE_ACTION_PROMPT } from '../action/create-action-prompt'
 import { buildClaudeCommand } from '../action/build-claude-command'
 import { PersonaStore } from '../persona/PersonaStore'
+import { SystemChecker } from '../system/SystemChecker'
 import { TOTAL_CODENAMES } from '../terminal/codenames'
 
 let mainWindow: BrowserWindow | null = null
@@ -43,6 +44,8 @@ export function setupIpcHandlers(): void {
   actionEngine = new ActionEngine(terminalManager)
 
   personaStore = new PersonaStore()
+
+  const systemChecker = new SystemChecker()
 
   // Send action changes to renderer
   actionStore.setOnChange(() => {
@@ -242,6 +245,15 @@ export function setupIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.COLLECTION_GET, async () => {
     const discovered = configManager.getDiscoveredCodenames()
     return { discovered: discovered.length, total: TOTAL_CODENAMES }
+  })
+
+  // System check handlers
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK_RUN, async () => {
+    return systemChecker.runAll()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_CHECK_FIX, async (_, checkId: string) => {
+    return systemChecker.fix(checkId)
   })
 
   // Action handlers

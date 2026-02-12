@@ -1618,6 +1618,31 @@ a {
   transition: width 0.05s linear;
 }
 
+/* Toast type modifiers */
+.toast--error {
+  border-left-color: var(--accent-error);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+.toast--error .toast__icon { color: var(--accent-error); animation: none; }
+.toast--error .toast__progress { background: var(--accent-error); }
+.toast--error:hover { border-color: rgba(248, 113, 113, 0.5); }
+
+.toast--success {
+  border-left-color: var(--accent-success);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+.toast--success .toast__icon { color: var(--accent-success); animation: none; }
+.toast--success .toast__progress { background: var(--accent-success); }
+.toast--success:hover { border-color: rgba(74, 222, 128, 0.5); }
+
+.toast--info {
+  border-left-color: var(--accent-cyan);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+.toast--info .toast__icon { color: var(--accent-cyan); animation: none; }
+.toast--info .toast__progress { background: var(--accent-cyan); }
+.toast--info:hover { border-color: rgba(34, 211, 238, 0.5); }
+
 /* === XTERM === */
 .xterm {
   padding: 0;

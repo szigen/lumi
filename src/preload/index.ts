@@ -111,6 +111,12 @@ const api = {
   getCollection: () =>
     invokeIpc<{ discovered: number; total: number }>(IPC_CHANNELS.COLLECTION_GET),
 
+  // System check operations
+  runSystemChecks: () =>
+    invokeIpc<Array<{ id: string; label: string; status: string; message: string; fixable?: boolean }>>(IPC_CHANNELS.SYSTEM_CHECK_RUN),
+  fixSystemCheck: (checkId: string) =>
+    invokeIpc<{ id: string; label: string; status: string; message: string; fixable?: boolean }>(IPC_CHANNELS.SYSTEM_CHECK_FIX, checkId),
+
   // Dialog operations
   openFolderDialog: () => invokeIpc<string | null>(IPC_CHANNELS.DIALOG_OPEN_FOLDER),
 

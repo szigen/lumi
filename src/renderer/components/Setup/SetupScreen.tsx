@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { FolderOpen } from 'lucide-react'
-import { Logo } from '../icons'
+import { useState, useCallback } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import { onboardingSteps } from './steps'
 import './SetupScreen.css'
 
 interface Props {
@@ -9,79 +8,68 @@ interface Props {
 }
 
 export default function SetupScreen({ onComplete }: Props) {
-  const [projectsRoot, setProjectsRoot] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
 
-  const handleBrowse = async () => {
-    const path = await window.api.openFolderDialog()
-    if (path) {
-      setProjectsRoot(path)
-    }
-  }
+  const step = onboardingSteps[currentStep]
+  const StepComponent = step.component
 
-  const handleSubmit = async () => {
-    if (!projectsRoot.trim() || isSubmitting) return
-    setIsSubmitting(true)
-    try {
-      await window.api.setConfig({ projectsRoot: projectsRoot.trim() })
+  const handleNext = useCallback(() => {
+    if (currentStep < onboardingSteps.length - 1) {
+      setCurrentStep((s) => s + 1)
+    } else {
       onComplete()
-    } catch (error) {
-      console.error('Failed to save config:', error)
-      setIsSubmitting(false)
     }
-  }
+  }, [currentStep, onComplete])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSubmit()
+  const handleBack = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep((s) => s - 1)
     }
-  }
+  }, [currentStep])
 
   return (
-    <div className="setup-screen">
-      <motion.div
-        className="setup-screen__card"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-      >
-        <Logo size={48} className="setup-screen__logo" />
-        <h1 className="setup-screen__title">Welcome to AI Orchestrator</h1>
-        <p className="setup-screen__desc">
-          Select the folder where your project repositories are located.
-        </p>
-
-        <div className="setup-screen__field">
-          <label className="setup-screen__label">Projects Root</label>
-          <div className="setup-screen__input-row">
-            <input
-              type="text"
-              className="setup-screen__input"
-              placeholder="~/Projects"
-              value={projectsRoot}
-              onChange={(e) => setProjectsRoot(e.target.value)}
-              onKeyDown={handleKeyDown}
-              autoFocus
-            />
-            <button
-              className="setup-screen__browse-btn"
-              onClick={handleBrowse}
-              type="button"
+    <div className="onboarding">
+      <div className="onboarding__stepper">
+        {onboardingSteps.map((s, i) => (
+          <div key={s.id} className="onboarding__stepper-item">
+            {i > 0 && (
+              <div
+                className={`onboarding__stepper-line ${i <= currentStep ? 'onboarding__stepper-line--active' : ''}`}
+              />
+            )}
+            <div
+              className={`onboarding__step-dot ${
+                i < currentStep
+                  ? 'onboarding__step-dot--done'
+                  : i === currentStep
+                    ? 'onboarding__step-dot--active'
+                    : ''
+              }`}
             >
-              <FolderOpen size={16} />
-              Browse
-            </button>
+              {i + 1}
+            </div>
+            <span
+              className={`onboarding__step-label ${
+                i === currentStep ? 'onboarding__step-label--active' : ''
+              }`}
+            >
+              {s.label}
+            </span>
           </div>
-        </div>
+        ))}
+      </div>
 
-        <button
-          className="setup-screen__submit-btn"
-          onClick={handleSubmit}
-          disabled={!projectsRoot.trim() || isSubmitting}
-        >
-          {isSubmitting ? 'Setting up...' : 'Get Started'}
-        </button>
-      </motion.div>
+      <div className="onboarding__content">
+        <AnimatePresence mode="wait">
+          <StepComponent
+            key={step.id}
+            onNext={handleNext}
+            onBack={handleBack}
+            isFirst={currentStep === 0}
+            isLast={currentStep === onboardingSteps.length - 1}
+          />
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

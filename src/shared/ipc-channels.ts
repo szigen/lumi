@@ -75,6 +75,10 @@ export const IPC_CHANNELS = {
   // Collection operations
   COLLECTION_GET: 'collection:get',
 
+  // System checks
+  SYSTEM_CHECK_RUN: 'system:check-run',
+  SYSTEM_CHECK_FIX: 'system:check-fix',
+
   // App lifecycle
   APP_CONFIRM_QUIT: 'app:confirm-quit',
   APP_QUIT_CONFIRMED: 'app:quit-confirmed'

@@ -9,13 +9,11 @@ export default function ToastContainer() {
   const { terminals, setActiveTerminal } = useTerminalStore()
   const { openTabs, setActiveTab } = useAppStore()
 
-  const handleToastClick = (toastId: string, terminalId: string, repoName: string) => {
-    // Switch to the repo tab if not already active
-    if (openTabs.includes(repoName)) {
-      setActiveTab(repoName)
+  const handleBellClick = (toastId: string, terminalId: string, title: string) => {
+    if (openTabs.includes(title)) {
+      setActiveTab(title)
     }
 
-    // Switch to the terminal
     if (terminals.has(terminalId)) {
       setActiveTerminal(terminalId)
     }
@@ -31,7 +29,11 @@ export default function ToastContainer() {
             key={toast.id}
             toast={toast}
             onClose={() => removeToast(toast.id)}
-            onClick={() => handleToastClick(toast.id, toast.terminalId, toast.repoName)}
+            onClick={
+              toast.type === 'bell' && toast.terminalId
+                ? () => handleBellClick(toast.id, toast.terminalId!, toast.title)
+                : undefined
+            }
           />
         ))}
       </AnimatePresence>
