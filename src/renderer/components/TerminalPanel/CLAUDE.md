@@ -15,6 +15,7 @@ Grid container for terminal cards with spawn controls.
 - `canSpawnTerminal()` — shared validation, checks count vs `DEFAULT_CONFIG.maxTerminals`
 - `registerSpawnedTerminal()` — shared callback: adds to store, optionally runs initial command
 - Grid columns cycle: auto → 2 → 3 (toggle button)
+- Header is hidden when `focusModeActive` is true — controls move to FocusExitControl
 - All terminals rendered but filtered by `display: none` for inactive repos (preserves xterm state across tab switches)
 
 ## Watch Out

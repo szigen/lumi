@@ -2242,7 +2242,9 @@ a {
   height: 52px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding-left: 80px;
+  padding-right: var(--spacing-md);
   background: linear-gradient(to bottom, rgba(18, 18, 31, 0.95), transparent);
   backdrop-filter: blur(8px);
   z-index: 100;
@@ -2251,6 +2253,42 @@ a {
 
 .focus-exit-control > * {
   -webkit-app-region: no-drag;
+}
+
+.focus-exit-control__left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.focus-exit-control__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.focus-exit-control__count {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+}
+
+.focus-exit-control__grid-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.focus-exit-control__grid-toggle:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-primary);
 }
 
 .focus-exit-control__btn {
@@ -2267,15 +2305,6 @@ a {
 .focus-exit-control__btn:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);
-}
-
-.focus-exit-control__hint {
-  font-size: 10px;
-  padding: 1px 6px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
 }
 
 /* === BUG TRACKER === */

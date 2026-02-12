@@ -23,7 +23,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 
 export default function TerminalPanel() {
   const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
-  const { activeTab, gridColumns, setGridColumns } = useAppStore()
+  const { activeTab, gridColumns, setGridColumns, focusModeActive } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
@@ -131,7 +131,7 @@ export default function TerminalPanel() {
 
   return (
     <div className="terminal-panel">
-      {repoTerminals.length > 0 && (
+      {repoTerminals.length > 0 && !focusModeActive && (
         <div className="terminal-panel__header">
           <h2 className="terminal-panel__title">Terminals</h2>
           <span className="terminal-panel__count">

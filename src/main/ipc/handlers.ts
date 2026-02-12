@@ -233,6 +233,10 @@ export function setupIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle(IPC_CHANNELS.WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY, (_event, visible: boolean) => {
+    mainWindow?.setWindowButtonVisibility(visible)
+  })
+
   // Dialog handlers
   ipcMain.handle(IPC_CHANNELS.DIALOG_OPEN_FOLDER, async () => {
     if (!mainWindow) return null
