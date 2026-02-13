@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow, shell, dialog } from 'electron'
+import { isMac } from '../platform'
 import { TerminalManager } from '../terminal/TerminalManager'
 import { RepoManager } from '../repo/RepoManager'
 import { ConfigManager } from '../config/ConfigManager'
@@ -234,7 +235,9 @@ export function setupIpcHandlers(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY, (_event, visible: boolean) => {
-    mainWindow?.setWindowButtonVisibility(visible)
+    if (isMac) {
+      mainWindow?.setWindowButtonVisibility(visible)
+    }
   })
 
   // Dialog handlers
@@ -257,7 +260,7 @@ export function setupIpcHandlers(): void {
   )
 
   ipcMain.handle(
-    IPC_CHANNELS.CONTEXT_REVEAL_IN_FINDER,
+    IPC_CHANNELS.CONTEXT_REVEAL_IN_FILE_MANAGER,
     async (_, repoPath: string, relativePath: string) => {
       const absolutePath = path.join(repoPath, relativePath)
       shell.showItemInFolder(absolutePath)

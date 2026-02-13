@@ -1,10 +1,10 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import * as yaml from 'js-yaml'
 import { app } from 'electron'
 import type { Persona } from '../../shared/persona-types'
 import type { ClaudeConfig } from '../../shared/action-types'
+import { getConfigDir } from '../platform'
 
 export class PersonaStore {
   private userDir: string
@@ -14,7 +14,7 @@ export class PersonaStore {
   private onChange: (() => void) | null = null
 
   constructor() {
-    this.userDir = path.join(os.homedir(), '.ai-orchestrator', 'personas')
+    this.userDir = path.join(getConfigDir(), 'personas')
     this.ensureDir(this.userDir)
     this.seedDefaults()
     this.userPersonas = this.loadDir(this.userDir, 'user')

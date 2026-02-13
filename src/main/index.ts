@@ -5,6 +5,7 @@ import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
+import { getWindowConfig, isMac } from './platform'
 
 const configManager = new ConfigManager()
 let mainWindow: BrowserWindow | null = null
@@ -42,8 +43,7 @@ function createWindow(): void {
       nodeIntegration: false,
       contextIsolation: true
     },
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 15, y: 19 }
+    ...getWindowConfig()
   })
 
   // Restore maximized state after window creation
@@ -113,24 +113,26 @@ function createWindow(): void {
 
 function createMenu(): void {
   const template: Electron.MenuItemConstructorOptions[] = [
-    {
-      label: app.name,
-      submenu: [
-        { role: 'about' },
-        { type: 'separator' },
-        { role: 'services' },
-        { type: 'separator' },
-        { role: 'hide' },
-        { role: 'hideOthers' },
-        { role: 'unhide' },
-        { type: 'separator' },
-        {
-          label: 'Quit',
-          accelerator: 'CmdOrCtrl+Q',
-          click: () => mainWindow?.close()
-        }
-      ]
-    },
+    ...(isMac
+      ? [{
+          label: app.name,
+          submenu: [
+            { role: 'about' as const },
+            { type: 'separator' as const },
+            { role: 'services' as const },
+            { type: 'separator' as const },
+            { role: 'hide' as const },
+            { role: 'hideOthers' as const },
+            { role: 'unhide' as const },
+            { type: 'separator' as const },
+            {
+              label: 'Quit',
+              accelerator: 'CmdOrCtrl+Q',
+              click: () => mainWindow?.close()
+            }
+          ]
+        }]
+      : []),
     {
       label: 'File',
       submenu: [
@@ -149,19 +151,29 @@ function createMenu(): void {
           label: 'Open Repository',
           accelerator: 'CmdOrCtrl+O',
           click: () => mainWindow?.webContents.send('shortcut', 'open-repo-selector')
-        }
+        },
+        ...(!isMac
+          ? [
+              { type: 'separator' as const },
+              {
+                label: 'Quit',
+                accelerator: 'CmdOrCtrl+Q',
+                click: () => mainWindow?.close()
+              }
+            ]
+          : [])
       ]
     },
     {
       label: 'Edit',
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' }
+        { role: 'undo' as const },
+        { role: 'redo' as const },
+        { type: 'separator' as const },
+        { role: 'cut' as const },
+        { role: 'copy' as const },
+        { role: 'paste' as const },
+        { role: 'selectAll' as const }
       ]
     },
     {
@@ -205,8 +217,14 @@ function createMenu(): void {
       submenu: [
         { role: 'minimize' },
         { role: 'zoom' },
-        { type: 'separator' },
-        { role: 'front' }
+        ...(isMac
+          ? [
+              { type: 'separator' as const },
+              { role: 'front' as const }
+            ]
+          : [
+              { role: 'close' as const }
+            ])
       ]
     }
   ]
@@ -259,7 +277,7 @@ app.on('will-quit', () => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (!isMac) {
     app.quit()
   }
 })

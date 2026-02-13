@@ -22,4 +22,4 @@ Distraction-free terminal view with hover-activated controls.
 - `useRepoStore` — `getRepoByName`
 
 ## IPC Dependencies
-- `WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY` — controls macOS window button visibility
+- `WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY` — controls macOS window button visibility (guarded on main process — no-op on Windows/Linux)

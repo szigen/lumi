@@ -4,6 +4,9 @@ import { IPC_CHANNELS } from '../shared/ipc-channels'
 import type { SpawnResult } from '../main/terminal/types'
 
 const api = {
+  // Platform info
+  platform: process.platform,
+
   // Terminal operations
   spawnTerminal: (repoPath: string, task?: string) =>
     invokeIpc<SpawnResult | null>(IPC_CHANNELS.TERMINAL_SPAWN, repoPath, task),
@@ -74,8 +77,8 @@ const api = {
   // Context menu operations
   deleteFile: (repoPath: string, relativePath: string) =>
     invokeIpc<void>(IPC_CHANNELS.CONTEXT_DELETE_FILE, repoPath, relativePath),
-  revealInFinder: (repoPath: string, relativePath: string) =>
-    invokeIpc<void>(IPC_CHANNELS.CONTEXT_REVEAL_IN_FINDER, repoPath, relativePath),
+  revealInFileManager: (repoPath: string, relativePath: string) =>
+    invokeIpc<void>(IPC_CHANNELS.CONTEXT_REVEAL_IN_FILE_MANAGER, repoPath, relativePath),
 
   // Action operations
   getActions: (repoPath?: string) =>

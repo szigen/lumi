@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import * as yaml from 'js-yaml'
 import { app } from 'electron'
 import type { Action } from '../../shared/action-types'
+import { getConfigDir } from '../platform'
 
 const MAX_HISTORY = 20
 
@@ -17,7 +17,7 @@ export class ActionStore {
   private defaultIds: Set<string> = new Set()
 
   constructor() {
-    this.userDir = path.join(os.homedir(), '.ai-orchestrator', 'actions')
+    this.userDir = path.join(getConfigDir(), 'actions')
     this.historyDir = path.join(this.userDir, '.history')
     this.ensureDir(this.userDir)
     this.ensureDir(this.historyDir)

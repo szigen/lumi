@@ -9,6 +9,7 @@ Secure IPC bridge between main and renderer via `contextBridge`.
 
 ## Rules
 - `nodeIntegration: false`, `contextIsolation: true` — only `window.api` is accessible from renderer
+- `window.api.platform` exposes `process.platform` to renderer for platform-conditional UI
 - Event listeners use `createIpcListener` which returns a cleanup function
 - Every new IPC channel needs a corresponding method added here
 

@@ -16,4 +16,6 @@ Top bar with repo tabs, repo selector dropdown, and window controls.
 - Click-outside detection needs both trigger ref and dropdown ref to be valid
 - RepoTab close uses `e.stopPropagation()` to prevent tab selection when closing
 - Listens for `open-repo-selector` event (triggered by Cmd+O shortcut)
-- macOS: 80px left padding for traffic lights, `-webkit-app-region: drag` on header
+- Header padding is platform-conditional: 80px on macOS (via `body.platform-darwin .header` CSS), 12px default on Windows/Linux
+- `-webkit-app-region: drag` on header
+- Focus Mode tooltip shows platform-aware shortcut (macOS: ⌘⇧F, others: Ctrl+Shift+F)

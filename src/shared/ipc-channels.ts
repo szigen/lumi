@@ -47,7 +47,7 @@ export const IPC_CHANNELS = {
 
   // Context menu operations
   CONTEXT_DELETE_FILE: 'context:delete-file',
-  CONTEXT_REVEAL_IN_FINDER: 'context:reveal-in-finder',
+  CONTEXT_REVEAL_IN_FILE_MANAGER: 'context:reveal-in-file-manager',
 
   // Window operations
   WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize',

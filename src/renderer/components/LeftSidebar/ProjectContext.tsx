@@ -136,10 +136,12 @@ export default function ProjectContext() {
 
     if (activeRepoPath) {
       items.push({
-        label: 'Reveal in Finder',
+        label: window.api.platform === 'darwin' ? 'Reveal in Finder'
+              : window.api.platform === 'win32' ? 'Reveal in File Explorer'
+              : 'Reveal in File Manager',
         icon: <FolderOpen size={14} />,
         onClick: () => {
-          window.api.revealInFinder(activeRepoPath, node.path)
+          window.api.revealInFileManager(activeRepoPath, node.path)
           closeContextMenu()
         }
       })

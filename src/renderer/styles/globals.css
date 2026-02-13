@@ -268,8 +268,12 @@ a {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   -webkit-app-region: drag;
-  padding-left: 80px; /* macOS traffic lights */
+  padding-left: 12px;
   user-select: none;
+}
+
+body.platform-darwin .header {
+  padding-left: 80px; /* macOS traffic lights */
 }
 
 .header > * {

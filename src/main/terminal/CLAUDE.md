@@ -27,7 +27,7 @@ PTY process spawn/management, output buffering, state queries.
 - `write()` strips focus reporting events (`\x1b[I`, `\x1b[O`) before forwarding to PTY — Claude CLI enables focus reporting (`\x1b[?1004h`) and stops spinner animation on focus-out, which breaks status detection. We manage focus ourselves via StatusStateMachine
 - `syncFromMain()` in renderer reconciles state on startup, visibility change, and powerMonitor resume
 - IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS`
-- PTY spawns `zsh` on macOS, `powershell.exe` on Windows
+- PTY shell resolved via `src/main/platform` module (`getDefaultShell()`, `getShellArgs()`) — supports macOS, Windows, and Linux with fallback chains
 - Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
 - Terminal exit handler cleans up from both the Map and notifier
 - `statusMachine.setOnChange` callback sends both `TERMINAL_STATUS` IPC and calls `notifier.notifyStatusChange` — notifications are status-driven with repeating intervals, not BEL-driven

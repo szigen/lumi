@@ -8,6 +8,7 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { generateCodename } from './codenames'
 import { StatusStateMachine } from './StatusStateMachine'
 import { OscTitleParser } from './OscTitleParser'
+import { getDefaultShell, getShellArgs } from '../platform'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
@@ -36,9 +37,9 @@ export class TerminalManager extends EventEmitter {
     const id = uuidv4()
     const name = generateCodename()
     const isNew = trackCollection ? this.codenameTracker.addDiscoveredCodename(name) : false
-    const shell = process.platform === 'win32' ? 'powershell.exe' : 'zsh'
+    const shell = getDefaultShell()
 
-    const ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn(shell, getShellArgs(), {
       name: 'xterm-256color',
       cols: 120,
       rows: 30,

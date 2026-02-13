@@ -18,6 +18,8 @@ Central registration point for all main process IPC handlers.
 - Stream handlers use `sendToRenderer()` helper that checks `mainWindow` isn't destroyed before sending
 
 ## Watch Out
+- `WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY` is guarded with `process.platform === 'darwin'` — safe no-op on Windows/Linux
+- `CONTEXT_REVEAL_IN_FILE_MANAGER` renamed from `CONTEXT_REVEAL_IN_FINDER` for cross-platform naming
 - `mainWindow` can be null — handlers that need it should check before use
 - `ACTIONS_CREATE_NEW` builds an inline action with `CREATE_ACTION_PROMPT` as `appendSystemPrompt`
 - `PERSONAS_SPAWN` uses `buildClaudeCommand` with `claude ""` as base command

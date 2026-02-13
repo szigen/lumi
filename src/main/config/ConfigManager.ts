@@ -1,8 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import type { Config, UIState, WorkLog } from '../../shared/types'
 import { DEFAULT_CONFIG, DEFAULT_UI_STATE } from '../../shared/constants'
+import { getConfigDir } from '../platform'
 
 export class ConfigManager {
   private configDir: string
@@ -12,7 +12,7 @@ export class ConfigManager {
   private codenamesPath: string
 
   constructor() {
-    this.configDir = path.join(os.homedir(), '.ai-orchestrator')
+    this.configDir = getConfigDir()
     this.configPath = path.join(this.configDir, 'config.json')
     this.uiStatePath = path.join(this.configDir, 'ui-state.json')
     this.workLogsDir = path.join(this.configDir, 'work-logs')
