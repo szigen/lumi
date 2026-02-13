@@ -9,6 +9,7 @@ import { getWindowConfig, isMac, isLinux } from './platform'
 
 if (isLinux) {
   app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('disable-dev-shm-usage')
 }
 
 const configManager = new ConfigManager()
