@@ -10,6 +10,7 @@ import { getWindowConfig, isMac, isLinux } from './platform'
 if (isLinux) {
   app.commandLine.appendSwitch('no-sandbox')
   app.commandLine.appendSwitch('disable-dev-shm-usage')
+  app.commandLine.appendSwitch('disable-gpu-sandbox')
 }
 
 const configManager = new ConfigManager()
