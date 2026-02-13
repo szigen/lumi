@@ -5,7 +5,11 @@ import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
-import { getWindowConfig, isMac } from './platform'
+import { getWindowConfig, isMac, isLinux } from './platform'
+
+if (isLinux) {
+  app.commandLine.appendSwitch('no-sandbox')
+}
 
 const configManager = new ConfigManager()
 let mainWindow: BrowserWindow | null = null
