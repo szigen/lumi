@@ -305,6 +305,11 @@ body.platform-darwin .header {
   gap: var(--spacing-sm);
 }
 
+body.platform-win32 .header-right,
+body.platform-linux .header-right {
+  padding-right: 140px;
+}
+
 .app-title {
   font-size: 14px;
   font-weight: 600;

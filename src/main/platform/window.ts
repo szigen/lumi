@@ -9,6 +9,13 @@ export function getWindowConfig(): Partial<BrowserWindowConstructorOptions> {
     }
   }
 
-  // Windows and Linux: use native title bar
-  return {}
+  // Windows and Linux: hide native frame, show overlay window controls
+  return {
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#12121f',
+      symbolColor: '#8a8aa3',
+      height: 52
+    }
+  }
 }
