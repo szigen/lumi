@@ -9,8 +9,13 @@ import { getWindowConfig, isMac, isLinux } from './platform'
 
 if (isLinux) {
   app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('disable-setuid-sandbox')
   app.commandLine.appendSwitch('disable-dev-shm-usage')
   app.commandLine.appendSwitch('disable-gpu-sandbox')
+  app.commandLine.appendSwitch('disable-gpu')
+  app.commandLine.appendSwitch('disable-gpu-compositing')
+  app.commandLine.appendSwitch('no-zygote')
+  app.commandLine.appendSwitch('in-process-gpu')
 }
 
 const configManager = new ConfigManager()
