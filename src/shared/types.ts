@@ -69,6 +69,8 @@ export interface UIState {
   rightSidebarOpen: boolean
   gridColumns: number | 'auto'
   activeView: 'terminals' | 'bugs'
+  windowBounds?: { x: number; y: number; width: number; height: number }
+  windowMaximized?: boolean
 }
 
 export interface WorkLog {

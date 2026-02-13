@@ -1,17 +1,40 @@
-import { app, BrowserWindow, Menu, ipcMain, powerMonitor } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
 import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
+import { ConfigManager } from './config/ConfigManager'
 
+const configManager = new ConfigManager()
 let mainWindow: BrowserWindow | null = null
 let isQuitting = false
 
 function createWindow(): void {
+  const uiState = configManager.getUIState()
+  const savedBounds = uiState.windowBounds
+
+  // Validate saved bounds are on a visible display
+  let useSavedBounds = false
+  if (savedBounds) {
+    const displays = screen.getAllDisplays()
+    const visible = displays.some((display) => {
+      const { x, y, width, height } = display.workArea
+      // Check if at least part of the window is on this display
+      return (
+        savedBounds.x < x + width &&
+        savedBounds.x + savedBounds.width > x &&
+        savedBounds.y < y + height &&
+        savedBounds.y + savedBounds.height > y
+      )
+    })
+    useSavedBounds = visible
+  }
+
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: useSavedBounds ? savedBounds!.width : 1400,
+    height: useSavedBounds ? savedBounds!.height : 900,
+    ...(useSavedBounds ? { x: savedBounds!.x, y: savedBounds!.y } : {}),
     minWidth: 1000,
     minHeight: 600,
     webPreferences: {
@@ -23,10 +46,47 @@ function createWindow(): void {
     trafficLightPosition: { x: 15, y: 19 }
   })
 
+  // Restore maximized state after window creation
+  if (uiState.windowMaximized) {
+    mainWindow.maximize()
+  }
+
   setMainWindow(mainWindow)
+
+  // --- Window state persistence ---
+  let saveTimeout: NodeJS.Timeout | null = null
+
+  const saveWindowBounds = () => {
+    if (!mainWindow || mainWindow.isMaximized() || mainWindow.isMinimized()) return
+    if (saveTimeout) clearTimeout(saveTimeout)
+    saveTimeout = setTimeout(() => {
+      if (!mainWindow || mainWindow.isMaximized() || mainWindow.isMinimized()) return
+      configManager.setUIState({ windowBounds: mainWindow.getBounds() })
+    }, 500)
+  }
+
+  mainWindow.on('resize', saveWindowBounds)
+  mainWindow.on('move', saveWindowBounds)
+
+  mainWindow.on('maximize', () => {
+    configManager.setUIState({ windowMaximized: true })
+  })
+
+  mainWindow.on('unmaximize', () => {
+    configManager.setUIState({ windowMaximized: false })
+  })
 
   // Intercept window close when terminals are active
   mainWindow.on('close', (e) => {
+    // Save final window state before closing
+    if (mainWindow) {
+      const maximized = mainWindow.isMaximized()
+      configManager.setUIState({ windowMaximized: maximized })
+      if (!maximized && !mainWindow.isMinimized()) {
+        configManager.setUIState({ windowBounds: mainWindow.getBounds() })
+      }
+    }
+
     const terminalManager = getTerminalManager()
     const terminalCount = terminalManager?.getCount() ?? 0
 
@@ -41,7 +101,7 @@ function createWindow(): void {
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
-    mainWindow.webContents.openDevTools()
+
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }

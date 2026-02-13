@@ -30,3 +30,4 @@ PTY process spawn/management, output buffering, state queries.
 - PTY spawns `zsh` on macOS, `powershell.exe` on Windows
 - Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
 - Terminal exit handler cleans up from both the Map and notifier
+- `statusMachine.setOnChange` callback sends both `TERMINAL_STATUS` IPC and calls `notifier.notifyStatusChange` — notifications are status-driven with repeating intervals, not BEL-driven

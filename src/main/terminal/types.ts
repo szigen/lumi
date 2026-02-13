@@ -18,7 +18,7 @@ export interface ManagedTerminal {
 
 /** Abstracts notification dispatch so TerminalManager doesn't depend on concrete NotificationManager */
 export interface ITerminalNotifier {
-  processPtyOutput(id: string, data: string, window: BrowserWindow, repoPath: string): void
+  notifyStatusChange(id: string, status: string, window: BrowserWindow, repoPath: string): void
   removeTerminal(id: string): void
 }
 

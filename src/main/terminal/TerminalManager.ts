@@ -61,6 +61,7 @@ export class TerminalManager extends EventEmitter {
     statusMachine.setOnChange((status) => {
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_STATUS, id, status)
+        this.notifier.notifyStatusChange(id, status, window, repoPath)
       }
     })
 
@@ -71,7 +72,6 @@ export class TerminalManager extends EventEmitter {
 
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
-        this.notifier.processPtyOutput(id, data, window, repoPath)
       }
       this.emit('output', { terminalId: id, data })
     })
