@@ -1,4 +1,4 @@
-import { Menu, GitBranch, Settings, Maximize2 } from 'lucide-react'
+import { Menu, GitBranch, Settings, Maximize2, Minus, Square, X } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { IconButton } from '../ui'
 import { Logo } from '../icons'
@@ -62,6 +62,19 @@ export default function Header() {
           onClick={openSettings}
           tooltip="Settings"
         />
+        {window.api.platform === 'linux' && (
+          <div className="window-controls">
+            <button className="window-controls__btn" onClick={() => window.api.minimizeWindow()}>
+              <Minus size={14} />
+            </button>
+            <button className="window-controls__btn" onClick={() => window.api.toggleMaximize()}>
+              <Square size={12} />
+            </button>
+            <button className="window-controls__btn window-controls__btn--close" onClick={() => window.api.closeWindow()}>
+              <X size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )

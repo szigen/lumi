@@ -51,6 +51,8 @@ export const IPC_CHANNELS = {
 
   // Window operations
   WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize',
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_CLOSE: 'window:close',
   WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY: 'window:set-traffic-light-visibility',
 
   // Dialog operations

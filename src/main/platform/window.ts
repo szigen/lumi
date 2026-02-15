@@ -1,5 +1,5 @@
 import type { BrowserWindowConstructorOptions } from 'electron'
-import { isMac } from './index'
+import { isMac, isWin } from './index'
 
 export function getWindowConfig(): Partial<BrowserWindowConstructorOptions> {
   if (isMac) {
@@ -9,13 +9,19 @@ export function getWindowConfig(): Partial<BrowserWindowConstructorOptions> {
     }
   }
 
-  // Windows and Linux: hide native frame, show overlay window controls
-  return {
-    titleBarStyle: 'hidden',
-    titleBarOverlay: {
-      color: '#12121f',
-      symbolColor: '#8a8aa3',
-      height: 52
+  if (isWin) {
+    return {
+      titleBarStyle: 'hidden',
+      titleBarOverlay: {
+        color: '#12121f',
+        symbolColor: '#8a8aa3',
+        height: 52
+      }
     }
+  }
+
+  // Linux: overlay olmadan hidden frame (titleBarOverlay Wayland/tiling WM'lerde unstable)
+  return {
+    titleBarStyle: 'hidden'
   }
 }

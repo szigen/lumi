@@ -4,6 +4,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:linux": "ELECTRON_DISABLE_SANDBOX=1 electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "lint": "eslint src/",
@@ -30,6 +31,9 @@
     "url": "https://github.com/sezginsazliogullari/ai-orchestrator.git"
   },
   "description": "Desktop dashboard for managing multiple Claude Code CLI instances",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/js-yaml": "^4.0.9",

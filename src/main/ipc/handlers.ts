@@ -234,6 +234,14 @@ export function setupIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle(IPC_CHANNELS.WINDOW_MINIMIZE, () => {
+    mainWindow?.minimize()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WINDOW_CLOSE, () => {
+    mainWindow?.close()
+  })
+
   ipcMain.handle(IPC_CHANNELS.WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY, (_event, visible: boolean) => {
     if (isMac) {
       mainWindow?.setWindowButtonVisibility(visible)

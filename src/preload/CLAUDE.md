@@ -22,5 +22,5 @@ Secure IPC bridge between main and renderer via `contextBridge`.
 - Personas: list, spawn, loadProject + change listener
 - Bugs: listBugs, createBug, updateBug, deleteBug, addFix, updateFix, askClaude (streaming, returns `{ started }`, takes bugId), applyFix + event listeners (onClaudeStreamDelta, onClaudeStreamDone, onClaudeStreamActivity for tool usage events)
 - System Checks: runSystemChecks, fixSystemCheck (onboarding health checks)
-- Window: toggleMaximize, setTrafficLightVisibility (macOS window button visibility)
+- Window: toggleMaximize, minimizeWindow, closeWindow (Linux custom controls), setTrafficLightVisibility (macOS window button visibility)
 - App: confirm quit flow, shortcut events

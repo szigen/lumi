@@ -16,6 +16,12 @@ if (isLinux) {
   app.commandLine.appendSwitch('disable-gpu-compositing')
   app.commandLine.appendSwitch('no-zygote')
   app.commandLine.appendSwitch('in-process-gpu')
+  // Software rendering fallback
+  app.commandLine.appendSwitch('use-gl', 'angle')
+  app.commandLine.appendSwitch('use-angle', 'swiftshader')
+  // Wayland support
+  app.commandLine.appendSwitch('ozone-platform-hint', 'auto')
+  app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations')
 }
 
 const configManager = new ConfigManager()
@@ -110,9 +116,15 @@ function createWindow(): void {
     }
   })
 
+  mainWindow.webContents.on('did-fail-load', (_, code, desc, url) => {
+    console.error(`Renderer failed to load: ${code} ${desc} (${url})`)
+  })
+  mainWindow.webContents.on('render-process-gone', (_, details) => {
+    console.error('Renderer process gone:', details.reason)
+  })
+
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
-
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }

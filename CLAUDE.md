@@ -19,6 +19,7 @@ Electron 40, React 19, Zustand 5, Custom CSS (BEM), Framer Motion 12, xterm.js 6
 - When working in a directory, check for CLAUDE.md first and read it before modifying files.
 - After making changes in a directory that has a CLAUDE.md, update that CLAUDE.md to reflect the changes (new files, renamed exports, changed behavior, etc.).
 - When executing plans with superpowers:executing-plan, don't commit, don't wait for feedback, do full implementation. User will test in the end.
+- **Scout Rule (İzci Kuralı):** Kodu bulduğundan daha temiz bırak. Dokunduğun dosyalardaki mevcut lint hatalarını, unused import/variable'ları ve küçük code smell'leri de düzelt.
 
 ## Style Conventions
 - CSS variables for theming (`--bg-deep`, `--accent-primary`, etc.)

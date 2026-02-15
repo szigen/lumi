@@ -149,6 +149,8 @@ const api = {
 
   // Window operations
   toggleMaximize: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_TOGGLE_MAXIMIZE),
+  minimizeWindow: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_MINIMIZE),
+  closeWindow: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_CLOSE),
   setTrafficLightVisibility: (visible: boolean) =>
     invokeIpc<void>(IPC_CHANNELS.WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY, visible),
 

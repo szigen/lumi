@@ -23,7 +23,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 
 export default function FocusExitControl() {
   const { toggleFocusMode, activeTab, gridColumns, setGridColumns } = useAppStore()
-  const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
+  const { terminals, addTerminal, getTerminalCount } = useTerminalStore()
   const { getRepoByName } = useRepoStore()
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

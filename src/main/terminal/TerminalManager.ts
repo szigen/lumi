@@ -8,7 +8,7 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { generateCodename } from './codenames'
 import { StatusStateMachine } from './StatusStateMachine'
 import { OscTitleParser } from './OscTitleParser'
-import { getDefaultShell, getShellArgs } from '../platform'
+import { getDefaultShell, getShellArgs, isWin } from '../platform'
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
@@ -44,7 +44,8 @@ export class TerminalManager extends EventEmitter {
       cols: 120,
       rows: 30,
       cwd: repoPath,
-      env: process.env as Record<string, string>
+      env: process.env as Record<string, string>,
+      ...(isWin && { useConpty: false })
     })
 
     const statusMachine = new StatusStateMachine()
@@ -100,6 +101,7 @@ export class TerminalManager extends EventEmitter {
     // Claude CLI enables focus reporting via \x1b[?1004h and stops spinner
     // animation on focus-out. We manage focus state ourselves via StatusStateMachine,
     // so Claude CLI should always behave as if focused to emit spinner titles.
+    // eslint-disable-next-line no-control-regex
     const filtered = data.replace(/\x1b\[[IO]/g, '')
     if (filtered.length === 0) return true
     terminal.pty.write(filtered)

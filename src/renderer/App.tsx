@@ -4,7 +4,7 @@ import ErrorBoundary from './components/common/ErrorBoundary'
 
 export default function App() {
   useEffect(() => {
-    document.body.classList.add(`platform-${window.api.platform}`)
+    document.body.classList.add(`platform-${window.api?.platform || 'unknown'}`)
   }, [])
 
   return (

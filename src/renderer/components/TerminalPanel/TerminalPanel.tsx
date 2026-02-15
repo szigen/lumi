@@ -90,6 +90,8 @@ export default function TerminalPanel() {
   const [containerWidth, setContainerWidth] = useState(0)
   const [containerHeight, setContainerHeight] = useState(0)
 
+  const hasTerminals = allTerminals.length > 0
+
   useEffect(() => {
     const el = gridRef.current
     if (!el) return
@@ -100,7 +102,7 @@ export default function TerminalPanel() {
     })
     ro.observe(el)
     return () => ro.disconnect()
-  }, [allTerminals.length > 0])
+  }, [hasTerminals])
 
   const handleGridToggle = useCallback(() => {
     const cycle: Array<number | 'auto'> = ['auto', 2, 3]

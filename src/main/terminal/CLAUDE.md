@@ -31,3 +31,4 @@ PTY process spawn/management, output buffering, state queries.
 - Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
 - Terminal exit handler cleans up from both the Map and notifier
 - `statusMachine.setOnChange` callback sends both `TERMINAL_STATUS` IPC and calls `notifier.notifyStatusChange` — notifications are status-driven with repeating intervals, not BEL-driven
+- On Windows, PTY spawns with `useConpty: false` (winpty fallback) — ConPTY strips alternate screen buffer sequences (`\x1b[?1049h/l`), causing xterm.js to accumulate output in the main buffer instead of switching screens. Winpty passes VT sequences through unchanged.

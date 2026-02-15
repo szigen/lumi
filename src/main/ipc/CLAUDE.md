@@ -18,6 +18,7 @@ Central registration point for all main process IPC handlers.
 - Stream handlers use `sendToRenderer()` helper that checks `mainWindow` isn't destroyed before sending
 
 ## Watch Out
+- `WINDOW_MINIMIZE` and `WINDOW_CLOSE` — used by Linux custom window controls (renderer buttons call these via preload)
 - `WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY` is guarded with `process.platform === 'darwin'` — safe no-op on Windows/Linux
 - `CONTEXT_REVEAL_IN_FILE_MANAGER` renamed from `CONTEXT_REVEAL_IN_FINDER` for cross-platform naming
 - `mainWindow` can be null — handlers that need it should check before use

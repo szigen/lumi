@@ -33,9 +33,9 @@ AI Orchestrator is an Electron-based desktop application that lets you run and m
 
 ## Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
 - **Claude Code CLI** installed and authenticated (`npm install -g @anthropic-ai/claude-code`)
-- **macOS** (primary platform — Windows/Linux support is untested)
+- **macOS** (primary platform), **Windows**, or **Linux**
 
 ## Installation
 
@@ -49,6 +49,9 @@ npm install
 
 # Start in development mode
 npm run dev
+
+# On Linux, use the sandbox-disabled variant:
+npm run dev:linux
 ```
 
 ## Usage
