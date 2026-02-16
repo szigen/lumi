@@ -24,6 +24,11 @@ const MAX_ASSISTANT_PROCESSES = 2
 const ASSISTANT_PROCESS_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
 const MAX_BUFFER_SIZE = 1024 * 1024 // 1MB
 const activeAssistantProcesses = new Map<string, ChildProcess>()
+const CODEX_IGNORED_STDERR_PATTERNS = [
+  /state db missing rollout path for thread/i,
+  /failed to record rollout items: failed to queue rollout items: channel closed/i,
+  /failed to shutdown rollout recorder/i
+]
 
 function isValidRepoPath(repoPath: string): boolean {
   return (
@@ -55,6 +60,35 @@ function emitAssistantActivity(bugId: string, activity: { type: string; tool?: s
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, bugId, activity)
   }
+}
+
+function deltaFromSnapshot(snapshot: string, accumulated: string): string {
+  if (!snapshot) return ''
+  if (snapshot.startsWith(accumulated)) {
+    return snapshot.slice(accumulated.length)
+  }
+  if (accumulated.startsWith(snapshot)) {
+    return ''
+  }
+  return snapshot
+}
+
+function normalizeCodexToolName(value: unknown): string | undefined {
+  if (typeof value !== 'string' || value.length === 0) {
+    return undefined
+  }
+  const lowered = value.toLowerCase()
+  if (lowered === 'bash' || lowered.includes('command') || lowered.includes('shell')) return 'Bash'
+  if (lowered.includes('read')) return 'Read'
+  if (lowered.includes('grep') || lowered.includes('search')) return 'Grep'
+  if (lowered.includes('glob') || lowered.includes('find') || lowered.includes('list')) return 'Glob'
+  if (lowered.includes('write')) return 'Write'
+  if (lowered.includes('edit') || lowered.includes('patch')) return 'Edit'
+  return value
+}
+
+function isIgnorableCodexStderrLine(line: string): boolean {
+  return CODEX_IGNORED_STDERR_PATTERNS.some((pattern) => pattern.test(line))
 }
 
 let mainWindow: BrowserWindow | null = null
@@ -477,16 +511,60 @@ export function setupIpcHandlers(): void {
     proc.stdin.write(prompt)
     proc.stdin.end()
 
-    let accumulated = ''
+    let previewAccumulated = ''
+    let responseAccumulated = ''
     let error = ''
+    let codexStreamError: string | null = null
+    let latestCodexAgentMessage: string | null = null
     let buffer = ''
+    let stderrBuffer = ''
     let currentToolName: string | null = null
     let killed = false
 
-    const emitDelta = (text: string) => {
-      if (!text) return
-      accumulated += text
+    const cleanup = () => {
+      clearTimeout(timeout)
+      activeAssistantProcesses.delete(bugId)
+    }
+
+    const killForBufferLimit = () => {
+      if (killed) return
+      killed = true
+      proc.kill('SIGTERM')
+      emitAssistantDone(bugId, null, 'Response exceeded maximum size limit')
+      cleanup()
+    }
+
+    const wouldExceedBufferLimit = (previewDeltaSize: number, responseDeltaSize: number) => (
+      previewAccumulated.length + previewDeltaSize > MAX_BUFFER_SIZE ||
+      responseAccumulated.length + responseDeltaSize > MAX_BUFFER_SIZE
+    )
+
+    const emitPreviewDelta = (text: string) => {
+      if (!text || killed) return
+      if (wouldExceedBufferLimit(text.length, 0)) {
+        killForBufferLimit()
+        return
+      }
+      previewAccumulated += text
       emitAssistantDelta(bugId, text)
+    }
+
+    const emitResponseDelta = (text: string) => {
+      if (!text || killed) return
+      if (wouldExceedBufferLimit(text.length, text.length)) {
+        killForBufferLimit()
+        return
+      }
+      responseAccumulated += text
+      previewAccumulated += text
+      emitAssistantDelta(bugId, text)
+    }
+
+    const emitResponseSnapshot = (snapshot: string) => {
+      const delta = deltaFromSnapshot(snapshot, responseAccumulated)
+      if (delta) {
+        emitResponseDelta(delta)
+      }
     }
 
     const timeout = setTimeout(() => {
@@ -497,17 +575,12 @@ export function setupIpcHandlers(): void {
       }
     }, ASSISTANT_PROCESS_TIMEOUT_MS)
 
-    const cleanup = () => {
-      clearTimeout(timeout)
-      activeAssistantProcesses.delete(bugId)
-    }
-
     const maybeEmitToolActivity = (event: unknown) => {
       if (!event || typeof event !== 'object') return
       const record = event as Record<string, unknown>
       const eventType = typeof record.type === 'string' ? record.type : ''
       const rawTool = record.tool || record.name
-      const tool = typeof rawTool === 'string' ? rawTool : undefined
+      const tool = normalizeCodexToolName(rawTool)
       if (!eventType.includes('tool')) return
       if (eventType.includes('start') && tool) {
         currentToolName = tool
@@ -522,125 +595,225 @@ export function setupIpcHandlers(): void {
       }
     }
 
-    proc.stdout.on('data', (data: Buffer) => {
-      if (accumulated.length > MAX_BUFFER_SIZE) {
-        if (!killed) {
-          killed = true
-          proc.kill('SIGTERM')
-          emitAssistantDone(bugId, null, 'Response exceeded maximum size limit')
-          cleanup()
+    const processClaudeLine = (line: string) => {
+      try {
+        const event = JSON.parse(line) as Record<string, unknown>
+
+        if (event.type === 'stream_event' && event.event && typeof event.event === 'object') {
+          const streamEvent = event.event as Record<string, unknown>
+
+          if (streamEvent.type === 'content_block_start' && streamEvent.content_block && typeof streamEvent.content_block === 'object') {
+            const block = streamEvent.content_block as Record<string, unknown>
+            if (block.type === 'tool_use' && typeof block.name === 'string') {
+              currentToolName = block.name
+              emitAssistantActivity(bugId, { type: 'tool_start', tool: block.name })
+            }
+          } else if (streamEvent.type === 'content_block_delta' && streamEvent.delta && typeof streamEvent.delta === 'object') {
+            const delta = streamEvent.delta as Record<string, unknown>
+            if (delta.type === 'text_delta' && typeof delta.text === 'string') {
+              emitResponseDelta(delta.text)
+            }
+          } else if (streamEvent.type === 'content_block_stop') {
+            if (currentToolName) {
+              emitAssistantActivity(bugId, { type: 'tool_end' })
+              currentToolName = null
+            }
+          }
+          return
         }
+
+        if (event.type === 'assistant' && event.message && typeof event.message === 'object') {
+          const message = event.message as Record<string, unknown>
+          if (Array.isArray(message.content)) {
+            for (const block of message.content) {
+              if (block && typeof block === 'object') {
+                const typedBlock = block as Record<string, unknown>
+                if (typedBlock.type === 'text' && typeof typedBlock.text === 'string') {
+                  const newText = deltaFromSnapshot(typedBlock.text, responseAccumulated)
+                  if (newText) emitResponseDelta(newText)
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // ignore non-json lines
+      }
+    }
+
+    const processCodexLine = (line: string) => {
+      try {
+        const event = JSON.parse(line) as Record<string, unknown>
+        maybeEmitToolActivity(event)
+
+        const eventType = typeof event.type === 'string' ? event.type : ''
+
+        if (eventType === 'error') {
+          if (typeof event.message === 'string' && !/^Reconnecting\.\.\./i.test(event.message)) {
+            codexStreamError = event.message
+          }
+          return
+        }
+
+        if (eventType === 'turn.failed') {
+          if (event.error && typeof event.error === 'object') {
+            const turnError = event.error as Record<string, unknown>
+            if (typeof turnError.message === 'string') {
+              codexStreamError = turnError.message
+            }
+          }
+          return
+        }
+
+        const item = event.item && typeof event.item === 'object'
+          ? event.item as Record<string, unknown>
+          : null
+
+        if (item && (eventType === 'item.started' || eventType === 'item.completed')) {
+          const itemType = typeof item.type === 'string' ? item.type : ''
+          const itemTool = normalizeCodexToolName(item.tool || item.name || itemType)
+
+          if (eventType === 'item.started') {
+            if (itemTool && itemType !== 'agent_message' && itemType !== 'reasoning') {
+              currentToolName = itemTool
+              emitAssistantActivity(bugId, { type: 'tool_start', tool: itemTool })
+            }
+            return
+          }
+
+          if (itemType === 'reasoning') {
+            if (typeof item.text === 'string' && item.text.length > 0) {
+              emitPreviewDelta(item.text.endsWith('\n') ? item.text : `${item.text}\n`)
+            }
+            return
+          }
+
+          if (itemType === 'agent_message') {
+            if (typeof item.text === 'string' && item.text.length > 0) {
+              latestCodexAgentMessage = item.text
+              emitResponseSnapshot(item.text)
+            }
+            return
+          }
+
+          if (currentToolName) {
+            emitAssistantActivity(bugId, { type: 'tool_end' })
+            currentToolName = null
+          } else if (itemTool) {
+            emitAssistantActivity(bugId, { type: 'tool_start', tool: itemTool })
+            emitAssistantActivity(bugId, { type: 'tool_end' })
+          }
+          return
+        }
+
+        const textCandidates: string[] = []
+        const pushText = (value: unknown) => {
+          if (typeof value === 'string' && value.length > 0) {
+            textCandidates.push(value)
+          }
+        }
+
+        pushText(event.text)
+        pushText(event.delta)
+        if (typeof event.message === 'string') pushText(event.message)
+
+        if (event.message && typeof event.message === 'object') {
+          const msg = event.message as Record<string, unknown>
+          pushText(msg.text)
+          pushText(msg.delta)
+          if (Array.isArray(msg.content)) {
+            for (const chunk of msg.content) {
+              if (chunk && typeof chunk === 'object') {
+                const content = chunk as Record<string, unknown>
+                pushText(content.text)
+                pushText(content.delta)
+              } else if (typeof chunk === 'string') {
+                pushText(chunk)
+              }
+            }
+          }
+        }
+
+        for (const candidate of textCandidates) {
+          emitResponseSnapshot(candidate)
+        }
+      } catch {
+        // Codex can print warnings in plain text; ignore unknown lines
+      }
+    }
+
+    const processStdoutLine = (line: string) => {
+      const trimmed = line.trim()
+      if (!trimmed || killed) return
+
+      if (provider === 'claude') {
+        processClaudeLine(trimmed)
+      } else {
+        processCodexLine(trimmed)
+      }
+    }
+
+    const processStderrLine = (line: string) => {
+      const trimmed = line.trim()
+      if (!trimmed) return
+      if (provider === 'codex' && isIgnorableCodexStderrLine(trimmed)) {
         return
       }
+      error += `${trimmed}\n`
+      console.error('[ASSISTANT-STREAM] stderr:', trimmed.slice(0, 200))
+    }
 
+    proc.stdout.on('data', (data: Buffer) => {
       buffer += data.toString()
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
       for (const line of lines) {
-        const trimmed = line.trim()
-        if (!trimmed) continue
-
-        if (provider === 'claude') {
-          try {
-            const event = JSON.parse(trimmed)
-
-            if (event.type === 'stream_event' && event.event) {
-              const streamEvent = event.event
-
-              if (streamEvent.type === 'content_block_start' && streamEvent.content_block) {
-                const block = streamEvent.content_block
-                if (block.type === 'tool_use' && block.name) {
-                  currentToolName = block.name
-                  emitAssistantActivity(bugId, { type: 'tool_start', tool: block.name })
-                }
-              } else if (streamEvent.type === 'content_block_delta' && streamEvent.delta) {
-                if (streamEvent.delta.type === 'text_delta' && streamEvent.delta.text) {
-                  emitDelta(streamEvent.delta.text)
-                }
-              } else if (streamEvent.type === 'content_block_stop') {
-                if (currentToolName) {
-                  emitAssistantActivity(bugId, { type: 'tool_end' })
-                  currentToolName = null
-                }
-              }
-              continue
-            }
-
-            if (event.type === 'assistant' && event.message?.content) {
-              for (const block of event.message.content) {
-                if (block.type === 'text' && block.text) {
-                  const newText = block.text.slice(accumulated.length)
-                  if (newText) emitDelta(newText)
-                }
-              }
-            }
-          } catch {
-            // ignore non-json lines
-          }
-          continue
-        }
-
-        // Codex jsonl mode
-        try {
-          const event = JSON.parse(trimmed) as Record<string, unknown>
-          maybeEmitToolActivity(event)
-
-          const textCandidates: string[] = []
-          const pushText = (value: unknown) => {
-            if (typeof value === 'string' && value.length > 0) {
-              textCandidates.push(value)
-            }
-          }
-          pushText(event.text)
-          pushText(event.delta)
-          if (typeof event.message === 'string') pushText(event.message)
-          if (event.message && typeof event.message === 'object') {
-            const msg = event.message as Record<string, unknown>
-            pushText(msg.text)
-            pushText(msg.delta)
-            if (Array.isArray(msg.content)) {
-              for (const chunk of msg.content) {
-                if (chunk && typeof chunk === 'object') {
-                  const content = chunk as Record<string, unknown>
-                  pushText(content.text)
-                  pushText(content.delta)
-                }
-              }
-            }
-          }
-
-          for (const candidate of textCandidates) {
-            if (!candidate) continue
-            if (candidate.startsWith(accumulated)) {
-              const next = candidate.slice(accumulated.length)
-              if (next) emitDelta(next)
-            } else {
-              emitDelta(candidate)
-            }
-          }
-        } catch {
-          // Codex can print warnings in plain text; treat as non-stream text
-        }
+        processStdoutLine(line)
+        if (killed) break
       }
     })
 
     proc.stderr.on('data', (data: Buffer) => {
-      error += data.toString()
-      console.error('[ASSISTANT-STREAM] stderr:', data.toString().slice(0, 200))
+      stderrBuffer += data.toString()
+      const lines = stderrBuffer.split('\n')
+      stderrBuffer = lines.pop() || ''
+      for (const line of lines) {
+        processStderrLine(line)
+      }
     })
 
     proc.on('error', (err: Error) => {
+      killed = true
       console.error('[ASSISTANT-STREAM] spawn error:', err.message)
       emitAssistantDone(bugId, null, err.message)
       cleanup()
     })
 
     proc.on('close', (code: number) => {
+      if (buffer.trim()) {
+        processStdoutLine(buffer)
+      }
+      if (stderrBuffer.trim()) {
+        processStderrLine(stderrBuffer)
+      }
+      if (currentToolName) {
+        emitAssistantActivity(bugId, { type: 'tool_end' })
+        currentToolName = null
+      }
+
       if (!killed) {
+        const codexFinal = latestCodexAgentMessage?.trim() || ''
+        const fallbackFinal = responseAccumulated.trim()
+        const finalResponse = (provider === 'codex' ? codexFinal || fallbackFinal : fallbackFinal) || null
+        const finalError = codexStreamError || error.trim() || undefined
         if (code === 0) {
-          emitAssistantDone(bugId, accumulated.trim() || null)
+          if (finalResponse) {
+            emitAssistantDone(bugId, finalResponse)
+          } else {
+            emitAssistantDone(bugId, null, finalError)
+          }
         } else {
-          emitAssistantDone(bugId, null, error || `${provider} exited with code ${code}`)
+          emitAssistantDone(bugId, null, finalError || `${provider} exited with code ${code}`)
         }
       }
       cleanup()
