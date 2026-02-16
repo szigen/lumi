@@ -20,6 +20,7 @@ export function useKeyboardShortcuts() {
       if (!result) return
       await window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
       await syncFromMain()
+      useTerminalStore.getState().setActiveTerminal(result.id)
     }).catch((error) => {
       console.error('Failed to spawn terminal from shortcut:', error)
     })
@@ -34,7 +35,9 @@ export function useKeyboardShortcuts() {
       }
       return
     }
-    window.api.killTerminal(activeTerminalId).then(async () => {
+    const closingId = activeTerminalId
+    window.api.killTerminal(closingId).then(async () => {
+      useTerminalStore.getState().removeTerminal(closingId)
       await syncFromMain()
     }).catch((error) => {
       console.error('Failed to close terminal from shortcut:', error)

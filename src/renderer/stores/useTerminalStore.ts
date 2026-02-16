@@ -100,6 +100,23 @@ export function rebuildLastActiveByRepo(
   return lastActive
 }
 
+/** Find the previous neighbor (or next if closing the first) for focus after close.
+ *  When repoPath is provided, only terminals from that repo are considered. */
+export function findNeighborTerminalId(
+  closedId: string,
+  terminals: Map<string, Terminal>,
+  repoPath?: string
+): string | null {
+  const entries = repoPath
+    ? Array.from(terminals.entries()).filter(([, t]) => t.repoPath === repoPath)
+    : Array.from(terminals.entries())
+  const keys = entries.map(([id]) => id)
+  const idx = keys.indexOf(closedId)
+  if (idx === -1) return keys[0] || null
+  if (idx > 0) return keys[idx - 1]
+  return keys[1] || null
+}
+
 export const useTerminalStore = create<TerminalState>((set, get) => ({
   terminals: new Map(),
   outputs: new Map(),
@@ -110,6 +127,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   removeTerminal: (id) => {
     set((state) => {
       const terminal = state.terminals.get(id)
+
+      // Compute neighbor BEFORE deleting so index is correct
+      const neighborId = state.activeTerminalId === id
+        ? findNeighborTerminalId(id, state.terminals, terminal?.repoPath)
+        : null
+
       const newTerminals = new Map(state.terminals)
       newTerminals.delete(id)
       const newOutputs = new Map(state.outputs)
@@ -130,7 +153,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       }
 
       const newActive = state.activeTerminalId === id
-        ? Array.from(newTerminals.keys())[0] || null
+        ? (neighborId && newTerminals.has(neighborId) ? neighborId : null)
         : state.activeTerminalId
 
       return {

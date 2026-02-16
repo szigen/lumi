@@ -40,6 +40,7 @@ export default function TerminalPanel() {
       if (result) {
         await window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
         await syncFromMain()
+        useTerminalStore.getState().setActiveTerminal(result.id)
       }
     } catch (error) {
       console.error('Failed to spawn terminal:', error)
@@ -53,6 +54,7 @@ export default function TerminalPanel() {
       const result = await window.api.spawnPersona(persona.id, activeRepo.path)
       if (result) {
         await syncFromMain()
+        useTerminalStore.getState().setActiveTerminal(result.id)
       }
     } catch (error) {
       console.error('Failed to spawn persona:', error)

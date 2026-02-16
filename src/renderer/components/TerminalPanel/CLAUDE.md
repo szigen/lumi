@@ -14,6 +14,7 @@ Grid container for terminal cards with spawn controls.
 ## Key Patterns
 - `canSpawnTerminal()` enforces terminal limit.
 - Spawn and kill handlers call IPC then `syncFromMain()`; renderer does not manually construct terminal records.
+- Spawn handlers (`handleNewTerminal`, `handlePersonaSelect`) call `setActiveTerminal(result.id)` after `syncFromMain()` to auto-focus the new terminal.
 - Grid columns cycle: `auto -> 2 -> 3`.
 - Focus mode computes explicit row heights to fit viewport.
 

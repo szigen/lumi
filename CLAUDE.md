@@ -8,6 +8,7 @@ Electron 40, React 19, Zustand 5, Custom CSS (BEM), Framer Motion 12, xterm.js 6
 ## Commands
 - `npm run dev` — development mode
 - `npm run build` — production build
+- `npm test` — Vitest unit tests
 - `npm run lint` — ESLint
 - `npm run typecheck` — TypeScript check
 - `npm run build:mac` — build macOS distributables
