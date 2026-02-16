@@ -114,10 +114,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().saveUIState()
   },
 
-  setActiveView: (view) => set({ activeView: view }),
-  toggleBugView: () => set((s) => ({
-    activeView: s.activeView === 'bugs' ? 'terminals' : 'bugs'
-  })),
+  setActiveView: (view) => {
+    set({ activeView: view })
+    get().saveUIState()
+  },
+  toggleBugView: () => {
+    set((s) => ({ activeView: s.activeView === 'bugs' ? 'terminals' : 'bugs' }))
+    get().saveUIState()
+  },
 
   toggleLeftSidebar: () => {
     set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen }))
@@ -145,7 +149,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const state = await window.api.getUIState()
       if (state) {
-        set(state)
+        set({ ...state, activeView: 'terminals' })
       }
     } catch (error) {
       console.error('Failed to load UI state:', error)

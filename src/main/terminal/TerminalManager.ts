@@ -67,7 +67,7 @@ export class TerminalManager extends EventEmitter {
     }
 
     statusMachine.setOnChange((status) => {
-      if (!window.isDestroyed()) {
+      if (!window.isDestroyed() && this.terminals.has(id)) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_STATUS, id, status)
         this.notifier.notifyStatusChange(id, status, window, repoPath)
       }
@@ -113,13 +113,13 @@ export class TerminalManager extends EventEmitter {
 
     ptyProcess.onExit(({ exitCode }) => {
       this.clearActivityTimer(terminal)
+      this.terminals.delete(id)
+      this.notifier.removeTerminal(id)
       terminal.statusMachine.onExit(exitCode)
       this.oscParser.delete(id)
       if (!window.isDestroyed()) {
         window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       }
-      this.terminals.delete(id)
-      this.notifier.removeTerminal(id)
       this.emit('exit', { terminalId: id, exitCode })
     })
 

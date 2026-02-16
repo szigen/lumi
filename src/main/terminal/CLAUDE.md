@@ -47,6 +47,6 @@ The `activityTimer` field on `ManagedTerminal` tracks the silence timeout. Timer
 - IPC channels for state sync: `TERMINAL_SNAPSHOT`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS` (`TERMINAL_LIST`/`TERMINAL_BUFFER` remain backward-compatible)
 - PTY shell resolved via `src/main/platform` module (`getDefaultShell()`, `getShellArgs()`) — supports macOS, Windows, and Linux with fallback chains
 - Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
-- Terminal exit handler cleans up from both the Map and notifier
+- Terminal exit handler removes from Map and notifier BEFORE status transition — `onChange` guard (`terminals.has(id)`) prevents stale notifications during exit
 - `statusMachine.setOnChange` callback sends both `TERMINAL_STATUS` IPC and calls `notifier.notifyStatusChange` — notifications are status-driven with repeating intervals, not BEL-driven
 - On Windows, PTY spawns with `useConpty: false` (winpty fallback) — ConPTY strips alternate screen buffer sequences (`\x1b[?1049h/l`), causing xterm.js to accumulate output in the main buffer instead of switching screens. Winpty passes VT sequences through unchanged.

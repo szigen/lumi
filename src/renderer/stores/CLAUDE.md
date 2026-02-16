@@ -16,7 +16,7 @@ State management for the renderer process.
 - Terminal output append in renderer must use `appendTerminalOutput()`/`trimTerminalOutput()` (100KB cap, newline-aware truncation)
 - Tab switching auto-selects the last active terminal for that repo (`lastActiveByRepo` map)
 - Closing a tab kills all terminals for that repo and unwatches file tree
-- UI state persists to main process via `saveUIState()` on every layout change
+- UI state persists to main process via `saveUIState()` on every layout change (including `setActiveView` and `toggleBugView`)
 - BugTracker components use granular selectors `useBugStore((s) => s.field)` — never destructure entire store
 - Use exported memoized selectors (`selectFilteredBugs`, `selectSelectedBug`) instead of calling methods in render
 - `subscribeToStream` should be called via `useBugStore.getState().subscribeToStream()` with `[]` dependency to avoid re-subscribe on every store update
