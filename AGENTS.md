@@ -1,52 +1,32 @@
-# Repository Guidelines
+# AI Orchestrator
 
-## Project Structure & Module Organization
-- `src/main/`: Electron main process (window lifecycle, terminals, git/actions/personas, IPC handlers).
-- `src/preload/`: secure `contextBridge` API between main and renderer.
-- `src/renderer/`: React UI (`components/`, `stores/`, `hooks/`, `styles/`).
-- `src/shared/`: shared types, constants, and IPC channel definitions.
-- `default-actions/` and `default-personas/`: seeded YAML templates shipped with the app.
-- `docs/plans/`: design notes and implementation plans.
-- `dist/` and `out/` are generated build artifacts; do not edit them directly.
+Electron desktop dashboard for managing Claude/Codex CLI workflows across repositories.
 
-## Build, Test, and Development Commands
-- `npm run dev`: launch Electron + Vite in development with HMR.
-- `npm run dev:linux`: Linux dev mode with sandbox-related flags.
-- `npm run build`: production build via `electron-vite`.
-- `npm run preview`: preview the built application.
-- `npm run lint`: run ESLint on `src/`.
-- `npm run lint:fix`: apply safe lint auto-fixes.
-- `npm run typecheck`: TypeScript check (`tsc --noEmit`).
-- `npm run build:mac|build:win|build:linux|build:all`: package distributables with `electron-builder`.
+## Tech Stack
+Electron 40, React 19, Zustand 5, TypeScript (strict), xterm.js 6, node-pty, simple-git, Vite 7, electron-builder
 
-## Coding Style & Naming Conventions
-- Stack: TypeScript (strict mode), React function components, Zustand stores.
-- Follow existing formatting: 2-space indentation, single quotes, and no semicolons.
-- Naming:
-  - Components/classes: `PascalCase` (e.g., `SettingsModal.tsx`, `TerminalManager.ts`).
-  - Hooks/stores: `useXxx` (e.g., `useTerminalStore.ts`, `useKeyboardShortcuts.ts`).
-  - Shared constants/types: keep in `src/shared/`.
-- CSS uses variables and BEM-style class naming (`src/renderer/styles/globals.css`).
-- No Prettier config is committed; ESLint is the primary style gate.
+## Commands
+- `npm run dev` — development mode
+- `npm run build` — production build
+- `npm run lint` — ESLint on `src/`
+- `npm run typecheck` — TypeScript check
+- `npm run build:mac|build:win|build:linux|build:all` — distributable builds
 
-## Testing Guidelines
-- There is no committed automated test runner yet (`*.test` / `*.spec` files are currently absent).
-- Minimum validation before opening a PR:
-  1. `npm run lint`
-  2. `npm run typecheck`
-  3. `npm run dev` and manually verify affected UI/terminal flows.
-- If adding tests, colocate with the feature and use `*.test.ts` or `*.test.tsx`.
-
-## Commit & Pull Request Guidelines
-- Keep commit subjects short, imperative, and specific (matching history such as `Add ...`, `Fix ...`, `Remove ...`).
-- Keep commits focused; avoid mixing refactors with behavior changes.
-- PRs should include:
-  - what changed and why
-  - linked issue (if available)
-  - manual verification steps
-  - screenshots/GIFs for renderer UI changes
-
-## Security & Configuration Tips
-- Required runtime: Node.js `>=22`.
+## Agent Rules
+- Always read root `CLAUDE.md` before making changes.
+- Before editing in any directory, check for the nearest `CLAUDE.md` and follow it.
+- Read other task-relevant markdown files before implementation.
+  Examples: module `CLAUDE.md` files, `docs/plans/*.md`, and related feature docs.
+- Keep context targeted: read only docs relevant to the task instead of bulk-loading all markdown files.
+- If behavior/files change in a directory that has `CLAUDE.md`, update that `CLAUDE.md` in the same change.
+- Keep diffs focused; avoid unrelated refactors.
+- Do not edit generated artifacts directly (`dist/`, `out/`).
 - Do not commit secrets or local machine config (`.env*`, `.claude/settings.local.json`).
-- User data/config is stored in `~/.ai-orchestrator` (or `%APPDATA%/ai-orchestrator` on Windows); avoid hardcoded local paths.
+
+## Style + Quality
+- Use TypeScript strict patterns, React function components, and Zustand store conventions.
+- Follow existing formatting: 2-space indentation, single quotes, no semicolons.
+- Naming: `PascalCase` for components/classes, `useXxx` for hooks/stores.
+- CSS: variables + BEM naming style.
+- Leave touched code cleaner than found (small lint/code-smell fixes are encouraged).
+- For code changes, validate with `npm run lint` and `npm run typecheck`.
