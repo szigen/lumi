@@ -5,7 +5,7 @@ PTY process spawn/management, output buffering, state queries.
 ## Files
 - **TerminalManager.ts** — PTY lifecycle (spawn, kill, write, resize), delegates to injected dependencies
 - **StatusStateMachine.ts** — Pure state machine: 6 states (idle, working, waiting-unseen, waiting-focused, waiting-seen, error), driven by title change, activity, and focus/blur events. Uses `ClaudeStatus` from shared/types.ts. Exit code 0 → idle, non-zero → error
-- **OscTitleParser.ts** — Buffers partial OSC sequences across PTY data chunks, supports OSC 0/2 titles and OSC 9 notifications, infers provider hints (`claude`/`codex`), and emits provider-aware working/idle events with safe null fallback. Max 4KB buffer guard against unbounded growth
+- **OscTitleParser.ts** — Buffers partial OSC sequences across PTY data chunks, supports OSC 0/2 titles and OSC 9 notifications, classifies notification payloads (`codex-turn-complete` vs `generic`), infers provider hints (`claude`/`codex`), and emits provider-aware status events with safe null fallback. Max 4KB buffer guard against unbounded growth
 - **OutputBuffer.ts** — Encapsulates output buffering with ANSI-safe truncation at newline boundaries
 - **types.ts** — `ManagedTerminal`, `SpawnResult` (re-exported from shared), `ITerminalNotifier`, `ICodenameTracker` interfaces
 - **codenames.ts** — Random codename generator (50 adj x 50 nouns = 2500 combos)
@@ -29,11 +29,11 @@ PTY process spawn/management, output buffering, state queries.
 
 ### Codex: OSC 9 Notifications + Activity-Based Fallback
 Codex CLI does **not** emit OSC title sequences (OSC 0/2). Instead:
-1. **OSC 9 (iTerm2 notification protocol):** Codex emits `\x1b]9;message\x07` when a turn completes. `OscTitleParser` detects this and emits `{ source: 'notification', isWorking: false, providerHint: 'codex' }`. This is a definitive "turn done" signal → transitions to waiting state
-2. **Activity-based fallback:** For non-Claude providers, PTY output activity triggers `StatusStateMachine.onOutputActivity()` → working state. A 3-second silence timer (`ACTIVITY_SILENCE_MS`) triggers `onOutputSilence()` → waiting state. This provides working status even without explicit signals
-3. **User input:** When user sends Enter (`\r`) to a non-Claude terminal, `StatusStateMachine.onUserInput()` transitions to working state
+1. **OSC 9 (iTerm2 notification protocol):** `OscTitleParser` classifies payloads as `codex-turn-complete` or `generic`. Only `codex-turn-complete` events are treated as definitive "turn done" signals and transition to waiting state
+2. **Activity-based fallback:** PTY output activity triggers `StatusStateMachine.onOutputActivity()` only when `agentHint === 'codex'` → working state. A silence timer (`STATUS_DETECTION.activitySilenceMs`, default 3 seconds) triggers `onOutputSilence()` → waiting state
+3. **User input:** When user sends Enter (`\r`) to a Codex terminal, `StatusStateMachine.onUserInput()` transitions to working state
 
-The `activityTimer` field on `ManagedTerminal` tracks the silence timeout. Timers are cleaned up on kill, killAll, onExit, and when OSC 9 provides a definitive signal.
+The `activityTimer` field on `ManagedTerminal` tracks the silence timeout. Timers are cleaned up on kill, killAll, onExit, on provider switch to Claude, and when a `codex-turn-complete` notification is observed.
 
 ## Other Rules
 - Focus/blur events from renderer drive waiting-* state transitions

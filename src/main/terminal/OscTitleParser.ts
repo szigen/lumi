@@ -13,16 +13,42 @@ const CLAUDE_HINT_RE = /claude code|(?:^|[^a-z0-9_])claude(?:[^a-z0-9_]|$)/i
 export type AgentProviderHint = 'claude' | 'codex'
 
 export type OscEventType = 'title' | 'notification'
+export type OscNotificationKind = 'codex-turn-complete' | 'generic'
 
-export interface OscEvent {
-  source: OscEventType
+interface OscTitleEventPayload {
+  source: 'title'
   title: string
   isWorking: boolean | null
   providerHint?: AgentProviderHint
 }
 
+interface OscNotificationEventPayload {
+  source: 'notification'
+  title: string
+  isWorking: false
+  kind: OscNotificationKind
+  providerHint?: AgentProviderHint
+}
+
+export type OscEvent = OscTitleEventPayload | OscNotificationEventPayload
+
 /** @deprecated Use OscEvent instead */
 export type OscTitleEvent = OscEvent
+
+const CODEX_TURN_COMPLETE_RE = [
+  /\bturn\s+(complete|completed|done|finished)\b/i,
+  /\btask\s+(complete|completed|done|finished)\b/i,
+  /\bwaiting\s+for\s+input\b/i,
+  /\ball[_\s-]?idle\b/i,
+  /\bidle[_\s-]?state\b/i
+]
+
+function inferNotificationKind(payload: string): OscNotificationKind {
+  if (CODEX_TURN_COMPLETE_RE.some(pattern => pattern.test(payload))) {
+    return 'codex-turn-complete'
+  }
+  return 'generic'
+}
 
 function inferProviderHint(title: string): AgentProviderHint | null {
   if (title.startsWith(CLAUDE_IDLE_PREFIX) || CLAUDE_HINT_RE.test(title)) {
@@ -112,11 +138,13 @@ export class OscTitleParser {
       } else if (command === OSC_NOTIFICATION_COMMAND) {
         // OSC 9 = iTerm2 notification protocol — Codex emits this when a turn completes
         const payload = buf.slice(payloadStart, endIdx)
+        const kind = inferNotificationKind(payload)
         onEvent({
           source: 'notification',
           title: payload,
           isWorking: false,
-          providerHint: 'codex'
+          kind,
+          providerHint: kind === 'codex-turn-complete' ? 'codex' : undefined
         })
       }
 

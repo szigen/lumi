@@ -10,8 +10,9 @@ import { StatusStateMachine } from './StatusStateMachine'
 import { OscTitleParser, type AgentProviderHint } from './OscTitleParser'
 import { getDefaultShell, getShellArgs, isWin } from '../platform'
 
-/** Silence timeout for activity-based status detection (ms) */
-const ACTIVITY_SILENCE_MS = 3_000
+const STATUS_DETECTION = {
+  activitySilenceMs: 3_000
+} as const
 
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
@@ -73,15 +74,19 @@ export class TerminalManager extends EventEmitter {
 
     ptyProcess.onData((data) => {
       this.maybeInferProviderFromOutput(terminal, data)
+      let sawCodexTurnComplete = false
       this.oscParser.parse(id, data, (event) => {
         if (event.providerHint) {
           this.setProviderHint(terminal, event.providerHint)
         }
 
         if (event.source === 'notification') {
-          // OSC 9 = Codex turn completed → definitive "done" signal
-          this.clearActivityTimer(terminal)
-          statusMachine.onTitleChange(false)
+          if (event.kind === 'codex-turn-complete') {
+            // Codex turn completed → definitive "done" signal
+            sawCodexTurnComplete = true
+            this.clearActivityTimer(terminal)
+            statusMachine.onTitleChange(false)
+          }
           return
         }
 
@@ -92,8 +97,8 @@ export class TerminalManager extends EventEmitter {
         statusMachine.onTitleChange(event.isWorking)
       })
 
-      // Activity-based detection for non-Claude providers (no OSC title events)
-      if (terminal.agentHint !== 'claude') {
+      // Activity-based detection is scoped to Codex terminals.
+      if (terminal.agentHint === 'codex' && !sawCodexTurnComplete) {
         this.resetActivityTimer(terminal)
       }
 
@@ -136,7 +141,7 @@ export class TerminalManager extends EventEmitter {
     if (filtered.includes('\r')) {
       terminal.lastActivityAt = Date.now()
       // User sent Enter → expect agent to start working
-      if (terminal.agentHint !== 'claude') {
+      if (terminal.agentHint === 'codex') {
         terminal.statusMachine.onUserInput()
       }
     }
@@ -217,17 +222,21 @@ export class TerminalManager extends EventEmitter {
   }
 
   private setProviderHint(terminal: ManagedTerminal, provider: AgentProviderHint): void {
+    if (terminal.agentHint === provider) return
     terminal.agentHint = provider
+    if (provider === 'claude') {
+      this.clearActivityTimer(terminal)
+    }
   }
 
   private maybeInferProviderFromInput(terminal: ManagedTerminal, data: string): void {
     const trimmed = data.trimStart()
     if (/^codex(\s|\r|$)/.test(trimmed)) {
-      terminal.agentHint = 'codex'
+      this.setProviderHint(terminal, 'codex')
       return
     }
     if (/^claude(\s|\r|$)/.test(trimmed)) {
-      terminal.agentHint = 'claude'
+      this.setProviderHint(terminal, 'claude')
     }
   }
 
@@ -236,13 +245,13 @@ export class TerminalManager extends EventEmitter {
 
     if (terminal.agentHint !== 'codex') {
       if (lowered.includes('openai codex')) {
-        terminal.agentHint = 'codex'
+        this.setProviderHint(terminal, 'codex')
         return
       }
     }
 
     if (terminal.agentHint === 'unknown' && lowered.includes('claude code')) {
-      terminal.agentHint = 'claude'
+      this.setProviderHint(terminal, 'claude')
     }
   }
 
@@ -254,7 +263,7 @@ export class TerminalManager extends EventEmitter {
     terminal.activityTimer = setTimeout(() => {
       terminal.activityTimer = undefined
       terminal.statusMachine.onOutputSilence()
-    }, ACTIVITY_SILENCE_MS)
+    }, STATUS_DETECTION.activitySilenceMs)
   }
 
   private clearActivityTimer(terminal: ManagedTerminal): void {
