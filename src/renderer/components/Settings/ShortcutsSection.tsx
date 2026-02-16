@@ -1,14 +1,16 @@
+const mod = window.api.platform === 'darwin' ? '⌘' : 'Alt'
+
 const SHORTCUTS = [
-  { keys: '⌘ T', action: 'New Terminal' },
-  { keys: '⌘ W', action: 'Close Terminal' },
-  { keys: '⌘ O', action: 'Open Repository' },
-  { keys: '⌘ B', action: 'Toggle Left Sidebar' },
-  { keys: '⌘ ⇧ B', action: 'Toggle Right Sidebar' },
-  { keys: '⌘ 1-9', action: 'Switch to Tab N' },
-  { keys: '⌘ ⇧ ←', action: 'Previous Terminal' },
-  { keys: '⌘ ⇧ →', action: 'Next Terminal' },
-  { keys: '⌘ ,', action: 'Settings' },
-  { keys: '⌘ ⇧ F', action: 'Focus Mode' },
+  { keys: `${mod} T`, action: 'New Terminal' },
+  { keys: `${mod} W`, action: 'Close Terminal' },
+  { keys: `${mod} O`, action: 'Open Repository' },
+  { keys: `${mod} B`, action: 'Toggle Left Sidebar' },
+  { keys: `${mod} ⇧ B`, action: 'Toggle Right Sidebar' },
+  { keys: `${mod} 1-9`, action: 'Switch to Tab N' },
+  { keys: `${mod} ⇧ ←`, action: 'Previous Terminal' },
+  { keys: `${mod} ⇧ →`, action: 'Next Terminal' },
+  { keys: `${mod} ,`, action: 'Settings' },
+  { keys: `${mod} ⇧ F`, action: 'Focus Mode' },
 ]
 
 export default function ShortcutsSection() {

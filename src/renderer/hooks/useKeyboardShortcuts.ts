@@ -96,7 +96,7 @@ export function useKeyboardShortcuts() {
   }, [terminals, activeTerminalId, setActiveTerminal, repos, activeTab, setActiveTab])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    const isMeta = e.metaKey || e.ctrlKey
+    const isMeta = window.api.platform === 'darwin' ? e.metaKey : e.altKey
 
     // Cmd+Shift+F: Toggle focus mode
     if (isMeta && e.shiftKey && e.key === 'f') {

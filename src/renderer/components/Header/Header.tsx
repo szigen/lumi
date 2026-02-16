@@ -50,7 +50,7 @@ export default function Header() {
         <IconButton
           icon={<Maximize2 size={18} />}
           onClick={enterFocusMode}
-          tooltip={`Focus Mode (${window.api.platform === 'darwin' ? '⌘⇧F' : 'Ctrl+Shift+F'})`}
+          tooltip={`Focus Mode (${window.api.platform === 'darwin' ? '⌘⇧F' : 'Alt+Shift+F'})`}
         />
         <IconButton
           icon={<GitBranch size={18} />}

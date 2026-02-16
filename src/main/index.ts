@@ -7,6 +7,9 @@ import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
 import { getWindowConfig, isMac, isLinux } from './platform'
 
+/** Returns platform-appropriate accelerator: Cmd on macOS, Alt on Windows/Linux */
+const accel = (key: string): string => isMac ? `Cmd+${key}` : `Alt+${key}`
+
 if (isLinux) {
   app.commandLine.appendSwitch('no-sandbox')
   app.commandLine.appendSwitch('disable-setuid-sandbox')
@@ -150,7 +153,7 @@ function createMenu(): void {
             { type: 'separator' as const },
             {
               label: 'Quit',
-              accelerator: 'CmdOrCtrl+Q',
+              accelerator: accel('Q'),
               click: () => mainWindow?.close()
             }
           ]
@@ -161,18 +164,18 @@ function createMenu(): void {
       submenu: [
         {
           label: 'New Claude',
-          accelerator: 'CmdOrCtrl+T',
+          accelerator: accel('T'),
           click: () => mainWindow?.webContents.send('shortcut', 'new-terminal')
         },
         {
           label: 'Close Terminal',
-          accelerator: 'CmdOrCtrl+W',
+          accelerator: accel('W'),
           click: () => mainWindow?.webContents.send('shortcut', 'close-terminal')
         },
         { type: 'separator' },
         {
           label: 'Open Repository',
-          accelerator: 'CmdOrCtrl+O',
+          accelerator: accel('O'),
           click: () => mainWindow?.webContents.send('shortcut', 'open-repo-selector')
         },
         ...(!isMac
@@ -180,7 +183,7 @@ function createMenu(): void {
               { type: 'separator' as const },
               {
                 label: 'Quit',
-                accelerator: 'CmdOrCtrl+Q',
+                accelerator: accel('Q'),
                 click: () => mainWindow?.close()
               }
             ]
@@ -204,23 +207,23 @@ function createMenu(): void {
       submenu: [
         {
           label: 'Toggle Left Sidebar',
-          accelerator: 'CmdOrCtrl+B',
+          accelerator: accel('B'),
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-left-sidebar')
         },
         {
           label: 'Toggle Right Sidebar',
-          accelerator: 'CmdOrCtrl+Shift+B',
+          accelerator: accel('Shift+B'),
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-right-sidebar')
         },
         {
           label: 'Settings',
-          accelerator: 'CmdOrCtrl+,',
+          accelerator: accel(','),
           click: () => mainWindow?.webContents.send('shortcut', 'open-settings')
         },
         { type: 'separator' },
         {
           label: 'Focus Mode',
-          accelerator: 'CmdOrCtrl+Shift+F',
+          accelerator: accel('Shift+F'),
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-focus-mode')
         },
         { type: 'separator' },
