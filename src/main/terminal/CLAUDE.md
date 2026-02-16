@@ -6,7 +6,7 @@ PTY process spawn/management, output buffering, and status tracking.
 - **TerminalManager.ts** — PTY lifecycle (spawn, kill, write, resize), output buffering, snapshot/status queries.
 - **StatusStateMachine.ts** — Pure state machine for `TerminalStatus` (`idle`, `working`, `waiting-unseen`, `waiting-focused`, `waiting-seen`, `error`).
 - **OscTitleParser.ts** — Parses OSC title/notification events and provider hints.
-- **OutputBuffer.ts** — Output truncation (newline-aware, ~100KB default).
+- **OutputBuffer.ts** — Output truncation (newline-aware, ~500KB default).
 - **types.ts** — `ManagedTerminal`, `SpawnResult` re-export, notifier/tracker interfaces.
 
 ## Rules

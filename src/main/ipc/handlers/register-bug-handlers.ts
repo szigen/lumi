@@ -1,9 +1,9 @@
 import { ipcMain } from 'electron'
 import { existsSync } from 'fs'
 import * as path from 'path'
-import { randomUUID } from 'crypto'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import type { IpcHandlerContext } from './types'
+import { buildDelimitedInputCommand } from './utils'
 
 function isValidRepoPath(repoPath: string): boolean {
   return (
@@ -12,11 +12,6 @@ function isValidRepoPath(repoPath: string): boolean {
     !repoPath.includes('..') &&
     existsSync(repoPath)
   )
-}
-
-function buildDelimitedInputCommand(commandPrefix: string, prompt: string): string {
-  const marker = `__AI_ORCH_${randomUUID().replace(/-/g, '_')}__`
-  return `${commandPrefix} <<'${marker}'\n${prompt}\n${marker}\r`
 }
 
 export function registerBugHandlers(context: IpcHandlerContext): void {

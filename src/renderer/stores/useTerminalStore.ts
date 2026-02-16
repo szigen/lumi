@@ -1,9 +1,6 @@
 import { create } from 'zustand'
 import type { TerminalStatus, Terminal, TerminalSnapshot } from '../../shared/types'
 
-const OUTPUT_BUFFER_MAX_SIZE = 100_000
-const OUTPUT_NEWLINE_SEARCH_WINDOW = 1024
-
 let terminalBridgeCleanup: (() => void) | null = null
 
 interface TerminalState {
@@ -24,30 +21,29 @@ interface TerminalState {
   syncFromMain: () => Promise<void>
 }
 
-export function trimTerminalOutput(buffer: string): string {
-  if (buffer.length <= OUTPUT_BUFFER_MAX_SIZE) {
-    return buffer
-  }
-
-  let cutIndex = buffer.length - OUTPUT_BUFFER_MAX_SIZE
-  const searchEnd = Math.min(cutIndex + OUTPUT_NEWLINE_SEARCH_WINDOW, buffer.length)
-  const newlinePos = buffer.indexOf('\n', cutIndex)
-
-  if (newlinePos !== -1 && newlinePos < searchEnd) {
-    cutIndex = newlinePos + 1
-  }
-
-  return buffer.slice(cutIndex)
+export function appendTerminalOutput(current: string, chunk: string): string {
+  return current + chunk
 }
 
-export function appendTerminalOutput(current: string, chunk: string): string {
-  return trimTerminalOutput(current + chunk)
+export function mergeSnapshotOutput(current: string, snapshot: string): string {
+  if (!current) return snapshot
+  if (!snapshot) return current
+
+  // Snapshot is ahead (renderer missed events) -> trust snapshot.
+  if (snapshot.startsWith(current)) return snapshot
+
+  // Renderer is ahead (sync raced with live output) -> keep current to avoid rollback flicker.
+  if (current.startsWith(snapshot)) return current
+
+  // Diverged streams: prefer longer buffer to reduce destructive full redraws.
+  return current.length >= snapshot.length ? current : snapshot
 }
 
 /** Reconcile main process snapshots with renderer state */
 export function reconcileTerminals(
   snapshots: TerminalSnapshot[],
-  currentTerminals: Map<string, Terminal>
+  currentTerminals: Map<string, Terminal>,
+  currentOutputs: Map<string, string>
 ): { terminals: Map<string, Terminal>; outputs: Map<string, string> } {
   const terminals = new Map<string, Terminal>()
   const outputs = new Map<string, string>()
@@ -63,7 +59,8 @@ export function reconcileTerminals(
       isNew: existing?.isNew,
       createdAt: new Date(snapshot.createdAt)
     })
-    outputs.set(snapshot.id, trimTerminalOutput(snapshot.output || ''))
+    const currentOutput = currentOutputs.get(snapshot.id) || ''
+    outputs.set(snapshot.id, mergeSnapshotOutput(currentOutput, snapshot.output || ''))
   }
 
   return { terminals, outputs }
@@ -223,7 +220,11 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     try {
       const snapshots = await window.api.getTerminalSnapshots()
       const mainIds = new Set(snapshots.map(t => t.id))
-      const { terminals, outputs } = reconcileTerminals(snapshots, get().terminals)
+      const { terminals, outputs } = reconcileTerminals(
+        snapshots,
+        get().terminals,
+        get().outputs
+      )
 
       const activeTerminalId = resolveActiveTerminal(
         get().activeTerminalId,

@@ -13,7 +13,7 @@ State management for the renderer process.
 - Main process is source of truth for terminals.
 - Terminal spawn/kill UX paths must call `syncFromMain()` after IPC mutations.
 - `syncFromMain()` consumes `TERMINAL_SNAPSHOT` and rebuilds `terminals`, `outputs`, `activeTerminalId`, and `lastActiveByRepo`.
-- Terminal output append must use buffer trimming helpers.
+- Live terminal output should append incrementally in renderer (no head-trimming) to avoid ANSI redraw artifacts; snapshot sync merges without rolling back newer live output.
 
 ## Watch Out
 - Terminal bridge listener lifetime is app-level, not terminal-panel-level.

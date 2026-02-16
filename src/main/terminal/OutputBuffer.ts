@@ -1,5 +1,5 @@
-const DEFAULT_MAX_SIZE = 100_000
-const NEWLINE_SEARCH_WINDOW = 1024
+const DEFAULT_MAX_SIZE = 500_000
+const NEWLINE_SEARCH_WINDOW = 2048
 
 export class OutputBuffer {
   private buffer = ''

@@ -5,6 +5,7 @@ import { CREATE_ACTION_PROMPT } from '../../action/create-action-prompt'
 import { buildAgentCommand } from '../../action/build-agent-command'
 import { getProviderBinary } from '../../../shared/ai-provider'
 import type { IpcHandlerContext } from './types'
+import { buildDelimitedInputCommand } from './utils'
 
 export function registerActionPersonaHandlers(context: IpcHandlerContext): void {
   const {
@@ -76,7 +77,10 @@ export function registerActionPersonaHandlers(context: IpcHandlerContext): void 
         {
           type: 'write',
           content: provider === 'codex'
-            ? `codex exec - <<'__AI_ORCH_CREATE_ACTION__'\n${CREATE_ACTION_PROMPT}\n\nThe user request is ".". Create the action now.\n__AI_ORCH_CREATE_ACTION__\r`
+            ? buildDelimitedInputCommand(
+                'codex exec -',
+                `${CREATE_ACTION_PROMPT}\n\nThe user request is ".". Create the action now.`
+              )
             : `${getProviderBinary(provider)} "."\r`
         }
       ]

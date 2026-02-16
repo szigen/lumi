@@ -23,5 +23,6 @@ Main-process IPC registration and dependency wiring.
 ## Watch Out
 - `mainWindow` can be null or destroyed; stream emitters and UI push events must guard for that.
 - `BUGS_APPLY_FIX` writes prompt via randomized heredoc delimiter to avoid fixed-marker collisions.
+- `ACTIONS_CREATE_NEW` (Codex path) also uses randomized heredoc delimiter for injected prompt safety.
 - `ACTIONS_CREATE_NEW` and `PERSONAS_SPAWN` must use `buildAgentCommand()` for provider-specific command construction.
 - Config updates must propagate side effects (`maxTerminals`, repo root, additional paths) and emit `REPOS_CHANGED` when needed.
