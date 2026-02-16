@@ -23,6 +23,27 @@ export class StatusStateMachine {
     }
   }
 
+  /** Called when PTY output activity detected (for non-OSC-title providers) */
+  onOutputActivity(): void {
+    if (this.status !== 'working') {
+      this.transition('working')
+    }
+  }
+
+  /** Called when activity timeout expires (no output for N seconds) */
+  onOutputSilence(): void {
+    if (this.status === 'working') {
+      this.transition(this.focused ? 'waiting-focused' : 'waiting-unseen')
+    }
+  }
+
+  /** Called when user sends input (Enter key) to a non-idle terminal */
+  onUserInput(): void {
+    if (this.status !== 'idle' && this.status !== 'error') {
+      this.transition('working')
+    }
+  }
+
   /** Called when user focuses this terminal's tab */
   onFocus(): void {
     this.focused = true

@@ -10,6 +10,9 @@ import { StatusStateMachine } from './StatusStateMachine'
 import { OscTitleParser, type AgentProviderHint } from './OscTitleParser'
 import { getDefaultShell, getShellArgs, isWin } from '../platform'
 
+/** Silence timeout for activity-based status detection (ms) */
+const ACTIVITY_SILENCE_MS = 3_000
+
 export class TerminalManager extends EventEmitter {
   private terminals: Map<string, ManagedTerminal> = new Map()
   private oscParser = new OscTitleParser()
@@ -74,12 +77,25 @@ export class TerminalManager extends EventEmitter {
         if (event.providerHint) {
           this.setProviderHint(terminal, event.providerHint)
         }
+
+        if (event.source === 'notification') {
+          // OSC 9 = Codex turn completed → definitive "done" signal
+          this.clearActivityTimer(terminal)
+          statusMachine.onTitleChange(false)
+          return
+        }
+
         if (event.isWorking === null) return
         if (event.isWorking) {
           terminal.lastActivityAt = Date.now()
         }
         statusMachine.onTitleChange(event.isWorking)
       })
+
+      // Activity-based detection for non-Claude providers (no OSC title events)
+      if (terminal.agentHint !== 'claude') {
+        this.resetActivityTimer(terminal)
+      }
 
       terminal.outputBuffer.append(data)
 
@@ -90,6 +106,7 @@ export class TerminalManager extends EventEmitter {
     })
 
     ptyProcess.onExit(({ exitCode }) => {
+      this.clearActivityTimer(terminal)
       terminal.statusMachine.onExit(exitCode)
       this.oscParser.delete(id)
       if (!window.isDestroyed()) {
@@ -118,6 +135,10 @@ export class TerminalManager extends EventEmitter {
     this.maybeInferProviderFromInput(terminal, filtered)
     if (filtered.includes('\r')) {
       terminal.lastActivityAt = Date.now()
+      // User sent Enter → expect agent to start working
+      if (terminal.agentHint !== 'claude') {
+        terminal.statusMachine.onUserInput()
+      }
     }
     terminal.pty.write(filtered)
     return true
@@ -133,6 +154,7 @@ export class TerminalManager extends EventEmitter {
   kill(terminalId: string): boolean {
     const terminal = this.terminals.get(terminalId)
     if (!terminal) return false
+    this.clearActivityTimer(terminal)
     terminal.pty.kill()
     this.terminals.delete(terminalId)
     this.oscParser.delete(terminalId)
@@ -142,6 +164,7 @@ export class TerminalManager extends EventEmitter {
 
   killAll(): void {
     for (const [id, terminal] of this.terminals.entries()) {
+      this.clearActivityTimer(terminal)
       terminal.pty.kill()
       this.notifier.removeTerminal(id)
     }
@@ -212,7 +235,7 @@ export class TerminalManager extends EventEmitter {
     const lowered = data.toLowerCase()
 
     if (terminal.agentHint !== 'codex') {
-      if (lowered.includes('openai codex') || data.includes('\x1b[?2026h')) {
+      if (lowered.includes('openai codex')) {
         terminal.agentHint = 'codex'
         return
       }
@@ -220,6 +243,24 @@ export class TerminalManager extends EventEmitter {
 
     if (terminal.agentHint === 'unknown' && lowered.includes('claude code')) {
       terminal.agentHint = 'claude'
+    }
+  }
+
+  /** Reset the activity silence timer — marks terminal as working on output */
+  private resetActivityTimer(terminal: ManagedTerminal): void {
+    this.clearActivityTimer(terminal)
+    terminal.statusMachine.onOutputActivity()
+    terminal.lastActivityAt = Date.now()
+    terminal.activityTimer = setTimeout(() => {
+      terminal.activityTimer = undefined
+      terminal.statusMachine.onOutputSilence()
+    }, ACTIVITY_SILENCE_MS)
+  }
+
+  private clearActivityTimer(terminal: ManagedTerminal): void {
+    if (terminal.activityTimer) {
+      clearTimeout(terminal.activityTimer)
+      terminal.activityTimer = undefined
     }
   }
 }

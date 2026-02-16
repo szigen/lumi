@@ -16,6 +16,7 @@ export interface ManagedTerminal {
   task?: string
   agentHint: TerminalAgentHint
   lastActivityAt?: number
+  activityTimer?: ReturnType<typeof setTimeout>
   outputBuffer: OutputBuffer
   statusMachine: StatusStateMachine
 }
