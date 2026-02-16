@@ -1,3 +1,5 @@
+import type { AIProvider } from './ai-provider'
+
 export interface ClaudeConfig {
   /** Append custom text to Claude's default system prompt */
   appendSystemPrompt?: string
@@ -17,6 +19,10 @@ export interface ClaudeConfig {
   maxTurns?: number
 }
 
+export interface CodexConfig {
+  model?: string
+}
+
 export type ActionStep =
   | { type: 'write'; content: string }
   | { type: 'wait_for'; pattern: string; timeout?: number }
@@ -27,6 +33,8 @@ export interface Action {
   label: string
   icon: string
   scope: 'user' | 'project'
+  provider?: AIProvider
   claude?: ClaudeConfig
+  codex?: CodexConfig
   steps: ActionStep[]
 }

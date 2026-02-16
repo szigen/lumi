@@ -1,8 +1,11 @@
-import type { ClaudeConfig } from './action-types'
+import type { AIProvider } from './ai-provider'
+import type { ClaudeConfig, CodexConfig } from './action-types'
 
 export interface Persona {
   id: string
   label: string
   scope: 'user' | 'project'
-  claude: ClaudeConfig
+  provider?: AIProvider
+  claude?: ClaudeConfig
+  codex?: CodexConfig
 }

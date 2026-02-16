@@ -22,13 +22,13 @@ export class NotificationManager {
     this.clearInterval(terminalId)
 
     if (status === 'waiting-unseen') {
-      this.sendNotification(terminalId, 'Claude is waiting for input')
-      this.startInterval(terminalId, UNSEEN_INTERVAL_MS, 'Claude is waiting for input')
+      this.sendNotification(terminalId, 'Assistant is waiting for input')
+      this.startInterval(terminalId, UNSEEN_INTERVAL_MS, 'Assistant is waiting for input')
     } else if (status === 'waiting-seen') {
       // Don't send immediately on seen transition (user already saw it), just start repeat
-      this.startInterval(terminalId, SEEN_INTERVAL_MS, 'Claude is still waiting for input')
+      this.startInterval(terminalId, SEEN_INTERVAL_MS, 'Assistant is still waiting for input')
     } else if (status === 'error') {
-      this.sendNotification(terminalId, 'Claude exited with error')
+      this.sendNotification(terminalId, 'Assistant exited with error')
     }
     // For working, idle, waiting-focused: interval already cleared above
   }

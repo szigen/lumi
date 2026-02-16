@@ -18,7 +18,7 @@ export class StatusStateMachine {
     if (isWorking && this.status !== 'working') {
       this.transition('working')
     } else if (!isWorking && this.status === 'working') {
-      // Claude finished — transition based on focus
+      // Assistant finished — transition based on focus
       this.transition(this.focused ? 'waiting-focused' : 'waiting-unseen')
     }
   }

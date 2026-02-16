@@ -36,7 +36,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       id,
       type: 'bell',
       title: repoName,
-      message: 'Claude is waiting for input',
+      message: 'Assistant is waiting for input',
       terminalId,
       timestamp: Date.now()
     }

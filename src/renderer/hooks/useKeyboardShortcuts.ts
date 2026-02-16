@@ -3,9 +3,10 @@ import { useAppStore } from '../stores/useAppStore'
 import { useRepoStore } from '../stores/useRepoStore'
 import { useTerminalStore } from '../stores/useTerminalStore'
 import { DEFAULT_CONFIG } from '../../shared/constants'
+import { getProviderLaunchCommand } from '../../shared/ai-provider'
 
 export function useKeyboardShortcuts() {
-  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings, toggleFocusMode } = useAppStore()
+  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings, toggleFocusMode, aiProvider } = useAppStore()
   const { repos, getRepoByName } = useRepoStore()
   const { addTerminal, getTerminalCount, activeTerminalId, removeTerminal, terminals, setActiveTerminal } = useTerminalStore()
 
@@ -25,10 +26,10 @@ export function useKeyboardShortcuts() {
           isNew: result.isNew,
           createdAt: new Date()
         })
-        window.api.writeTerminal(result.id, 'claude\r')
+        window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
       }
     })
-  }, [activeTab, getRepoByName, getTerminalCount, addTerminal])
+  }, [activeTab, aiProvider, getRepoByName, getTerminalCount, addTerminal])
 
   // Handle close terminal action (or close repo tab if no terminal)
   const handleCloseTerminal = useCallback(() => {

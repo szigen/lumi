@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { UIState } from '../../shared/types'
 import { DEFAULT_UI_STATE } from '../../shared/constants'
+import type { AIProvider } from '../../shared/ai-provider'
 import { useTerminalStore } from './useTerminalStore'
 import { useRepoStore } from './useRepoStore'
 
@@ -8,6 +9,7 @@ interface AppState extends UIState {
   settingsOpen: boolean
   quitDialogOpen: boolean
   quitTerminalCount: number
+  aiProvider: AIProvider
   focusModeActive: boolean
   collapsedGroups: Set<string>
   enterFocusMode: () => void
@@ -17,6 +19,7 @@ interface AppState extends UIState {
   closeSettings: () => void
   showQuitDialog: (count: number) => void
   hideQuitDialog: () => void
+  setAiProvider: (provider: AIProvider) => void
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
@@ -35,10 +38,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   quitDialogOpen: false,
   quitTerminalCount: 0,
+  aiProvider: 'claude',
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   showQuitDialog: (count) => set({ quitDialogOpen: true, quitTerminalCount: count }),
   hideQuitDialog: () => set({ quitDialogOpen: false, quitTerminalCount: 0 }),
+  setAiProvider: (provider) => set({ aiProvider: provider }),
   focusModeActive: false,
   collapsedGroups: new Set<string>(),
   enterFocusMode: () => set({ focusModeActive: true }),

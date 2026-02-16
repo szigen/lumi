@@ -17,13 +17,18 @@ const STATUS_CONFIG = {
 export default function FixCard({ fix, onApply, isApplying }: FixCardProps) {
   const config = STATUS_CONFIG[fix.status]
   const StatusIcon = config.icon
+  const sourceLabel = fix.suggestedBy === 'codex'
+    ? 'Codex'
+    : fix.suggestedBy === 'claude'
+      ? 'Claude'
+      : 'Manual'
 
   return (
     <div className={`fix-card ${config.className}`} aria-busy={fix.status === 'applying'}>
       <div className="fix-card__header">
         <div className="fix-card__source">
-          {fix.suggestedBy === 'claude' ? <Bot size={12} /> : <User size={12} />}
-          <span>{fix.suggestedBy === 'claude' ? 'Claude' : 'Manual'}</span>
+          {fix.suggestedBy === 'user' ? <User size={12} /> : <Bot size={12} />}
+          <span>{sourceLabel}</span>
         </div>
         <div className="fix-card__status">
           <StatusIcon size={12} />

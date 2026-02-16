@@ -21,7 +21,7 @@ export default function Layout() {
   useNotificationListener()
   const [isInitializing, setIsInitializing] = useState(true)
   const [isSetupRequired, setIsSetupRequired] = useState(false)
-  const { leftSidebarOpen, rightSidebarOpen, focusModeActive, activeView, loadUIState, showQuitDialog } = useAppStore()
+  const { leftSidebarOpen, rightSidebarOpen, focusModeActive, activeView, loadUIState, showQuitDialog, setAiProvider } = useAppStore()
   const { loadRepos, loadAdditionalPaths } = useRepoStore()
   const { syncFromMain } = useTerminalStore()
 
@@ -51,6 +51,8 @@ export default function Layout() {
           setIsInitializing(false)
           return
         }
+        const config = await window.api.getConfig()
+        setAiProvider(((config as Record<string, unknown>).aiProvider as 'claude' | 'codex') || 'claude')
         await Promise.all([
           loadUIState(),
           loadRepos(),
@@ -66,7 +68,7 @@ export default function Layout() {
     }
 
     initialize()
-  }, [loadUIState, loadRepos, loadAdditionalPaths, syncFromMain])
+  }, [loadUIState, loadRepos, loadAdditionalPaths, setAiProvider, syncFromMain])
 
   // Re-sync terminals when app regains focus (covers macOS sleep/wake)
   useEffect(() => {
@@ -99,6 +101,8 @@ export default function Layout() {
     setIsSetupRequired(false)
     setIsInitializing(true)
     try {
+      const config = await window.api.getConfig()
+      setAiProvider(((config as Record<string, unknown>).aiProvider as 'claude' | 'codex') || 'claude')
       await Promise.all([loadUIState(), loadRepos(), loadAdditionalPaths()])
       await syncFromMain()
     } catch (error) {

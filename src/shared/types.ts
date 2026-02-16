@@ -1,10 +1,12 @@
+import type { AIProvider } from './ai-provider'
+
 export interface SpawnResult {
   id: string
   name: string
   isNew: boolean
 }
 
-/** Single source of truth for Claude terminal status */
+/** Single source of truth for assistant terminal status */
 export type ClaudeStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
 
 export interface Terminal {
@@ -57,6 +59,7 @@ export interface Branch {
 export interface Config {
   projectsRoot: string
   additionalPaths: AdditionalPath[]
+  aiProvider: AIProvider
   maxTerminals: number
   theme: 'dark' | 'light'
   terminalFontSize: number

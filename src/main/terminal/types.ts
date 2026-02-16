@@ -5,6 +5,8 @@ import type { StatusStateMachine } from './StatusStateMachine'
 
 export type { SpawnResult } from '../../shared/types'
 
+export type TerminalAgentHint = 'claude' | 'codex' | 'unknown'
+
 export interface ManagedTerminal {
   id: string
   name: string
@@ -12,6 +14,8 @@ export interface ManagedTerminal {
   repoPath: string
   createdAt: Date
   task?: string
+  agentHint: TerminalAgentHint
+  lastActivityAt?: number
   outputBuffer: OutputBuffer
   statusMachine: StatusStateMachine
 }

@@ -1,8 +1,21 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Logo } from '../../icons'
 import type { StepProps } from '../types'
+import type { AIProvider } from '../../../../shared/ai-provider'
 
 export default function WelcomeStep({ onNext }: StepProps) {
+  const [provider, setProvider] = useState<AIProvider>('claude')
+
+  const handleNext = async () => {
+    try {
+      await window.api.setConfig({ aiProvider: provider })
+    } catch (error) {
+      console.error('Failed to save AI provider:', error)
+    }
+    onNext()
+  }
+
   return (
     <motion.div
       className="onboarding__step-content"
@@ -14,10 +27,21 @@ export default function WelcomeStep({ onNext }: StepProps) {
       <Logo size={56} className="onboarding__logo" animated />
       <h1 className="onboarding__title">Welcome to AI Orchestrator</h1>
       <p className="onboarding__desc">
-        Manage multiple Claude Code CLI sessions from one dashboard.
+        Manage multiple AI coding CLI sessions from one dashboard.
         Let's get your environment set up.
       </p>
-      <button className="onboarding__primary-btn" onClick={onNext}>
+      <div className="settings-theme-options" style={{ marginBottom: 16 }}>
+        {(['claude', 'codex'] as AIProvider[]).map((item) => (
+          <button
+            key={item}
+            className={`settings-theme-btn ${provider === item ? 'settings-theme-btn--active' : ''}`}
+            onClick={() => setProvider(item)}
+          >
+            {item === 'codex' ? 'Codex' : 'Claude'}
+          </button>
+        ))}
+      </div>
+      <button className="onboarding__primary-btn" onClick={handleNext}>
         Get Started
       </button>
     </motion.div>

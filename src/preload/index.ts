@@ -127,14 +127,23 @@ const api = {
     invokeIpc<unknown>(IPC_CHANNELS.BUGS_ADD_FIX, repoPath, bugId, fix),
   updateFix: (repoPath: string, bugId: string, fixId: string, updates: Record<string, unknown>) =>
     invokeIpc<unknown>(IPC_CHANNELS.BUGS_UPDATE_FIX, repoPath, bugId, fixId, updates),
+  askBugAssistant: (repoPath: string, bugId: string, prompt: string) =>
+    invokeIpc<{ started: boolean }>(IPC_CHANNELS.BUGS_ASK_ASSISTANT, repoPath, bugId, prompt),
+  onBugAssistantStreamDelta: (cb: (bugId: string, text: string) => void) =>
+    createIpcListener<[string, string]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, cb),
+  onBugAssistantStreamDone: (cb: (bugId: string, fullText: string | null, error?: string) => void) =>
+    createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, cb),
+  onBugAssistantStreamActivity: (cb: (bugId: string, activity: { type: string; tool?: string }) => void) =>
+    createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, cb),
+  // Backward-compatible aliases
   askClaude: (repoPath: string, bugId: string, prompt: string) =>
-    invokeIpc<{ started: boolean }>(IPC_CHANNELS.BUGS_ASK_CLAUDE, repoPath, bugId, prompt),
+    invokeIpc<{ started: boolean }>(IPC_CHANNELS.BUGS_ASK_ASSISTANT, repoPath, bugId, prompt),
   onClaudeStreamDelta: (cb: (bugId: string, text: string) => void) =>
-    createIpcListener<[string, string]>(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, cb),
+    createIpcListener<[string, string]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, cb),
   onClaudeStreamDone: (cb: (bugId: string, fullText: string | null, error?: string) => void) =>
-    createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, cb),
+    createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, cb),
   onClaudeStreamActivity: (cb: (bugId: string, activity: { type: string; tool?: string }) => void) =>
-    createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, cb),
+    createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, cb),
   applyFix: (repoPath: string, prompt: string) =>
     invokeIpc<{ id: string; name: string; isNew: boolean } | null>(IPC_CHANNELS.BUGS_APPLY_FIX, repoPath, prompt),
 

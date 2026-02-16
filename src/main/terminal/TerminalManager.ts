@@ -7,7 +7,7 @@ import type { ManagedTerminal, SpawnResult, ITerminalNotifier, ICodenameTracker 
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { generateCodename } from './codenames'
 import { StatusStateMachine } from './StatusStateMachine'
-import { OscTitleParser } from './OscTitleParser'
+import { OscTitleParser, type AgentProviderHint } from './OscTitleParser'
 import { getDefaultShell, getShellArgs, isWin } from '../platform'
 
 export class TerminalManager extends EventEmitter {
@@ -56,6 +56,7 @@ export class TerminalManager extends EventEmitter {
       pty: ptyProcess,
       repoPath,
       createdAt: new Date(),
+      agentHint: 'unknown',
       outputBuffer: new OutputBuffer(),
       statusMachine
     }
@@ -68,7 +69,17 @@ export class TerminalManager extends EventEmitter {
     })
 
     ptyProcess.onData((data) => {
-      this.oscParser.parse(id, data, (isWorking) => statusMachine.onTitleChange(isWorking))
+      this.maybeInferProviderFromOutput(terminal, data)
+      this.oscParser.parse(id, data, (event) => {
+        if (event.providerHint) {
+          this.setProviderHint(terminal, event.providerHint)
+        }
+        if (event.isWorking === null) return
+        if (event.isWorking) {
+          terminal.lastActivityAt = Date.now()
+        }
+        statusMachine.onTitleChange(event.isWorking)
+      })
 
       terminal.outputBuffer.append(data)
 
@@ -98,12 +109,16 @@ export class TerminalManager extends EventEmitter {
     const terminal = this.terminals.get(terminalId)
     if (!terminal) return false
     // Strip focus reporting events (\x1b[I = focus-in, \x1b[O = focus-out)
-    // Claude CLI enables focus reporting via \x1b[?1004h and stops spinner
+    // Assistant CLIs can enable focus reporting via \x1b[?1004h and stop spinner
     // animation on focus-out. We manage focus state ourselves via StatusStateMachine,
-    // so Claude CLI should always behave as if focused to emit spinner titles.
+    // so they should always behave as if focused to emit spinner titles.
     // eslint-disable-next-line no-control-regex
     const filtered = data.replace(/\x1b\[[IO]/g, '')
     if (filtered.length === 0) return true
+    this.maybeInferProviderFromInput(terminal, filtered)
+    if (filtered.includes('\r')) {
+      terminal.lastActivityAt = Date.now()
+    }
     terminal.pty.write(filtered)
     return true
   }
@@ -178,4 +193,33 @@ export class TerminalManager extends EventEmitter {
     return terminal ? terminal.outputBuffer.get() : null
   }
 
+  private setProviderHint(terminal: ManagedTerminal, provider: AgentProviderHint): void {
+    terminal.agentHint = provider
+  }
+
+  private maybeInferProviderFromInput(terminal: ManagedTerminal, data: string): void {
+    const trimmed = data.trimStart()
+    if (/^codex(\s|\r|$)/.test(trimmed)) {
+      terminal.agentHint = 'codex'
+      return
+    }
+    if (/^claude(\s|\r|$)/.test(trimmed)) {
+      terminal.agentHint = 'claude'
+    }
+  }
+
+  private maybeInferProviderFromOutput(terminal: ManagedTerminal, data: string): void {
+    const lowered = data.toLowerCase()
+
+    if (terminal.agentHint !== 'codex') {
+      if (lowered.includes('openai codex') || data.includes('\x1b[?2026h')) {
+        terminal.agentHint = 'codex'
+        return
+      }
+    }
+
+    if (terminal.agentHint === 'unknown' && lowered.includes('claude code')) {
+      terminal.agentHint = 'claude'
+    }
+  }
 }

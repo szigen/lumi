@@ -9,7 +9,7 @@ import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { ActionStore } from '../action/ActionStore'
 import { ActionEngine } from '../action/ActionEngine'
 import { CREATE_ACTION_PROMPT } from '../action/create-action-prompt'
-import { buildClaudeCommand } from '../action/build-claude-command'
+import { buildAgentCommand } from '../action/build-claude-command'
 import { PersonaStore } from '../persona/PersonaStore'
 import { SystemChecker } from '../system/SystemChecker'
 import { BugStorage } from '../bug/bug-storage'
@@ -17,11 +17,13 @@ import { TOTAL_CODENAMES } from '../terminal/codenames'
 import { existsSync } from 'fs'
 import { spawn } from 'child_process'
 import type { ChildProcess } from 'child_process'
+import type { AIProvider } from '../../shared/ai-provider'
+import { getProviderBinary } from '../../shared/ai-provider'
 
-const MAX_CLAUDE_PROCESSES = 2
-const CLAUDE_PROCESS_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
+const MAX_ASSISTANT_PROCESSES = 2
+const ASSISTANT_PROCESS_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
 const MAX_BUFFER_SIZE = 1024 * 1024 // 1MB
-const activeClaudeProcesses = new Map<string, ChildProcess>()
+const activeAssistantProcesses = new Map<string, ChildProcess>()
 
 function isValidRepoPath(repoPath: string): boolean {
   return (
@@ -30,6 +32,29 @@ function isValidRepoPath(repoPath: string): boolean {
     !repoPath.includes('..') &&
     existsSync(repoPath)
   )
+}
+
+function getActiveProvider(configManager: ConfigManager): AIProvider {
+  const configured = configManager.getConfig().aiProvider
+  return configured === 'codex' ? 'codex' : 'claude'
+}
+
+function emitAssistantDelta(bugId: string, text: string): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, bugId, text)
+  }
+}
+
+function emitAssistantDone(bugId: string, fullText: string | null, error?: string): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, bugId, fullText, error)
+  }
+}
+
+function emitAssistantActivity(bugId: string, activity: { type: string; tool?: string }): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, bugId, activity)
+  }
 }
 
 let mainWindow: BrowserWindow | null = null
@@ -64,7 +89,7 @@ export function setupIpcHandlers(): void {
 
   personaStore = new PersonaStore()
 
-  const systemChecker = new SystemChecker()
+  const systemChecker = new SystemChecker(() => getActiveProvider(configManager))
   const bugStorage = new BugStorage()
 
   // Send action changes to renderer
@@ -301,7 +326,10 @@ export function setupIpcHandlers(): void {
       const actions = actionStore!.getActions(repoPath)
       const action = actions.find((a) => a.id === actionId)
       if (!action) throw new Error(`Action not found: ${actionId}`)
-      const result = await actionEngine!.execute(action, repoPath)
+      const result = await actionEngine!.execute(
+        { ...action, provider: action.provider ?? getActiveProvider(configManager) },
+        repoPath
+      )
       if (result) {
         terminalManager!.setTask(result.id, action.label)
       }
@@ -336,18 +364,26 @@ export function setupIpcHandlers(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.ACTIONS_CREATE_NEW, async (_, repoPath: string) => {
+    const provider = getActiveProvider(configManager)
     const action: import('../../shared/action-types').Action = {
       id: '__create-action',
       label: 'Create Action',
       icon: 'Plus',
       scope: 'user',
-      claude: {
-        appendSystemPrompt: CREATE_ACTION_PROMPT
-      },
+      provider,
+      ...(provider === 'claude'
+        ? {
+            claude: {
+              appendSystemPrompt: CREATE_ACTION_PROMPT
+            }
+          }
+        : {}),
       steps: [
         {
           type: 'write',
-          content: `claude "."\r`
+          content: provider === 'codex'
+            ? `codex exec - <<'__AI_ORCH_CREATE_ACTION__'\n${CREATE_ACTION_PROMPT}\n\nThe user request is ".". Create the action now.\n__AI_ORCH_CREATE_ACTION__\r`
+            : `${getProviderBinary(provider)} "."\r`
         }
       ]
     }
@@ -380,7 +416,13 @@ export function setupIpcHandlers(): void {
       if (!result) return null
 
       terminalManager!.setTask(result.id, persona.label)
-      const command = buildClaudeCommand('claude ""\r', persona.claude)
+      const provider = persona.provider ?? getActiveProvider(configManager)
+      const baseCommand = provider === 'codex' ? 'codex\r' : 'claude ""\r'
+      const command = buildAgentCommand(baseCommand, {
+        provider,
+        claude: persona.claude,
+        codex: persona.codex
+      })
       terminalManager!.write(result.id, command)
 
       return result
@@ -418,21 +460,20 @@ export function setupIpcHandlers(): void {
     return bugStorage.updateFix(repoPath, bugId, fixId, updates)
   })
 
-  ipcMain.handle(IPC_CHANNELS.BUGS_ASK_CLAUDE, async (_, repoPath: string, bugId: string, prompt: string) => {
+  ipcMain.handle(IPC_CHANNELS.BUGS_ASK_ASSISTANT, async (_, repoPath: string, bugId: string, prompt: string) => {
     if (!mainWindow) return { started: false }
     if (!isValidRepoPath(repoPath)) return { started: false, error: 'Invalid repo path' }
 
-    // Enforce concurrent process limit
-    if (activeClaudeProcesses.size >= MAX_CLAUDE_PROCESSES) {
-      return { started: false, error: 'Too many concurrent Claude processes. Please wait for one to finish.' }
+    if (activeAssistantProcesses.size >= MAX_ASSISTANT_PROCESSES) {
+      return { started: false, error: 'Too many concurrent assistant processes. Please wait for one to finish.' }
     }
 
-    const proc = spawn('claude', ['-p', '--verbose', '--output-format', 'stream-json', '--include-partial-messages'], {
-      cwd: repoPath,
-      env: process.env
-    })
-    activeClaudeProcesses.set(bugId, proc)
+    const provider = getActiveProvider(configManager)
+    const proc = provider === 'codex'
+      ? spawn('codex', ['exec', '--json', '-'], { cwd: repoPath, env: process.env })
+      : spawn('claude', ['-p', '--verbose', '--output-format', 'stream-json', '--include-partial-messages'], { cwd: repoPath, env: process.env })
 
+    activeAssistantProcesses.set(bugId, proc)
     proc.stdin.write(prompt)
     proc.stdin.end()
 
@@ -442,33 +483,51 @@ export function setupIpcHandlers(): void {
     let currentToolName: string | null = null
     let killed = false
 
-    const sendToRenderer = (channel: string, ...args: unknown[]) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(channel, ...args)
-      }
+    const emitDelta = (text: string) => {
+      if (!text) return
+      accumulated += text
+      emitAssistantDelta(bugId, text)
     }
 
-    // Timeout: kill process after 5 minutes
     const timeout = setTimeout(() => {
       if (!killed) {
         killed = true
         proc.kill('SIGTERM')
-        sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, 'Claude process timed out after 5 minutes')
+        emitAssistantDone(bugId, null, `${provider === 'codex' ? 'Codex' : 'Claude'} process timed out after 5 minutes`)
       }
-    }, CLAUDE_PROCESS_TIMEOUT_MS)
+    }, ASSISTANT_PROCESS_TIMEOUT_MS)
 
     const cleanup = () => {
       clearTimeout(timeout)
-      activeClaudeProcesses.delete(bugId)
+      activeAssistantProcesses.delete(bugId)
+    }
+
+    const maybeEmitToolActivity = (event: unknown) => {
+      if (!event || typeof event !== 'object') return
+      const record = event as Record<string, unknown>
+      const eventType = typeof record.type === 'string' ? record.type : ''
+      const rawTool = record.tool || record.name
+      const tool = typeof rawTool === 'string' ? rawTool : undefined
+      if (!eventType.includes('tool')) return
+      if (eventType.includes('start') && tool) {
+        currentToolName = tool
+        emitAssistantActivity(bugId, { type: 'tool_start', tool })
+        return
+      }
+      if (eventType.includes('end') || eventType.includes('stop')) {
+        if (currentToolName) {
+          emitAssistantActivity(bugId, { type: 'tool_end' })
+          currentToolName = null
+        }
+      }
     }
 
     proc.stdout.on('data', (data: Buffer) => {
-      // Buffer size limit check
       if (accumulated.length > MAX_BUFFER_SIZE) {
         if (!killed) {
           killed = true
           proc.kill('SIGTERM')
-          sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, 'Response exceeded maximum size limit')
+          emitAssistantDone(bugId, null, 'Response exceeded maximum size limit')
           cleanup()
         }
         return
@@ -480,66 +539,108 @@ export function setupIpcHandlers(): void {
       for (const line of lines) {
         const trimmed = line.trim()
         if (!trimmed) continue
-        try {
-          const event = JSON.parse(trimmed)
 
-          if (event.type === 'stream_event' && event.event) {
-            const streamEvent = event.event
+        if (provider === 'claude') {
+          try {
+            const event = JSON.parse(trimmed)
 
-            if (streamEvent.type === 'content_block_start' && streamEvent.content_block) {
-              const block = streamEvent.content_block
-              if (block.type === 'tool_use' && block.name) {
-                currentToolName = block.name
-                sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_start', tool: block.name })
+            if (event.type === 'stream_event' && event.event) {
+              const streamEvent = event.event
+
+              if (streamEvent.type === 'content_block_start' && streamEvent.content_block) {
+                const block = streamEvent.content_block
+                if (block.type === 'tool_use' && block.name) {
+                  currentToolName = block.name
+                  emitAssistantActivity(bugId, { type: 'tool_start', tool: block.name })
+                }
+              } else if (streamEvent.type === 'content_block_delta' && streamEvent.delta) {
+                if (streamEvent.delta.type === 'text_delta' && streamEvent.delta.text) {
+                  emitDelta(streamEvent.delta.text)
+                }
+              } else if (streamEvent.type === 'content_block_stop') {
+                if (currentToolName) {
+                  emitAssistantActivity(bugId, { type: 'tool_end' })
+                  currentToolName = null
+                }
               }
-            } else if (streamEvent.type === 'content_block_delta' && streamEvent.delta) {
-              if (streamEvent.delta.type === 'text_delta' && streamEvent.delta.text) {
-                accumulated += streamEvent.delta.text
-                sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, streamEvent.delta.text)
-              }
-            } else if (streamEvent.type === 'content_block_stop') {
-              if (currentToolName) {
-                sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, bugId, { type: 'tool_end' })
-                currentToolName = null
+              continue
+            }
+
+            if (event.type === 'assistant' && event.message?.content) {
+              for (const block of event.message.content) {
+                if (block.type === 'text' && block.text) {
+                  const newText = block.text.slice(accumulated.length)
+                  if (newText) emitDelta(newText)
+                }
               }
             }
-            continue
+          } catch {
+            // ignore non-json lines
           }
+          continue
+        }
 
-          if (event.type === 'assistant' && event.message?.content) {
-            for (const block of event.message.content) {
-              if (block.type === 'text' && block.text) {
-                const newText = block.text.slice(accumulated.length)
-                if (newText) {
-                  accumulated = block.text
-                  sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, bugId, newText)
+        // Codex jsonl mode
+        try {
+          const event = JSON.parse(trimmed) as Record<string, unknown>
+          maybeEmitToolActivity(event)
+
+          const textCandidates: string[] = []
+          const pushText = (value: unknown) => {
+            if (typeof value === 'string' && value.length > 0) {
+              textCandidates.push(value)
+            }
+          }
+          pushText(event.text)
+          pushText(event.delta)
+          if (typeof event.message === 'string') pushText(event.message)
+          if (event.message && typeof event.message === 'object') {
+            const msg = event.message as Record<string, unknown>
+            pushText(msg.text)
+            pushText(msg.delta)
+            if (Array.isArray(msg.content)) {
+              for (const chunk of msg.content) {
+                if (chunk && typeof chunk === 'object') {
+                  const content = chunk as Record<string, unknown>
+                  pushText(content.text)
+                  pushText(content.delta)
                 }
               }
             }
           }
+
+          for (const candidate of textCandidates) {
+            if (!candidate) continue
+            if (candidate.startsWith(accumulated)) {
+              const next = candidate.slice(accumulated.length)
+              if (next) emitDelta(next)
+            } else {
+              emitDelta(candidate)
+            }
+          }
         } catch {
-          // skip non-JSON lines
+          // Codex can print warnings in plain text; treat as non-stream text
         }
       }
     })
 
     proc.stderr.on('data', (data: Buffer) => {
       error += data.toString()
-      console.error('[CLAUDE-STREAM] stderr:', data.toString().slice(0, 200))
+      console.error('[ASSISTANT-STREAM] stderr:', data.toString().slice(0, 200))
     })
 
     proc.on('error', (err: Error) => {
-      console.error('[CLAUDE-STREAM] spawn error:', err.message)
-      sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, err.message)
+      console.error('[ASSISTANT-STREAM] spawn error:', err.message)
+      emitAssistantDone(bugId, null, err.message)
       cleanup()
     })
 
     proc.on('close', (code: number) => {
       if (!killed) {
         if (code === 0) {
-          sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, accumulated.trim())
+          emitAssistantDone(bugId, accumulated.trim() || null)
         } else {
-          sendToRenderer(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, bugId, null, error || `claude exited with code ${code}`)
+          emitAssistantDone(bugId, null, error || `${provider} exited with code ${code}`)
         }
       }
       cleanup()
@@ -551,12 +652,17 @@ export function setupIpcHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.BUGS_APPLY_FIX, async (_, repoPath: string, prompt: string) => {
     if (!mainWindow) throw new Error('No main window')
     if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
+    const provider = getActiveProvider(configManager)
     const result = terminalManager!.spawn(repoPath, mainWindow, false)
     if (result) {
       terminalManager!.setTask(result.id, 'Applying fix')
       // Use stdin via heredoc to avoid command injection
       setTimeout(() => {
-        terminalManager!.write(result.id, `claude -p <<'__EOF__'\n${prompt}\n__EOF__\r`)
+        if (provider === 'codex') {
+          terminalManager!.write(result.id, `codex exec - <<'__EOF__'\n${prompt}\n__EOF__\r`)
+        } else {
+          terminalManager!.write(result.id, `claude -p <<'__EOF__'\n${prompt}\n__EOF__\r`)
+        }
       }, 500)
     }
     return result

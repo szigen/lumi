@@ -3,6 +3,7 @@ import * as path from 'path'
 import * as yaml from 'js-yaml'
 import { app } from 'electron'
 import type { Action } from '../../shared/action-types'
+import type { AIProvider } from '../../shared/ai-provider'
 import { getConfigDir } from '../platform'
 
 const MAX_HISTORY = 20
@@ -80,7 +81,9 @@ export class ActionStore {
             label: parsed.label as string,
             icon: (parsed.icon as string) || 'Zap',
             scope,
+            provider: parsed.provider as AIProvider | undefined,
             claude: parsed.claude as Action['claude'],
+            codex: parsed.codex as Action['codex'],
             steps: parsed.steps as Action['steps']
           })
         }

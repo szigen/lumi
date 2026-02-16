@@ -163,7 +163,7 @@ function createMenu(): void {
       label: 'File',
       submenu: [
         {
-          label: 'New Claude',
+          label: 'New Session',
           accelerator: accel('T'),
           click: () => mainWindow?.webContents.send('shortcut', 'new-terminal')
         },

@@ -2,6 +2,7 @@ import { execSync } from 'child_process'
 import { shell } from 'electron'
 import * as pty from 'node-pty'
 import { isWin, getDefaultShell, getPlatformChecks } from '../platform'
+import type { AIProvider } from '../../shared/ai-provider'
 
 export interface SystemCheckResult {
   id: string
@@ -12,6 +13,7 @@ export interface SystemCheckResult {
 }
 
 export class SystemChecker {
+  private getSelectedProvider: () => AIProvider
   private checks: Array<{
     id: string
     label: string
@@ -19,7 +21,8 @@ export class SystemChecker {
     fix?: () => SystemCheckResult
   }>
 
-  constructor() {
+  constructor(getSelectedProvider: () => AIProvider) {
+    this.getSelectedProvider = getSelectedProvider
     this.checks = [
       {
         id: 'shell',
@@ -65,11 +68,20 @@ export class SystemChecker {
         id: 'claude-cli',
         label: 'Claude CLI',
         run: () => {
+          const selected = this.getSelectedProvider()
           try {
             const cmd = isWin ? 'where claude' : 'which claude'
             const result = execSync(cmd, { encoding: 'utf-8', timeout: 5000 }).trim()
             return { id: 'claude-cli', label: 'Claude CLI', status: 'pass', message: `Found: ${result.split('\n')[0]}` }
           } catch {
+            if (selected !== 'claude') {
+              return {
+                id: 'claude-cli',
+                label: 'Claude CLI',
+                status: 'warn',
+                message: 'Claude CLI not found. Install it if you want to switch providers later.'
+              }
+            }
             return {
               id: 'claude-cli',
               label: 'Claude CLI',
@@ -84,6 +96,43 @@ export class SystemChecker {
           return {
             id: 'claude-cli',
             label: 'Claude CLI',
+            status: 'fail',
+            message: 'Opened install page in browser. Re-run checks after installing.'
+          }
+        }
+      },
+      {
+        id: 'codex-cli',
+        label: 'Codex CLI',
+        run: () => {
+          const selected = this.getSelectedProvider()
+          try {
+            const cmd = isWin ? 'where codex' : 'which codex'
+            const result = execSync(cmd, { encoding: 'utf-8', timeout: 5000 }).trim()
+            return { id: 'codex-cli', label: 'Codex CLI', status: 'pass', message: `Found: ${result.split('\n')[0]}` }
+          } catch {
+            if (selected !== 'codex') {
+              return {
+                id: 'codex-cli',
+                label: 'Codex CLI',
+                status: 'warn',
+                message: 'Codex CLI not found. Install it if you want to switch providers later.'
+              }
+            }
+            return {
+              id: 'codex-cli',
+              label: 'Codex CLI',
+              status: 'fail',
+              message: 'Codex CLI not found. Install it from https://developers.openai.com/codex/',
+              fixable: true
+            }
+          }
+        },
+        fix: () => {
+          shell.openExternal('https://developers.openai.com/codex/')
+          return {
+            id: 'codex-cli',
+            label: 'Codex CLI',
             status: 'fail',
             message: 'Opened install page in browser. Re-run checks after installing.'
           }

@@ -89,10 +89,15 @@ export const IPC_CHANNELS = {
   BUGS_DELETE: 'bugs:delete',
   BUGS_ADD_FIX: 'bugs:add-fix',
   BUGS_UPDATE_FIX: 'bugs:update-fix',
-  BUGS_ASK_CLAUDE: 'bugs:ask-claude',
-  BUGS_CLAUDE_STREAM_DELTA: 'bugs:claude-stream-delta',
-  BUGS_CLAUDE_STREAM_DONE: 'bugs:claude-stream-done',
-  BUGS_CLAUDE_STREAM_ACTIVITY: 'bugs:claude-stream-activity',
+  BUGS_ASK_ASSISTANT: 'bugs:ask-assistant',
+  BUGS_ASSISTANT_STREAM_DELTA: 'bugs:assistant-stream-delta',
+  BUGS_ASSISTANT_STREAM_DONE: 'bugs:assistant-stream-done',
+  BUGS_ASSISTANT_STREAM_ACTIVITY: 'bugs:assistant-stream-activity',
+  // Backward-compatible aliases
+  BUGS_ASK_CLAUDE: 'bugs:ask-assistant',
+  BUGS_CLAUDE_STREAM_DELTA: 'bugs:assistant-stream-delta',
+  BUGS_CLAUDE_STREAM_DONE: 'bugs:assistant-stream-done',
+  BUGS_CLAUDE_STREAM_ACTIVITY: 'bugs:assistant-stream-activity',
   BUGS_APPLY_FIX: 'bugs:apply-fix',
 
   // App lifecycle

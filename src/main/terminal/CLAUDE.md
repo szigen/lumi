@@ -5,7 +5,7 @@ PTY process spawn/management, output buffering, state queries.
 ## Files
 - **TerminalManager.ts** — PTY lifecycle (spawn, kill, write, resize), delegates to injected dependencies
 - **StatusStateMachine.ts** — Pure state machine: 6 states (idle, working, waiting-unseen, waiting-focused, waiting-seen, error), driven by title change and focus/blur events. Uses `ClaudeStatus` from shared/types.ts. Exit code 0 → idle, non-zero → error
-- **OscTitleParser.ts** — Buffers partial OSC title sequences across PTY data chunks, invokes callback with working/idle state. Max 4KB buffer guard against unbounded growth
+- **OscTitleParser.ts** — Buffers partial OSC title sequences across PTY data chunks, supports OSC 0/2 titles, infers provider hints (`claude`/`codex`), and emits provider-aware working/idle events with safe null fallback. Max 4KB buffer guard against unbounded growth
 - **OutputBuffer.ts** — Encapsulates output buffering with ANSI-safe truncation at newline boundaries
 - **types.ts** — `ManagedTerminal`, `SpawnResult` (re-exported from shared), `ITerminalNotifier`, `ICodenameTracker` interfaces
 - **codenames.ts** — Random codename generator (50 adj x 50 nouns = 2500 combos)
@@ -16,15 +16,18 @@ PTY process spawn/management, output buffering, state queries.
 - Max 12 terminals (configurable via ConfigManager)
 - Each terminal gets a random codename on spawn from `codenames.ts`
 - Terminals support an optional `task` field set by actions, personas, or manual spawn
+- Terminals track lightweight provider hints (`agentHint`) for safer status parsing (`claude` / `codex` / `unknown`)
 - TerminalManager uses dependency injection: `ITerminalNotifier` and `ICodenameTracker` interfaces (DIP)
-- Status detection uses OSC title sequences via `OscTitleParser`: `✳` prefix = idle/finished, anything else = working
+- Status detection uses OSC title sequences via `OscTitleParser`:
+- Claude-compatible rule: `✳` prefix = idle/finished, non-`✳` title = working
+- Codex-compatible rule: title token heuristics (`all_idle`, `working`, `tool_use`, `input_required`) with conservative fallback (`isWorking: null` means "don't change state")
 - OSC title sequences are buffered across PTY data chunks — partial sequences accumulate until BEL/ST terminator is received (max 4KB buffer)
 - Focus/blur events from renderer drive waiting-* state transitions
 - `getTerminalList()` includes current `status` from StatusStateMachine for sync
 - `getStatus(id)` allows renderer to query current status on demand (used by useTerminalIPC on mount)
 
 ## Watch Out
-- `write()` strips focus reporting events (`\x1b[I`, `\x1b[O`) before forwarding to PTY — Claude CLI enables focus reporting (`\x1b[?1004h`) and stops spinner animation on focus-out, which breaks status detection. We manage focus ourselves via StatusStateMachine
+- `write()` strips focus reporting events (`\x1b[I`, `\x1b[O`) before forwarding to PTY — assistant CLIs can enable focus reporting (`\x1b[?1004h`) and stop spinner animation on focus-out, which breaks status detection. We manage focus ourselves via StatusStateMachine
 - `syncFromMain()` in renderer reconciles state on startup, visibility change, and powerMonitor resume
 - IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS`
 - PTY shell resolved via `src/main/platform` module (`getDefaultShell()`, `getShellArgs()`) — supports macOS, Windows, and Linux with fallback chains

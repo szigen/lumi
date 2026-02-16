@@ -5,6 +5,7 @@ import { useAppStore } from '../../stores/useAppStore'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
+import { getProviderLaunchCommand } from '../../../shared/ai-provider'
 import PersonaDropdown from '../TerminalPanel/PersonaDropdown'
 import type { Persona } from '../../../shared/persona-types'
 import type { SpawnResult } from '../../../shared/types'
@@ -22,7 +23,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 }
 
 export default function FocusExitControl() {
-  const { toggleFocusMode, activeTab, gridColumns, setGridColumns } = useAppStore()
+  const { toggleFocusMode, activeTab, gridColumns, setGridColumns, aiProvider } = useAppStore()
   const { terminals, addTerminal, getTerminalCount } = useTerminalStore()
   const { getRepoByName } = useRepoStore()
   const [visible, setVisible] = useState(false)
@@ -104,12 +105,12 @@ export default function FocusExitControl() {
     try {
       const result = await window.api.spawnTerminal(activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { initialCommand: 'claude\r' })
+        registerSpawnedTerminal(result, activeRepo.path, { initialCommand: getProviderLaunchCommand(aiProvider) })
       }
     } catch (error) {
       console.error('Failed to spawn terminal:', error)
     }
-  }, [activeRepo, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, aiProvider, getTerminalCount, registerSpawnedTerminal])
 
   const handlePersonaSelect = useCallback(async (persona: Persona) => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
@@ -161,7 +162,7 @@ export default function FocusExitControl() {
             )}
             <PersonaDropdown
               disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
-              onNewClaude={handleNewTerminal}
+              onNewProvider={handleNewTerminal}
               onPersonaSelect={handlePersonaSelect}
               repoPath={activeRepo?.path}
               onOpenChange={handleDropdownOpenChange}
