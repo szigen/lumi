@@ -42,9 +42,22 @@ export class ActionStore {
     )
     const defaultNames = new Set(defaults)
 
-    // Always overwrite default action files with latest versions
     for (const file of defaults) {
-      fs.copyFileSync(path.join(defaultsDir, file), path.join(this.userDir, file))
+      const targetPath = path.join(this.userDir, file)
+
+      // Skip if user has modified this action (modified_at flag present)
+      if (fs.existsSync(targetPath)) {
+        try {
+          const existing = yaml.load(fs.readFileSync(targetPath, 'utf-8')) as Record<string, unknown>
+          if (existing?.modified_at) {
+            // Still track the ID as a default
+            if (existing?.id) this.defaultIds.add(existing.id as string)
+            continue
+          }
+        } catch { /* overwrite if unparseable */ }
+      }
+
+      fs.copyFileSync(path.join(defaultsDir, file), targetPath)
       // Track default action IDs
       try {
         const content = fs.readFileSync(path.join(defaultsDir, file), 'utf-8')
@@ -84,7 +97,8 @@ export class ActionStore {
             provider: parsed.provider as AIProvider | undefined,
             claude: parsed.claude as Action['claude'],
             codex: parsed.codex as Action['codex'],
-            steps: parsed.steps as Action['steps']
+            steps: parsed.steps as Action['steps'],
+            modified_at: parsed.modified_at as string | undefined
           })
         }
       } catch (error) {
@@ -100,11 +114,14 @@ export class ActionStore {
 
     try {
       const watcher = fs.watch(dir, (_event, filename) => {
-        // Backup user-scope YAML files before reloading
         if (scope === 'user' && filename && (filename.endsWith('.yaml') || filename.endsWith('.yml'))) {
           const filePath = path.join(dir, filename)
           if (fs.existsSync(filePath)) {
+            // File was created or modified — backup before reloading
             this.backupAction(filePath)
+          } else {
+            // File was deleted — reseed defaults if needed
+            this.reseedIfDefault()
           }
         }
 
@@ -146,6 +163,17 @@ export class ActionStore {
       }
     } catch {
       // Best-effort backup
+    }
+  }
+
+  private reseedIfDefault(): void {
+    // Re-run seedDefaults to restore any missing default actions
+    const before = this.userActions.map((a) => a.id)
+    this.seedDefaults()
+    const after = this.loadDir(this.userDir, 'user').map((a) => a.id)
+    // Only trigger if something actually changed
+    if (JSON.stringify(before.sort()) !== JSON.stringify(after.sort())) {
+      this.userActions = this.loadDir(this.userDir, 'user')
     }
   }
 
@@ -206,6 +234,41 @@ export class ActionStore {
 
   getDefaultIds(): string[] {
     return [...this.defaultIds]
+  }
+
+  getActionContent(actionId: string, scope: 'user' | 'project', repoPath?: string): string | null {
+    const dir = scope === 'project' && repoPath
+      ? path.join(repoPath, '.ai-orchestrator', 'actions')
+      : this.userDir
+    if (!fs.existsSync(dir)) return null
+
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
+    for (const file of files) {
+      try {
+        const filePath = path.join(dir, file)
+        const content = fs.readFileSync(filePath, 'utf-8')
+        const parsed = yaml.load(content) as Record<string, unknown>
+        if (parsed?.id === actionId) return content
+      } catch { /* skip */ }
+    }
+    return null
+  }
+
+  getActionFilePath(actionId: string, scope: 'user' | 'project', repoPath?: string): string | null {
+    const dir = scope === 'project' && repoPath
+      ? path.join(repoPath, '.ai-orchestrator', 'actions')
+      : this.userDir
+    if (!fs.existsSync(dir)) return null
+
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
+    for (const file of files) {
+      try {
+        const content = fs.readFileSync(path.join(dir, file), 'utf-8')
+        const parsed = yaml.load(content) as Record<string, unknown>
+        if (parsed?.id === actionId) return path.join(dir, file)
+      } catch { /* skip */ }
+    }
+    return null
   }
 
   getActionHistory(actionId: string): string[] {

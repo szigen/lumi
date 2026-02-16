@@ -15,7 +15,7 @@ Secure IPC bridge between main and renderer via `contextBridge`.
 ## API Groups
 - Terminal: spawn, write, kill, resize, `getTerminalSnapshots`, status/focus/sync listeners.
 - Repository + Git: repo discovery/file tree/watch + commit/branch/status APIs.
-- Actions + Personas: list/load/execute/spawn and change listeners.
+- Actions + Personas: list/load/execute/edit/spawn and change listeners (`editAction` for terminal-first editing).
 - Bugs: `askBugAssistant` + `onBugAssistantStream*` channels, fix CRUD/apply.
 - Config/UI State, Window controls, Dialog, System checks, App lifecycle.
 

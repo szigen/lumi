@@ -90,6 +90,8 @@ const api = {
     invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
   createNewAction: (repoPath: string) =>
     invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_CREATE_NEW, repoPath),
+  editAction: (actionId: string, scope: string, repoPath?: string) =>
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_EDIT, actionId, scope, repoPath),
   getActionHistory: (actionId: string) =>
     invokeIpc<string[]>(IPC_CHANNELS.ACTIONS_HISTORY, actionId),
   restoreAction: (actionId: string, timestamp: string) =>

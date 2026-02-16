@@ -67,6 +67,7 @@ export const IPC_CHANNELS = {
   ACTIONS_HISTORY: 'actions:history',
   ACTIONS_RESTORE: 'actions:restore',
   ACTIONS_DEFAULT_IDS: 'actions:default-ids',
+  ACTIONS_EDIT: 'actions:edit',
 
   // Persona operations
   PERSONAS_LIST: 'personas:list',

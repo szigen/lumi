@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import type { Action } from '../../../shared/action-types'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import { CREATE_ACTION_PROMPT } from '../../action/create-action-prompt'
+import { buildEditActionPrompt } from '../../action/edit-action-prompt'
 import { buildAgentCommand } from '../../action/build-agent-command'
 import { getProviderBinary } from '../../../shared/ai-provider'
 import type { IpcHandlerContext } from './types'
@@ -91,6 +92,49 @@ export function registerActionPersonaHandlers(context: IpcHandlerContext): void 
       terminalManager.setTask(result.id, 'Create Action')
     }
     return result
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ACTIONS_EDIT, async (_, actionId: string, scope: string, repoPath?: string) => {
+    const yamlContent = actionStore.getActionContent(actionId, scope as 'user' | 'project', repoPath)
+    if (!yamlContent) throw new Error(`Action not found: ${actionId}`)
+
+    const filePath = actionStore.getActionFilePath(actionId, scope as 'user' | 'project', repoPath)
+    if (!filePath) throw new Error(`Action file not found: ${actionId}`)
+
+    const provider = getActiveProvider()
+    const editPrompt = buildEditActionPrompt(yamlContent, filePath)
+
+    const action: Action = {
+      id: '__edit-action',
+      label: `Edit Action`,
+      icon: 'FileEdit',
+      scope: 'user',
+      provider,
+      ...(provider === 'claude'
+        ? {
+            claude: {
+              appendSystemPrompt: editPrompt
+            }
+          }
+        : {}),
+      steps: [
+        {
+          type: 'write',
+          content: provider === 'codex'
+            ? buildDelimitedInputCommand(
+                'codex exec -',
+                `${editPrompt}\n\nThe user request is ".". Edit the action now.`
+              )
+            : `${getProviderBinary(provider)} "."\r`
+        }
+      ]
+    }
+
+    const editResult = await actionEngine.execute(action, repoPath || actionStore.getUserDir())
+    if (editResult) {
+      terminalManager.setTask(editResult.id, `Edit: ${actionId}`)
+    }
+    return editResult
   })
 
   ipcMain.handle(IPC_CHANNELS.PERSONAS_LIST, async (_, repoPath?: string) => {

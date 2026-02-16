@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Zap, Terminal, TestTube, Package, GitBranch, FileEdit, Plus,
-  Clock, Trash2, RotateCcw
+  Clock, Trash2, RotateCcw, Pencil
 } from 'lucide-react'
 import type { Action } from '../../../shared/action-types'
 import { useTerminalStore } from '../../stores/useTerminalStore'
@@ -125,14 +125,18 @@ export default function QuickActions() {
 
   const handleDelete = useCallback(async (action: Action) => {
     setContextMenu(null)
-    if (defaultIds.has(action.id)) return
     await window.api.deleteAction(action.id, action.scope, activeRepo?.path)
-  }, [defaultIds, activeRepo?.path])
+  }, [activeRepo?.path])
 
   const handleResetDefault = useCallback(async (action: Action) => {
     setContextMenu(null)
     // Deleting a default action triggers seedDefaults on next reload via watcher
     await window.api.deleteAction(action.id, action.scope, activeRepo?.path)
+  }, [activeRepo?.path])
+
+  const handleEdit = useCallback(async (action: Action) => {
+    setContextMenu(null)
+    await executeAndTrack(() => window.api.editAction(action.id, action.scope, activeRepo?.path))
   }, [activeRepo?.path])
 
   const userActions = actions.filter((a) => a.scope === 'user')
@@ -175,18 +179,7 @@ export default function QuickActions() {
         <>
           <div className="action-divider" />
           <div className="quick-actions">
-            {projectActions.map((action) => (
-              <button
-                key={action.id}
-                className="action-btn"
-                onClick={() => handleAction(action)}
-                disabled={!activeRepo}
-                title={`${action.label} (project)`}
-              >
-                {ICON_MAP[action.icon] || <Zap size={16} />}
-                <span>{action.label}</span>
-              </button>
-            ))}
+            {projectActions.map(renderActionButton)}
           </div>
         </>
       )}
@@ -197,21 +190,27 @@ export default function QuickActions() {
           onClose={() => setContextMenu(null)}
           items={[
             {
+              label: 'Edit',
+              icon: <Pencil size={14} />,
+              onClick: () => handleEdit(contextMenu.action)
+            },
+            {
+              label: 'Delete',
+              icon: <Trash2 size={14} />,
+              onClick: () => handleDelete(contextMenu.action)
+            },
+            {
               label: 'History',
               icon: <Clock size={14} />,
               onClick: () => handleShowHistory(contextMenu.action, contextMenu.position)
             },
-            ...(defaultIds.has(contextMenu.action.id)
+            ...(defaultIds.has(contextMenu.action.id) && contextMenu.action.modified_at
               ? [{
                   label: 'Reset to Default',
                   icon: <RotateCcw size={14} />,
                   onClick: () => handleResetDefault(contextMenu.action)
                 }]
-              : [{
-                  label: 'Delete',
-                  icon: <Trash2 size={14} />,
-                  onClick: () => handleDelete(contextMenu.action)
-                }]
+              : []
             )
           ]}
         />

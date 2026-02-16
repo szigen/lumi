@@ -37,4 +37,5 @@ export interface Action {
   claude?: ClaudeConfig
   codex?: CodexConfig
   steps: ActionStep[]
+  modified_at?: string
 }

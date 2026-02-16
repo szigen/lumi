@@ -4,7 +4,7 @@ Type definitions and constants shared between main and renderer.
 
 ## Files
 - **types.ts** — shared domain interfaces, including `TerminalStatus`, `Terminal`, `TerminalInfo`, and `TerminalSnapshot`.
-- **ipc-channels.ts** — centralized IPC channel constants (`domain:operation` naming).
+- **ipc-channels.ts** — centralized IPC channel constants (`domain:operation` naming). Includes `ACTIONS_EDIT` for terminal-first action editing.
 - **action-types.ts** — action/persona config payload types.
 - **bug-types.ts** — bug tracker domain types.
 - **persona-types.ts** — persona definition.
