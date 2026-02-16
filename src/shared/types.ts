@@ -29,6 +29,11 @@ export interface TerminalInfo {
   status: Terminal['status']
 }
 
+/** Serializable terminal snapshot sent from main → renderer */
+export interface TerminalSnapshot extends TerminalInfo {
+  output: string
+}
+
 export interface Repository {
   name: string
   path: string

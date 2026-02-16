@@ -1,5 +1,10 @@
 import { create } from 'zustand'
-import type { Terminal, TerminalInfo } from '../../shared/types'
+import type { ClaudeStatus, Terminal, TerminalSnapshot } from '../../shared/types'
+
+const OUTPUT_BUFFER_MAX_SIZE = 100_000
+const OUTPUT_NEWLINE_SEARCH_WINDOW = 1024
+
+let terminalBridgeCleanup: (() => void) | null = null
 
 interface TerminalState {
   terminals: Map<string, Terminal>
@@ -15,42 +20,58 @@ interface TerminalState {
   setActiveTerminal: (id: string | null) => void
   getTerminalsByRepo: (repoPath: string) => Terminal[]
   getTerminalCount: () => number
+  connectTerminalEventBridge: () => void
+  disconnectTerminalEventBridge: () => void
   syncFromMain: () => Promise<void>
 }
 
-/** Reconcile main process terminal list with renderer state */
-async function reconcileTerminals(
-  mainTerminals: TerminalInfo[],
-  currentTerminals: Map<string, Terminal>,
-  currentOutputs: Map<string, string>
-) {
+export function trimTerminalOutput(buffer: string): string {
+  if (buffer.length <= OUTPUT_BUFFER_MAX_SIZE) {
+    return buffer
+  }
+
+  let cutIndex = buffer.length - OUTPUT_BUFFER_MAX_SIZE
+  const searchEnd = Math.min(cutIndex + OUTPUT_NEWLINE_SEARCH_WINDOW, buffer.length)
+  const newlinePos = buffer.indexOf('\n', cutIndex)
+
+  if (newlinePos !== -1 && newlinePos < searchEnd) {
+    cutIndex = newlinePos + 1
+  }
+
+  return buffer.slice(cutIndex)
+}
+
+export function appendTerminalOutput(current: string, chunk: string): string {
+  return trimTerminalOutput(current + chunk)
+}
+
+/** Reconcile main process snapshots with renderer state */
+export function reconcileTerminals(
+  snapshots: TerminalSnapshot[],
+  currentTerminals: Map<string, Terminal>
+): { terminals: Map<string, Terminal>; outputs: Map<string, string> } {
   const terminals = new Map<string, Terminal>()
   const outputs = new Map<string, string>()
 
-  for (const mt of mainTerminals) {
-    const existing = currentTerminals.get(mt.id)
-    if (existing) {
-      terminals.set(mt.id, existing)
-      outputs.set(mt.id, currentOutputs.get(mt.id) || '')
-    } else {
-      const buffer = await window.api.getTerminalBuffer(mt.id)
-      terminals.set(mt.id, {
-        id: mt.id,
-        name: mt.name,
-        repoPath: mt.repoPath,
-        status: mt.status || 'idle',
-        task: mt.task,
-        createdAt: new Date(mt.createdAt)
-      })
-      outputs.set(mt.id, buffer || '')
-    }
+  for (const snapshot of snapshots) {
+    const existing = currentTerminals.get(snapshot.id)
+    terminals.set(snapshot.id, {
+      id: snapshot.id,
+      name: snapshot.name,
+      repoPath: snapshot.repoPath,
+      status: snapshot.status || existing?.status || 'idle',
+      task: snapshot.task,
+      isNew: existing?.isNew,
+      createdAt: new Date(snapshot.createdAt)
+    })
+    outputs.set(snapshot.id, trimTerminalOutput(snapshot.output || ''))
   }
 
   return { terminals, outputs }
 }
 
 /** Pick the active terminal: keep current if still valid, otherwise pick first available */
-function resolveActiveTerminal(
+export function resolveActiveTerminal(
   currentActive: string | null,
   validIds: Set<string>,
   terminals: Map<string, Terminal>
@@ -60,7 +81,7 @@ function resolveActiveTerminal(
 }
 
 /** Rebuild per-repo last-active map, preserving valid previous selections */
-function rebuildLastActiveByRepo(
+export function rebuildLastActiveByRepo(
   terminals: Map<string, Terminal>,
   previousLastActive: Map<string, string>
 ): Map<string, string> {
@@ -152,7 +173,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     set((state) => {
       const newOutputs = new Map(state.outputs)
       const current = newOutputs.get(id) || ''
-      newOutputs.set(id, current + data)
+      const next = appendTerminalOutput(current, data)
+      newOutputs.set(id, next)
       return { outputs: newOutputs }
     })
   },
@@ -179,19 +201,42 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   getTerminalCount: () => get().terminals.size,
 
+  connectTerminalEventBridge: () => {
+    if (terminalBridgeCleanup) {
+      return
+    }
+
+    const cleanupOutput = window.api.onTerminalOutput((terminalId: string, data: string) => {
+      get().appendOutput(terminalId, data)
+    })
+    const cleanupStatus = window.api.onTerminalStatus((terminalId: string, status: string) => {
+      get().updateTerminal(terminalId, { status: status as ClaudeStatus })
+    })
+    const cleanupExit = window.api.onTerminalExit((terminalId: string) => {
+      get().removeTerminal(terminalId)
+    })
+
+    terminalBridgeCleanup = () => {
+      cleanupOutput()
+      cleanupStatus()
+      cleanupExit()
+      terminalBridgeCleanup = null
+    }
+  },
+
+  disconnectTerminalEventBridge: () => {
+    if (!terminalBridgeCleanup) return
+    terminalBridgeCleanup()
+  },
+
   syncFromMain: async () => {
     if (get().syncing) return
     set({ syncing: true })
 
     try {
-      const mainTerminals = await window.api.listTerminals()
-      const mainIds = new Set(mainTerminals.map(t => t.id))
-
-      const { terminals, outputs } = await reconcileTerminals(
-        mainTerminals,
-        get().terminals,
-        get().outputs
-      )
+      const snapshots = await window.api.getTerminalSnapshots()
+      const mainIds = new Set(snapshots.map(t => t.id))
+      const { terminals, outputs } = reconcileTerminals(snapshots, get().terminals)
 
       const activeTerminalId = resolveActiveTerminal(
         get().activeTerminalId,

@@ -181,6 +181,10 @@ export function setupIpcHandlers(): void {
     return terminalManager!.getOutputBuffer(terminalId)
   })
 
+  ipcMain.handle(IPC_CHANNELS.TERMINAL_SNAPSHOT, async () => {
+    return terminalManager!.getTerminalSnapshots()
+  })
+
   ipcMain.handle(IPC_CHANNELS.TERMINAL_GET_STATUS, async (_, terminalId: string) => {
     return terminalManager!.getStatus(terminalId)
   })

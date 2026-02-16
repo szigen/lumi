@@ -17,6 +17,7 @@ Each component lives in its own directory with barrel export (`index.ts`). Major
 - **BugTracker** — repo-scoped bug tracker with Claude integration. Split-panel: left has BugList, FixList, ClaudeInput; right has FixTerminal. Components: BugTracker (shell), BugList, BugForm, FixList, FixCard, ClaudeInput, FixTerminal
 - **WorkflowPanel** — workflow management UI
 - **ui/** — reusable primitives (Button, Badge, Card, IconButton, EmptyState)
+- **Layout** — app shell; connects/disconnects global terminal event bridge so terminal IPC listeners survive view switches
 
 ## Conventions
 - Animations via Framer Motion (`motion.div`, `AnimatePresence`)

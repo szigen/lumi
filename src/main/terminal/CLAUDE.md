@@ -38,12 +38,13 @@ The `activityTimer` field on `ManagedTerminal` tracks the silence timeout. Timer
 ## Other Rules
 - Focus/blur events from renderer drive waiting-* state transitions
 - `getTerminalList()` includes current `status` from StatusStateMachine for sync
-- `getStatus(id)` allows renderer to query current status on demand (used by useTerminalIPC on mount)
+- `getTerminalSnapshots()` returns atomic terminal metadata + output buffer (`TerminalSnapshot[]`) for renderer reconciliation
+- `getStatus(id)` is still available for one-off status queries
 
 ## Watch Out
 - `write()` strips focus reporting events (`\x1b[I`, `\x1b[O`) before forwarding to PTY — assistant CLIs can enable focus reporting (`\x1b[?1004h`) and stop spinner animation on focus-out, which breaks status detection. We manage focus ourselves via StatusStateMachine
 - `syncFromMain()` in renderer reconciles state on startup, visibility change, and powerMonitor resume
-- IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS`
+- IPC channels for state sync: `TERMINAL_SNAPSHOT`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS` (`TERMINAL_LIST`/`TERMINAL_BUFFER` remain backward-compatible)
 - PTY shell resolved via `src/main/platform` module (`getDefaultShell()`, `getShellArgs()`) — supports macOS, Windows, and Linux with fallback chains
 - Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
 - Terminal exit handler cleans up from both the Map and notifier

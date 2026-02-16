@@ -1,4 +1,4 @@
 export { useXTermInstance } from './useXTermInstance'
 export { useTerminalResize } from './useTerminalResize'
-export { useTerminalIPC } from './useTerminalIPC'
+export { useTerminalOutputRenderer } from './useTerminalOutputRenderer'
 export { useTerminalDragDrop } from './useTerminalDragDrop'

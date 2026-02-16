@@ -12,6 +12,7 @@ export const IPC_CHANNELS = {
   TERMINAL_EXIT: 'terminal:exit',
   TERMINAL_LIST: 'terminal:list',
   TERMINAL_BUFFER: 'terminal:buffer',
+  TERMINAL_SNAPSHOT: 'terminal:snapshot',
   TERMINAL_SYNC: 'terminal:sync',
   TERMINAL_STATUS: 'terminal:status',
   TERMINAL_GET_STATUS: 'terminal:get-status',

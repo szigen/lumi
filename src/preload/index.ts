@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { createIpcListener, invokeIpc } from './ipc-utils'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import type { SpawnResult } from '../main/terminal/types'
+import type { TerminalSnapshot } from '../shared/types'
 
 const api = {
   // Platform info
@@ -20,6 +21,8 @@ const api = {
     invokeIpc<Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string; status: string }>>(IPC_CHANNELS.TERMINAL_LIST),
   getTerminalBuffer: (terminalId: string) =>
     invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_BUFFER, terminalId),
+  getTerminalSnapshots: () =>
+    invokeIpc<TerminalSnapshot[]>(IPC_CHANNELS.TERMINAL_SNAPSHOT),
   getTerminalStatus: (terminalId: string) =>
     invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_GET_STATUS, terminalId),
 

@@ -9,6 +9,7 @@ import { generateCodename } from './codenames'
 import { StatusStateMachine } from './StatusStateMachine'
 import { OscTitleParser, type AgentProviderHint } from './OscTitleParser'
 import { getDefaultShell, getShellArgs, isWin } from '../platform'
+import type { TerminalSnapshot } from '../../shared/types'
 
 const STATUS_DETECTION = {
   activitySilenceMs: 3_000
@@ -198,6 +199,18 @@ export class TerminalManager extends EventEmitter {
       createdAt: t.createdAt.toISOString(),
       task: t.task,
       status: t.statusMachine.getStatus()
+    }))
+  }
+
+  getTerminalSnapshots(): TerminalSnapshot[] {
+    return Array.from(this.terminals.values()).map(t => ({
+      id: t.id,
+      name: t.name,
+      repoPath: t.repoPath,
+      createdAt: t.createdAt.toISOString(),
+      task: t.task,
+      status: t.statusMachine.getStatus(),
+      output: t.outputBuffer.get()
     }))
   }
 

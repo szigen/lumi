@@ -14,7 +14,7 @@ Secure IPC bridge between main and renderer via `contextBridge`.
 - Every new IPC channel needs a corresponding method added here
 
 ## API Groups
-- Terminal: spawn, write, kill, resize, list, getBuffer + event listeners (output, exit, bell, sync)
+- Terminal: spawn, write, kill, resize, list, getBuffer, `getTerminalSnapshots` + event listeners (output, exit, bell, sync, status)
 - Repository: getRepos, getFileTree, watch/unwatch + change listeners
 - Git: commits, branches, status, commit
 - Config: get/set config and UI state

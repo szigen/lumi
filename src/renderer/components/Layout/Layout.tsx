@@ -23,7 +23,17 @@ export default function Layout() {
   const [isSetupRequired, setIsSetupRequired] = useState(false)
   const { leftSidebarOpen, rightSidebarOpen, focusModeActive, activeView, loadUIState, showQuitDialog, setAiProvider } = useAppStore()
   const { loadRepos, loadAdditionalPaths } = useRepoStore()
-  const { syncFromMain } = useTerminalStore()
+  const syncFromMain = useTerminalStore((s) => s.syncFromMain)
+  const connectTerminalEventBridge = useTerminalStore((s) => s.connectTerminalEventBridge)
+  const disconnectTerminalEventBridge = useTerminalStore((s) => s.disconnectTerminalEventBridge)
+
+  // Keep terminal IPC listeners alive regardless of panel mount state
+  useEffect(() => {
+    connectTerminalEventBridge()
+    return () => {
+      disconnectTerminalEventBridge()
+    }
+  }, [connectTerminalEventBridge, disconnectTerminalEventBridge])
 
   // Listen for quit confirmation request from main process
   useEffect(() => {
