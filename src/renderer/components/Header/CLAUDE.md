@@ -19,4 +19,4 @@ Top bar with repo tabs, repo selector dropdown, and window controls.
 - Header padding is platform-conditional: 80px on macOS (via `body.platform-darwin .header` CSS), 140px right padding on Windows (for native titleBarOverlay), 12px default on Linux
 - Linux uses custom `.window-controls` buttons in header-right (no native titleBarOverlay — unstable on Wayland/tiling WMs)
 - `-webkit-app-region: drag` on header
-- Focus Mode tooltip shows platform-aware shortcut (macOS: ⌘⇧F, others: Alt+Shift+F)
+- Focus Mode tooltip shows platform-aware shortcut (macOS: ⌘⇧F, others: Ctrl+Shift+F)

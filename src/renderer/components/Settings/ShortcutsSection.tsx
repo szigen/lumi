@@ -1,16 +1,17 @@
-const mod = window.api.platform === 'darwin' ? '⌘' : 'Alt'
+const isMac = window.api.platform === 'darwin'
+const mod = isMac ? '⌘' : 'Ctrl+Shift'
 
 const SHORTCUTS = [
-  { keys: `${mod} T`, action: 'New Terminal' },
-  { keys: `${mod} W`, action: 'Close Terminal' },
-  { keys: `${mod} O`, action: 'Open Repository' },
-  { keys: `${mod} B`, action: 'Toggle Left Sidebar' },
-  { keys: `${mod} ⇧ B`, action: 'Toggle Right Sidebar' },
-  { keys: `${mod} 1-9`, action: 'Switch to Tab N' },
-  { keys: `${mod} ⇧ ←`, action: 'Previous Terminal' },
-  { keys: `${mod} ⇧ →`, action: 'Next Terminal' },
-  { keys: `${mod} ,`, action: 'Settings' },
-  { keys: `${mod} ⇧ F`, action: 'Focus Mode' },
+  { keys: `${mod}+T`, action: 'New Terminal' },
+  { keys: `${mod}+W`, action: 'Close Terminal' },
+  { keys: `${mod}+O`, action: 'Open Repository' },
+  { keys: `${mod}+B`, action: 'Toggle Left Sidebar' },
+  { keys: isMac ? '⌘ ⇧ B' : 'Ctrl+Shift+J', action: 'Toggle Right Sidebar' },
+  { keys: isMac ? '⌘ 1-9' : 'Ctrl+Shift+1-9', action: 'Switch to Tab N' },
+  { keys: isMac ? '⌘ ⇧ ←' : 'Ctrl+Shift+←', action: 'Previous Terminal' },
+  { keys: isMac ? '⌘ ⇧ →' : 'Ctrl+Shift+→', action: 'Next Terminal' },
+  { keys: `${mod}+,`, action: 'Settings' },
+  { keys: isMac ? '⌘ ⇧ F' : 'Ctrl+Shift+F', action: 'Focus Mode' },
 ]
 
 export default function ShortcutsSection() {

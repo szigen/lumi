@@ -96,34 +96,40 @@ export function useKeyboardShortcuts() {
   }, [terminals, activeTerminalId, setActiveTerminal, repos, activeTab, setActiveTab])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    const isMeta = window.api.platform === 'darwin' ? e.metaKey : e.altKey
+    const isMod = window.api.platform === 'darwin' ? e.metaKey : (e.ctrlKey && e.shiftKey)
 
-    // Cmd+Shift+F: Toggle focus mode
-    if (isMeta && e.shiftKey && e.key === 'f') {
+    // Focus mode: macOS = Cmd+Shift+F, Win/Linux = Ctrl+Shift+F
+    if (isMod && e.shiftKey && e.key === 'f') {
       e.preventDefault()
       toggleFocusMode()
       return
     }
 
-    // Cmd+1-9: Switch to tab N
-    if (isMeta && !e.shiftKey && e.key >= '1' && e.key <= '9') {
+    // Switch to tab N: macOS = Cmd+1-9, Win/Linux = Ctrl+Shift+1-9
+    const isTabSwitch = window.api.platform === 'darwin'
+      ? (e.metaKey && !e.shiftKey && e.key >= '1' && e.key <= '9')
+      : (e.ctrlKey && e.shiftKey && e.code >= 'Digit1' && e.code <= 'Digit9')
+
+    if (isTabSwitch) {
       e.preventDefault()
-      const tabIndex = parseInt(e.key, 10) - 1
+      const tabIndex = window.api.platform === 'darwin'
+        ? parseInt(e.key, 10) - 1
+        : parseInt(e.code.replace('Digit', ''), 10) - 1
       if (openTabs[tabIndex]) {
         setActiveTab(openTabs[tabIndex])
       }
       return
     }
 
-    // Cmd+Shift+Left: Previous terminal
-    if (isMeta && e.shiftKey && e.key === 'ArrowLeft') {
+    // Previous terminal: macOS = Cmd+Shift+Left, Win/Linux = Ctrl+Shift+Left
+    if (isMod && e.shiftKey && e.key === 'ArrowLeft') {
       e.preventDefault()
       navigateTerminal('prev')
       return
     }
 
-    // Cmd+Shift+Right: Next terminal
-    if (isMeta && e.shiftKey && e.key === 'ArrowRight') {
+    // Next terminal: macOS = Cmd+Shift+Right, Win/Linux = Ctrl+Shift+Right
+    if (isMod && e.shiftKey && e.key === 'ArrowRight') {
       e.preventDefault()
       navigateTerminal('next')
       return

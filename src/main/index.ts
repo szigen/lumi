@@ -7,8 +7,8 @@ import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
 import { getWindowConfig, isMac, isLinux } from './platform'
 
-/** Returns platform-appropriate accelerator: Cmd on macOS, Alt on Windows/Linux */
-const accel = (key: string): string => isMac ? `Cmd+${key}` : `Alt+${key}`
+/** Returns platform-appropriate accelerator: Cmd on macOS, Ctrl+Shift on Windows/Linux */
+const accel = (key: string): string => isMac ? `Cmd+${key}` : `Ctrl+Shift+${key}`
 
 if (isLinux) {
   app.commandLine.appendSwitch('no-sandbox')
@@ -212,7 +212,7 @@ function createMenu(): void {
         },
         {
           label: 'Toggle Right Sidebar',
-          accelerator: accel('Shift+B'),
+          accelerator: isMac ? 'Cmd+Shift+B' : 'Ctrl+Shift+J',
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-right-sidebar')
         },
         {
@@ -223,7 +223,7 @@ function createMenu(): void {
         { type: 'separator' },
         {
           label: 'Focus Mode',
-          accelerator: accel('Shift+F'),
+          accelerator: isMac ? 'Cmd+Shift+F' : 'Ctrl+Shift+F',
           click: () => mainWindow?.webContents.send('shortcut', 'toggle-focus-mode')
         },
         { type: 'separator' },
