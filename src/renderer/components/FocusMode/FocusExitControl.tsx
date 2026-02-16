@@ -8,7 +8,6 @@ import { DEFAULT_CONFIG } from '../../../shared/constants'
 import { getProviderLaunchCommand } from '../../../shared/ai-provider'
 import PersonaDropdown from '../TerminalPanel/PersonaDropdown'
 import type { Persona } from '../../../shared/persona-types'
-import type { SpawnResult } from '../../../shared/types'
 
 const HOVER_ZONE_HEIGHT = 50
 const HOVER_DELAY_MS = 500
@@ -24,7 +23,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 
 export default function FocusExitControl() {
   const { toggleFocusMode, activeTab, gridColumns, setGridColumns, aiProvider } = useAppStore()
-  const { terminals, addTerminal, getTerminalCount } = useTerminalStore()
+  const { terminals, getTerminalCount, syncFromMain } = useTerminalStore()
   const { getRepoByName } = useRepoStore()
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -81,48 +80,30 @@ export default function FocusExitControl() {
     }
   }, [handleMouseMove])
 
-  const registerSpawnedTerminal = useCallback((
-    result: SpawnResult,
-    repoPath: string,
-    options?: { task?: string; initialCommand?: string }
-  ) => {
-    addTerminal({
-      id: result.id,
-      name: result.name,
-      repoPath,
-      status: 'idle',
-      task: options?.task,
-      isNew: result.isNew,
-      createdAt: new Date()
-    })
-    if (options?.initialCommand) {
-      window.api.writeTerminal(result.id, options.initialCommand)
-    }
-  }, [addTerminal])
-
   const handleNewTerminal = useCallback(async () => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
     try {
       const result = await window.api.spawnTerminal(activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { initialCommand: getProviderLaunchCommand(aiProvider) })
+        await window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
+        await syncFromMain()
       }
     } catch (error) {
       console.error('Failed to spawn terminal:', error)
     }
-  }, [activeRepo, aiProvider, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, aiProvider, getTerminalCount, syncFromMain])
 
   const handlePersonaSelect = useCallback(async (persona: Persona) => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
     try {
       const result = await window.api.spawnPersona(persona.id, activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { task: persona.label })
+        await syncFromMain()
       }
     } catch (error) {
       console.error('Failed to spawn persona:', error)
     }
-  }, [activeRepo, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, getTerminalCount, syncFromMain])
 
   const handleGridToggle = useCallback(() => {
     const cycle: Array<number | 'auto'> = ['auto', 2, 3]

@@ -1,15 +1,15 @@
-import type { ClaudeStatus } from '../../shared/types'
+import type { TerminalStatus } from '../../shared/types'
 
 export class StatusStateMachine {
-  private status: ClaudeStatus = 'idle'
+  private status: TerminalStatus = 'idle'
   private focused: boolean = false
-  private onChange: ((status: ClaudeStatus) => void) | null = null
+  private onChange: ((status: TerminalStatus) => void) | null = null
 
-  getStatus(): ClaudeStatus {
+  getStatus(): TerminalStatus {
     return this.status
   }
 
-  setOnChange(cb: (status: ClaudeStatus) => void): void {
+  setOnChange(cb: (status: TerminalStatus) => void): void {
     this.onChange = cb
   }
 
@@ -70,7 +70,7 @@ export class StatusStateMachine {
     this.transition('idle')
   }
 
-  private transition(newStatus: ClaudeStatus): void {
+  private transition(newStatus: TerminalStatus): void {
     if (this.status === newStatus) return
     this.status = newStatus
     this.onChange?.(newStatus)

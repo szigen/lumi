@@ -3,24 +3,22 @@
 Secure IPC bridge between main and renderer via `contextBridge`.
 
 ## Architecture
-- `index.ts` — exposes `window.api` object with typed methods for all IPC operations
-- `ipc-utils.ts` — helper utilities (`invokeIpc`, `createIpcListener` with auto-cleanup)
-- All methods map to IPC channels from `shared/ipc-channels.ts`
+- `index.ts` exposes typed `window.api` methods.
+- `ipc-utils.ts` provides `invokeIpc` and `createIpcListener` helpers.
+- Channel names are sourced from `src/shared/ipc-channels.ts` only.
 
 ## Rules
-- `nodeIntegration: false`, `contextIsolation: true` — only `window.api` is accessible from renderer
-- `window.api.platform` exposes `process.platform` to renderer for platform-conditional UI
-- Event listeners use `createIpcListener` which returns a cleanup function
-- Every new IPC channel needs a corresponding method added here
+- `nodeIntegration: false`, `contextIsolation: true`.
+- Every new IPC channel must have an explicit preload mapping.
+- Terminal reconciliation API is `getTerminalSnapshots()`; list/buffer legacy helpers are removed.
 
 ## API Groups
-- Terminal: spawn, write, kill, resize, list, getBuffer, `getTerminalSnapshots` + event listeners (output, exit, bell, sync, status)
-- Repository: getRepos, getFileTree, watch/unwatch + change listeners
-- Git: commits, branches, status, commit
-- Config: get/set config and UI state
-- Actions: list, execute, delete, loadProject, createNew + change listener
-- Personas: list, spawn, loadProject + change listener
-- Bugs: listBugs, createBug, updateBug, deleteBug, addFix, updateFix, askClaude (streaming, returns `{ started }`, takes bugId), applyFix + event listeners (onClaudeStreamDelta, onClaudeStreamDone, onClaudeStreamActivity for tool usage events)
-- System Checks: runSystemChecks, fixSystemCheck (onboarding health checks)
-- Window: toggleMaximize, minimizeWindow, closeWindow (Linux custom controls), setTrafficLightVisibility (macOS window button visibility)
-- App: confirm quit flow, shortcut events
+- Terminal: spawn, write, kill, resize, `getTerminalSnapshots`, status/focus/sync listeners.
+- Repository + Git: repo discovery/file tree/watch + commit/branch/status APIs.
+- Actions + Personas: list/load/execute/spawn and change listeners.
+- Bugs: `askBugAssistant` + `onBugAssistantStream*` channels, fix CRUD/apply.
+- Config/UI State, Window controls, Dialog, System checks, App lifecycle.
+
+## Watch Out
+- Keep listener callbacks strongly typed; always return cleanup function from `createIpcListener` wrappers.
+- Avoid backward-compat alias methods once channels are removed from `ipc-channels.ts`.

@@ -17,10 +17,6 @@ const api = {
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_KILL, terminalId),
   resizeTerminal: (terminalId: string, cols: number, rows: number) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_RESIZE, terminalId, cols, rows),
-  listTerminals: () =>
-    invokeIpc<Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string; status: string }>>(IPC_CHANNELS.TERMINAL_LIST),
-  getTerminalBuffer: (terminalId: string) =>
-    invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_BUFFER, terminalId),
   getTerminalSnapshots: () =>
     invokeIpc<TerminalSnapshot[]>(IPC_CHANNELS.TERMINAL_SNAPSHOT),
   getTerminalStatus: (terminalId: string) =>
@@ -137,15 +133,6 @@ const api = {
   onBugAssistantStreamDone: (cb: (bugId: string, fullText: string | null, error?: string) => void) =>
     createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, cb),
   onBugAssistantStreamActivity: (cb: (bugId: string, activity: { type: string; tool?: string }) => void) =>
-    createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, cb),
-  // Backward-compatible aliases
-  askClaude: (repoPath: string, bugId: string, prompt: string) =>
-    invokeIpc<{ started: boolean }>(IPC_CHANNELS.BUGS_ASK_ASSISTANT, repoPath, bugId, prompt),
-  onClaudeStreamDelta: (cb: (bugId: string, text: string) => void) =>
-    createIpcListener<[string, string]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, cb),
-  onClaudeStreamDone: (cb: (bugId: string, fullText: string | null, error?: string) => void) =>
-    createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, cb),
-  onClaudeStreamActivity: (cb: (bugId: string, activity: { type: string; tool?: string }) => void) =>
     createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, cb),
   applyFix: (repoPath: string, prompt: string) =>
     invokeIpc<{ id: string; name: string; isNew: boolean } | null>(IPC_CHANNELS.BUGS_APPLY_FIX, repoPath, prompt),

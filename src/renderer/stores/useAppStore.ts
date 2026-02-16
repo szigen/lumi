@@ -92,18 +92,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       ? newTabs[newTabs.length - 1] || null
       : activeTab
 
-    const repo = useRepoStore.getState().getRepoByName(repoName)
-    if (repo) {
-      const terminalState = useTerminalStore.getState()
-      const repoTerminals = terminalState.getTerminalsByRepo(repo.path)
+      const repo = useRepoStore.getState().getRepoByName(repoName)
+      if (repo) {
+        const terminalState = useTerminalStore.getState()
+        const repoTerminals = terminalState.getTerminalsByRepo(repo.path)
 
-      repoTerminals.forEach(terminal => {
-        window.api.killTerminal(terminal.id)
-        terminalState.removeTerminal(terminal.id)
-      })
+        Promise.all(repoTerminals.map((terminal) => window.api.killTerminal(terminal.id)))
+          .finally(() => {
+            terminalState.syncFromMain()
+          })
 
-      window.api.unwatchFileTree(repo.path)
-    }
+        window.api.unwatchFileTree(repo.path)
+      }
 
     set({ openTabs: newTabs, activeTab: newActive })
     get().saveUIState()

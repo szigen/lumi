@@ -2,7 +2,7 @@ import { BrowserWindow } from 'electron'
 import { TerminalManager } from '../terminal/TerminalManager'
 import type { Action } from '../../shared/action-types'
 import type { SpawnResult } from '../terminal/types'
-import { buildAgentCommand } from './build-claude-command'
+import { buildAgentCommand } from './build-agent-command'
 
 interface OutputEvent {
   terminalId: string

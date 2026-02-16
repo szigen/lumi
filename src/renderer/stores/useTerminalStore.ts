@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ClaudeStatus, Terminal, TerminalSnapshot } from '../../shared/types'
+import type { TerminalStatus, Terminal, TerminalSnapshot } from '../../shared/types'
 
 const OUTPUT_BUFFER_MAX_SIZE = 100_000
 const OUTPUT_NEWLINE_SEARCH_WINDOW = 1024
@@ -13,7 +13,6 @@ interface TerminalState {
   lastActiveByRepo: Map<string, string>
   syncing: boolean
 
-  addTerminal: (terminal: Terminal) => void
   removeTerminal: (id: string) => void
   updateTerminal: (id: string, updates: Partial<Terminal>) => void
   appendOutput: (id: string, data: string) => void
@@ -111,18 +110,6 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   lastActiveByRepo: new Map(),
   syncing: false,
 
-  addTerminal: (terminal) => {
-    set((state) => {
-      const newTerminals = new Map(state.terminals)
-      newTerminals.set(terminal.id, terminal)
-      const newOutputs = new Map(state.outputs)
-      if (!newOutputs.has(terminal.id)) {
-        newOutputs.set(terminal.id, '')
-      }
-      return { terminals: newTerminals, outputs: newOutputs, activeTerminalId: terminal.id }
-    })
-  },
-
   removeTerminal: (id) => {
     set((state) => {
       const terminal = state.terminals.get(id)
@@ -210,7 +197,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       get().appendOutput(terminalId, data)
     })
     const cleanupStatus = window.api.onTerminalStatus((terminalId: string, status: string) => {
-      get().updateTerminal(terminalId, { status: status as ClaudeStatus })
+      get().updateTerminal(terminalId, { status: status as TerminalStatus })
     })
     const cleanupExit = window.api.onTerminalExit((terminalId: string) => {
       get().removeTerminal(terminalId)

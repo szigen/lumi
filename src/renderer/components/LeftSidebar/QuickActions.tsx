@@ -43,7 +43,7 @@ function formatTimestamp(filename: string): string {
 }
 
 export default function QuickActions() {
-  const { addTerminal } = useTerminalStore()
+  const syncFromMain = useTerminalStore((s) => s.syncFromMain)
   const { activeTab } = useAppStore()
   const { getRepoByName } = useRepoStore()
   const [actions, setActions] = useState<Action[]>([])
@@ -90,29 +90,20 @@ export default function QuickActions() {
   }, [activeRepo?.path])
 
   const executeAndTrack = async (
-    apiCall: () => Promise<{ id: string; name: string; isNew: boolean } | null>,
-    task?: string
+    apiCall: () => Promise<{ id: string; name: string; isNew: boolean } | null>
   ) => {
     if (!activeRepo) return
     const result = await apiCall()
     if (result) {
-      addTerminal({
-        id: result.id,
-        name: result.name,
-        repoPath: activeRepo.path,
-        status: 'running',
-        isNew: result.isNew,
-        task,
-        createdAt: new Date()
-      })
+      await syncFromMain()
     }
   }
 
   const handleCreateAction = () =>
-    executeAndTrack(() => window.api.createNewAction(activeRepo!.path), 'Create Action')
+    executeAndTrack(() => window.api.createNewAction(activeRepo!.path))
 
   const handleAction = (action: Action) =>
-    executeAndTrack(() => window.api.executeAction(action.id, activeRepo!.path), action.label)
+    executeAndTrack(() => window.api.executeAction(action.id, activeRepo!.path))
 
   const handleContextMenu = useCallback((e: React.MouseEvent, action: Action) => {
     e.preventDefault()

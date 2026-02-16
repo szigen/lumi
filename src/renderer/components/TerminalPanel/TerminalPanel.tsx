@@ -9,7 +9,6 @@ import { DEFAULT_CONFIG } from '../../../shared/constants'
 import { getProviderLabel, getProviderLaunchCommand } from '../../../shared/ai-provider'
 import PersonaDropdown from './PersonaDropdown'
 import type { Persona } from '../../../shared/persona-types'
-import type { SpawnResult } from '../../../shared/types'
 
 const GRID_GAP = 12 // --spacing-md
 
@@ -23,7 +22,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 }
 
 export default function TerminalPanel() {
-  const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
+  const { terminals, getTerminalCount, syncFromMain } = useTerminalStore()
   const { activeTab, gridColumns, setGridColumns, focusModeActive, aiProvider } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
@@ -33,37 +32,19 @@ export default function TerminalPanel() {
     ? allTerminals.filter(t => t.repoPath === activeRepo.path)
     : []
 
-  const registerSpawnedTerminal = useCallback((
-    result: SpawnResult,
-    repoPath: string,
-    options?: { task?: string; initialCommand?: string }
-  ) => {
-    addTerminal({
-      id: result.id,
-      name: result.name,
-      repoPath,
-      status: 'idle',
-      task: options?.task,
-      isNew: result.isNew,
-      createdAt: new Date()
-    })
-    if (options?.initialCommand) {
-      window.api.writeTerminal(result.id, options.initialCommand)
-    }
-  }, [addTerminal])
-
   const handleNewTerminal = useCallback(async () => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
 
     try {
       const result = await window.api.spawnTerminal(activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { initialCommand: getProviderLaunchCommand(aiProvider) })
+        await window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
+        await syncFromMain()
       }
     } catch (error) {
       console.error('Failed to spawn terminal:', error)
     }
-  }, [activeRepo, aiProvider, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, aiProvider, getTerminalCount, syncFromMain])
 
   const handlePersonaSelect = useCallback(async (persona: Persona) => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
@@ -71,21 +52,21 @@ export default function TerminalPanel() {
     try {
       const result = await window.api.spawnPersona(persona.id, activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { task: persona.label })
+        await syncFromMain()
       }
     } catch (error) {
       console.error('Failed to spawn persona:', error)
     }
-  }, [activeRepo, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, getTerminalCount, syncFromMain])
 
   const handleCloseTerminal = useCallback(async (terminalId: string) => {
     try {
       await window.api.killTerminal(terminalId)
+      await syncFromMain()
     } catch (error) {
       console.error('Failed to kill terminal:', error)
     }
-    removeTerminal(terminalId)
-  }, [removeTerminal])
+  }, [syncFromMain])
 
   const gridRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)

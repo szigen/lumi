@@ -191,17 +191,6 @@ export class TerminalManager extends EventEmitter {
     if (terminal) terminal.task = task
   }
 
-  getTerminalList(): Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string; status: string }> {
-    return Array.from(this.terminals.values()).map(t => ({
-      id: t.id,
-      name: t.name,
-      repoPath: t.repoPath,
-      createdAt: t.createdAt.toISOString(),
-      task: t.task,
-      status: t.statusMachine.getStatus()
-    }))
-  }
-
   getTerminalSnapshots(): TerminalSnapshot[] {
     return Array.from(this.terminals.values()).map(t => ({
       id: t.id,
@@ -227,11 +216,6 @@ export class TerminalManager extends EventEmitter {
         terminal.statusMachine.onBlur()
       }
     }
-  }
-
-  getOutputBuffer(terminalId: string): string | null {
-    const terminal = this.terminals.get(terminalId)
-    return terminal ? terminal.outputBuffer.get() : null
   }
 
   private setProviderHint(terminal: ManagedTerminal, provider: AgentProviderHint): void {

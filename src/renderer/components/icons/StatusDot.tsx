@@ -1,7 +1,7 @@
-import type { ClaudeStatus } from '../../../shared/types'
+import type { TerminalStatus } from '../../../shared/types'
 
 interface StatusDotProps {
-  status: ClaudeStatus
+  status: TerminalStatus
   className?: string
 }
 

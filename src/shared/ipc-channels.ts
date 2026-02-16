@@ -10,8 +10,6 @@ export const IPC_CHANNELS = {
   TERMINAL_RESIZE: 'terminal:resize',
   TERMINAL_OUTPUT: 'terminal:output',
   TERMINAL_EXIT: 'terminal:exit',
-  TERMINAL_LIST: 'terminal:list',
-  TERMINAL_BUFFER: 'terminal:buffer',
   TERMINAL_SNAPSHOT: 'terminal:snapshot',
   TERMINAL_SYNC: 'terminal:sync',
   TERMINAL_STATUS: 'terminal:status',
@@ -94,11 +92,6 @@ export const IPC_CHANNELS = {
   BUGS_ASSISTANT_STREAM_DELTA: 'bugs:assistant-stream-delta',
   BUGS_ASSISTANT_STREAM_DONE: 'bugs:assistant-stream-done',
   BUGS_ASSISTANT_STREAM_ACTIVITY: 'bugs:assistant-stream-activity',
-  // Backward-compatible aliases
-  BUGS_ASK_CLAUDE: 'bugs:ask-assistant',
-  BUGS_CLAUDE_STREAM_DELTA: 'bugs:assistant-stream-delta',
-  BUGS_CLAUDE_STREAM_DONE: 'bugs:assistant-stream-done',
-  BUGS_CLAUDE_STREAM_ACTIVITY: 'bugs:assistant-stream-activity',
   BUGS_APPLY_FIX: 'bugs:apply-fix',
 
   // App lifecycle

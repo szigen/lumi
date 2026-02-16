@@ -7,13 +7,13 @@ export interface SpawnResult {
 }
 
 /** Single source of truth for assistant terminal status */
-export type ClaudeStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
+export type TerminalStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
 
 export interface Terminal {
   id: string
   name: string
   repoPath: string
-  status: ClaudeStatus
+  status: TerminalStatus
   task?: string
   isNew?: boolean
   createdAt: Date
