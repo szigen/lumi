@@ -37,7 +37,7 @@ export default function SessionList() {
             >
               <StatusDot status={terminal.status} />
               <span className="session-item__name">
-                {terminal.task || terminal.name}
+                {terminal.oscTitle || terminal.task || terminal.name}
               </span>
               {terminal.isNew && (
                 <motion.span

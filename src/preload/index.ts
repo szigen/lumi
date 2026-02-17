@@ -35,6 +35,8 @@ const api = {
     createIpcListener<[]>(IPC_CHANNELS.TERMINAL_SYNC, callback),
   onTerminalStatus: (callback: (terminalId: string, status: string) => void) =>
     createIpcListener<[string, string]>(IPC_CHANNELS.TERMINAL_STATUS, callback),
+  onTerminalTitle: (callback: (terminalId: string, title: string) => void) =>
+    createIpcListener<[string, string]>(IPC_CHANNELS.TERMINAL_TITLE, callback),
   focusTerminal: (terminalId: string | null) =>
     invokeIpc<void>(IPC_CHANNELS.TERMINAL_FOCUS, terminalId),
 
