@@ -53,12 +53,12 @@ export default function Logo({ size = 24, className = '', animated = false }: Lo
         <circle cx="9.1" cy="12" r="2" fill="url(#logoGradient)" opacity="0.8" />
 
         {/* Connection lines */}
-        <line x1="16" y1="13" x2="16" y2="8" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="18.6" y1="14.5" x2="22.9" y2="12" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="18.6" y1="17.5" x2="22.9" y2="20" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="16" y1="19" x2="16" y2="24" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="13.4" y1="17.5" x2="9.1" y2="20" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="13.4" y1="14.5" x2="9.1" y2="12" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <line x1="16" y1="16" x2="16" y2="8" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <line x1="16" y1="16" x2="22.9" y2="12" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <line x1="16" y1="16" x2="22.9" y2="20" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <line x1="16" y1="16" x2="16" y2="24" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <line x1="16" y1="16" x2="9.1" y2="20" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <line x1="16" y1="16" x2="9.1" y2="12" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
       </g>
     </svg>
   )
