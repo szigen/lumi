@@ -91,6 +91,7 @@ export default function ChangesSection() {
             key={file.path}
             file={file}
             isSelected={repoSelected.has(file.path)}
+            repoPath={activeRepo.path}
             onToggle={() => activeRepo && toggleFile(activeRepo.path, file.path)}
           />
         ))}
