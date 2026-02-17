@@ -89,7 +89,7 @@ export default function QuickActions() {
     }
   }, [activeRepo?.path])
 
-  const executeAndTrack = async (
+  const executeAndTrack = useCallback(async (
     apiCall: () => Promise<{ id: string; name: string; isNew: boolean } | null>
   ) => {
     if (!activeRepo) return
@@ -97,7 +97,7 @@ export default function QuickActions() {
     if (result) {
       await syncFromMain()
     }
-  }
+  }, [activeRepo, syncFromMain])
 
   const handleCreateAction = () =>
     executeAndTrack(() => window.api.createNewAction(activeRepo!.path))
@@ -137,7 +137,7 @@ export default function QuickActions() {
   const handleEdit = useCallback(async (action: Action) => {
     setContextMenu(null)
     await executeAndTrack(() => window.api.editAction(action.id, action.scope, activeRepo?.path))
-  }, [activeRepo?.path])
+  }, [executeAndTrack, activeRepo?.path])
 
   const userActions = actions.filter((a) => a.scope === 'user')
   const projectActions = actions.filter((a) => a.scope === 'project')
