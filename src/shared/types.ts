@@ -1,17 +1,19 @@
+import type { AIProvider } from './ai-provider'
+
 export interface SpawnResult {
   id: string
   name: string
   isNew: boolean
 }
 
-/** Single source of truth for Claude terminal status */
-export type ClaudeStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
+/** Single source of truth for assistant terminal status */
+export type TerminalStatus = 'idle' | 'working' | 'waiting-unseen' | 'waiting-focused' | 'waiting-seen' | 'error'
 
 export interface Terminal {
   id: string
   name: string
   repoPath: string
-  status: ClaudeStatus
+  status: TerminalStatus
   task?: string
   isNew?: boolean
   createdAt: Date
@@ -25,6 +27,11 @@ export interface TerminalInfo {
   createdAt: string
   task?: string
   status: Terminal['status']
+}
+
+/** Serializable terminal snapshot sent from main → renderer */
+export interface TerminalSnapshot extends TerminalInfo {
+  output: string
 }
 
 export interface Repository {
@@ -57,6 +64,7 @@ export interface Branch {
 export interface Config {
   projectsRoot: string
   additionalPaths: AdditionalPath[]
+  aiProvider: AIProvider
   maxTerminals: number
   theme: 'dark' | 'light'
   terminalFontSize: number

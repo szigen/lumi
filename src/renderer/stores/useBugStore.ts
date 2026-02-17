@@ -1,17 +1,20 @@
 import { create } from 'zustand'
 import type { Bug, Fix, BugFilter } from '../../shared/bug-types'
+import { useAppStore } from './useAppStore'
+import type { AIProvider } from '../../shared/ai-provider'
 
 interface BugState {
   bugs: Bug[]
   selectedBugId: string | null
   filter: BugFilter
   loading: boolean
-  claudeLoading: boolean
+  assistantLoading: boolean
   fixTerminalId: string | null
   applyingFixId: string | null
   streamingBugId: string | null
   streamingText: string
   streamingRepoPath: string | null
+  streamingProvider: AIProvider | null
   streamingActivities: Array<{ type: string; tool?: string; timestamp: number }>
 
   loadBugs: (repoPath: string) => Promise<void>
@@ -23,7 +26,7 @@ interface BugState {
 
   addFix: (repoPath: string, bugId: string, fix: Omit<Fix, 'id'>) => Promise<void>
   updateFix: (repoPath: string, bugId: string, fixId: string, updates: Partial<Fix>) => Promise<void>
-  askClaude: (repoPath: string, bugId: string, userMessage: string) => Promise<void>
+  askAssistant: (repoPath: string, bugId: string, userMessage: string) => Promise<void>
   applyFix: (repoPath: string, bugId: string, fixId: string) => Promise<void>
   subscribeToStream: () => () => void
 
@@ -53,12 +56,13 @@ export const useBugStore = create<BugState>((set, get) => ({
   selectedBugId: null,
   filter: 'open',
   loading: false,
-  claudeLoading: false,
+  assistantLoading: false,
   fixTerminalId: null,
   applyingFixId: null,
   streamingBugId: null,
   streamingText: '',
   streamingRepoPath: null,
+  streamingProvider: null,
   streamingActivities: [],
 
   loadBugs: async (repoPath) => {
@@ -116,7 +120,7 @@ export const useBugStore = create<BugState>((set, get) => ({
     }
   },
 
-  askClaude: async (repoPath, bugId, userMessage) => {
+  askAssistant: async (repoPath, bugId, userMessage) => {
     const bug = get().bugs.find(b => b.id === bugId)
     if (!bug) return
 
@@ -133,13 +137,28 @@ export const useBugStore = create<BugState>((set, get) => ({
       `\nSuggest a fix approach. Be specific about what files to change and how. Keep your response concise.`
     ].filter(Boolean).join('\n')
 
-    set({ claudeLoading: true, streamingBugId: bugId, streamingText: '', streamingRepoPath: repoPath, streamingActivities: [] })
+    const providerAtStart = useAppStore.getState().aiProvider
+    set({
+      assistantLoading: true,
+      streamingBugId: bugId,
+      streamingText: '',
+      streamingRepoPath: repoPath,
+      streamingProvider: providerAtStart,
+      streamingActivities: []
+    })
 
     try {
-      await window.api.askClaude(repoPath, bugId, prompt)
+      await window.api.askBugAssistant(repoPath, bugId, prompt)
     } catch (error) {
-      console.error('Claude ask failed:', error)
-      set({ claudeLoading: false, streamingBugId: null, streamingText: '', streamingRepoPath: null, streamingActivities: [] })
+      console.error('Assistant ask failed:', error)
+      set({
+        assistantLoading: false,
+        streamingBugId: null,
+        streamingText: '',
+        streamingRepoPath: null,
+        streamingProvider: null,
+        streamingActivities: []
+      })
     }
   },
 
@@ -164,36 +183,44 @@ export const useBugStore = create<BugState>((set, get) => ({
   },
 
   subscribeToStream: () => {
-    const cleanupDelta = window.api.onClaudeStreamDelta((bugId: string, text: string) => {
+    const cleanupDelta = window.api.onBugAssistantStreamDelta((bugId: string, text: string) => {
       const state = useBugStore.getState()
       if (state.streamingBugId === bugId) {
         set({ streamingText: state.streamingText + text })
       }
     })
 
-    const cleanupActivity = window.api.onClaudeStreamActivity((bugId: string, activity: { type: string; tool?: string }) => {
+    const cleanupActivity = window.api.onBugAssistantStreamActivity((bugId: string, activity: { type: string; tool?: string }) => {
       const state = useBugStore.getState()
       if (state.streamingBugId === bugId) {
         set({ streamingActivities: [...state.streamingActivities, { ...activity, timestamp: Date.now() }] })
       }
     })
 
-    const cleanupDone = window.api.onClaudeStreamDone(async (bugId: string, fullText: string | null, error?: string) => {
+    const cleanupDone = window.api.onBugAssistantStreamDone(async (bugId: string, fullText: string | null, error?: string) => {
       const state = useBugStore.getState()
       if (state.streamingBugId !== bugId) return
 
       if (fullText) {
+        const provider = state.streamingProvider ?? 'claude'
         await useBugStore.getState().addFix(state.streamingRepoPath!, bugId, {
           summary: fullText.slice(0, 120),
           detail: fullText,
           status: 'suggested',
-          suggestedBy: 'claude'
+          suggestedBy: provider
         })
       } else {
-        console.error('Claude stream failed:', error)
+        console.error('Assistant stream failed:', error)
       }
 
-      set({ claudeLoading: false, streamingBugId: null, streamingText: '', streamingRepoPath: null, streamingActivities: [] })
+      set({
+        assistantLoading: false,
+        streamingBugId: null,
+        streamingText: '',
+        streamingRepoPath: null,
+        streamingProvider: null,
+        streamingActivities: []
+      })
     })
 
     return () => {

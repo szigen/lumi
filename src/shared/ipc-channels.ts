@@ -10,8 +10,7 @@ export const IPC_CHANNELS = {
   TERMINAL_RESIZE: 'terminal:resize',
   TERMINAL_OUTPUT: 'terminal:output',
   TERMINAL_EXIT: 'terminal:exit',
-  TERMINAL_LIST: 'terminal:list',
-  TERMINAL_BUFFER: 'terminal:buffer',
+  TERMINAL_SNAPSHOT: 'terminal:snapshot',
   TERMINAL_SYNC: 'terminal:sync',
   TERMINAL_STATUS: 'terminal:status',
   TERMINAL_GET_STATUS: 'terminal:get-status',
@@ -68,6 +67,7 @@ export const IPC_CHANNELS = {
   ACTIONS_HISTORY: 'actions:history',
   ACTIONS_RESTORE: 'actions:restore',
   ACTIONS_DEFAULT_IDS: 'actions:default-ids',
+  ACTIONS_EDIT: 'actions:edit',
 
   // Persona operations
   PERSONAS_LIST: 'personas:list',
@@ -89,10 +89,10 @@ export const IPC_CHANNELS = {
   BUGS_DELETE: 'bugs:delete',
   BUGS_ADD_FIX: 'bugs:add-fix',
   BUGS_UPDATE_FIX: 'bugs:update-fix',
-  BUGS_ASK_CLAUDE: 'bugs:ask-claude',
-  BUGS_CLAUDE_STREAM_DELTA: 'bugs:claude-stream-delta',
-  BUGS_CLAUDE_STREAM_DONE: 'bugs:claude-stream-done',
-  BUGS_CLAUDE_STREAM_ACTIVITY: 'bugs:claude-stream-activity',
+  BUGS_ASK_ASSISTANT: 'bugs:ask-assistant',
+  BUGS_ASSISTANT_STREAM_DELTA: 'bugs:assistant-stream-delta',
+  BUGS_ASSISTANT_STREAM_DONE: 'bugs:assistant-stream-done',
+  BUGS_ASSISTANT_STREAM_ACTIVITY: 'bugs:assistant-stream-activity',
   BUGS_APPLY_FIX: 'bugs:apply-fix',
 
   // App lifecycle

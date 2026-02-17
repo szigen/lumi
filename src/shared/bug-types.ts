@@ -3,7 +3,7 @@ export interface Fix {
   summary: string
   detail: string
   status: 'suggested' | 'applying' | 'failed' | 'success'
-  suggestedBy: 'claude' | 'user'
+  suggestedBy: 'claude' | 'codex' | 'user'
   appliedAt?: string
   failedNote?: string
 }

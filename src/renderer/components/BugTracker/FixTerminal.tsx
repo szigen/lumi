@@ -14,7 +14,7 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
   const applyingFixId = useBugStore((s) => s.applyingFixId)
   const markFixResult = useBugStore((s) => s.markFixResult)
   const clearFixTerminal = useBugStore((s) => s.clearFixTerminal)
-  const removeTerminal = useTerminalStore((s) => s.removeTerminal)
+  const syncFromMain = useTerminalStore((s) => s.syncFromMain)
   const [showNote, setShowNote] = useState(false)
   const [note, setNote] = useState('')
 
@@ -30,8 +30,8 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
     if (!selectedBugId || !applyingFixId) return
     try {
       await markFixResult(repoPath, selectedBugId, applyingFixId, true)
-      window.api.killTerminal(fixTerminalId)
-      removeTerminal(fixTerminalId)
+      await window.api.killTerminal(fixTerminalId)
+      await syncFromMain()
     } catch (err) {
       console.error('Failed to mark fix as success:', err)
     }
@@ -45,8 +45,8 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
     }
     try {
       await markFixResult(repoPath, selectedBugId, applyingFixId, false, note || undefined)
-      window.api.killTerminal(fixTerminalId)
-      removeTerminal(fixTerminalId)
+      await window.api.killTerminal(fixTerminalId)
+      await syncFromMain()
       setShowNote(false)
       setNote('')
     } catch (err) {
@@ -54,9 +54,9 @@ export default function FixTerminal({ repoPath }: FixTerminalProps) {
     }
   }
 
-  const handleClose = () => {
-    window.api.killTerminal(fixTerminalId)
-    removeTerminal(fixTerminalId)
+  const handleClose = async () => {
+    await window.api.killTerminal(fixTerminalId)
+    await syncFromMain()
     clearFixTerminal()
   }
 

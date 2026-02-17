@@ -119,6 +119,14 @@ function createWindow(): void {
     }
   })
 
+  // Track window-level focus for notification decisions
+  mainWindow.on('focus', () => {
+    getTerminalManager()?.setWindowFocused(true)
+  })
+  mainWindow.on('blur', () => {
+    getTerminalManager()?.setWindowFocused(false)
+  })
+
   mainWindow.webContents.on('did-fail-load', (_, code, desc, url) => {
     console.error(`Renderer failed to load: ${code} ${desc} (${url})`)
   })
@@ -163,7 +171,7 @@ function createMenu(): void {
       label: 'File',
       submenu: [
         {
-          label: 'New Claude',
+          label: 'New Session',
           accelerator: accel('T'),
           click: () => mainWindow?.webContents.send('shortcut', 'new-terminal')
         },

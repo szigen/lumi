@@ -3,10 +3,12 @@ import { Plus, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui'
 import type { Persona } from '../../../shared/persona-types'
+import { useAppStore } from '../../stores/useAppStore'
+import { getProviderLabel } from '../../../shared/ai-provider'
 
 interface PersonaDropdownProps {
   disabled?: boolean
-  onNewClaude: () => void
+  onNewProvider: () => void
   onPersonaSelect: (persona: Persona) => void
   repoPath?: string
   onOpenChange?: (open: boolean) => void
@@ -14,11 +16,12 @@ interface PersonaDropdownProps {
 
 export default function PersonaDropdown({
   disabled,
-  onNewClaude,
+  onNewProvider,
   onPersonaSelect,
   repoPath,
   onOpenChange
 }: PersonaDropdownProps) {
+  const aiProvider = useAppStore((s) => s.aiProvider)
   const [isOpen, setIsOpen] = useState(false)
   const [personas, setPersonas] = useState<Persona[]>([])
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -68,6 +71,8 @@ export default function PersonaDropdown({
     onPersonaSelect(persona)
   }
 
+  const providerLabel = getProviderLabel(aiProvider)
+
   return (
     <div
       className="persona-dropdown-container"
@@ -77,10 +82,10 @@ export default function PersonaDropdown({
       <Button
         leftIcon={<Plus size={14} />}
         rightIcon={<ChevronDown size={12} />}
-        onClick={onNewClaude}
+        onClick={onNewProvider}
         disabled={disabled}
       >
-        New Claude
+        New {providerLabel}
       </Button>
 
       <AnimatePresence>

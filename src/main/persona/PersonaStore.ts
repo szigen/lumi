@@ -3,7 +3,8 @@ import * as path from 'path'
 import * as yaml from 'js-yaml'
 import { app } from 'electron'
 import type { Persona } from '../../shared/persona-types'
-import type { ClaudeConfig } from '../../shared/action-types'
+import type { ClaudeConfig, CodexConfig } from '../../shared/action-types'
+import type { AIProvider } from '../../shared/ai-provider'
 import { getConfigDir } from '../platform'
 
 export class PersonaStore {
@@ -51,12 +52,14 @@ export class PersonaStore {
       try {
         const content = fs.readFileSync(path.join(dir, file), 'utf-8')
         const parsed = yaml.load(content) as Record<string, unknown>
-        if (parsed && parsed.id && parsed.label && parsed.claude) {
+        if (parsed && parsed.id && parsed.label) {
           personas.push({
             id: parsed.id as string,
             label: parsed.label as string,
             scope,
-            claude: parsed.claude as ClaudeConfig
+            provider: parsed.provider as AIProvider | undefined,
+            claude: parsed.claude as ClaudeConfig | undefined,
+            codex: parsed.codex as CodexConfig | undefined
           })
         }
       } catch (error) {

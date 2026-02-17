@@ -19,7 +19,7 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ReactNode }[] = [
 ]
 
 export default function SettingsModal() {
-  const { settingsOpen, closeSettings } = useAppStore()
+  const { settingsOpen, closeSettings, setAiProvider } = useAppStore()
   const [activeSection, setActiveSection] = useState<SectionId>('general')
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG)
   const [uiDefaults, setUiDefaults] = useState<Pick<UIState, 'leftSidebarOpen' | 'rightSidebarOpen'>>({
@@ -73,6 +73,7 @@ export default function SettingsModal() {
     try {
       await window.api.setConfig(config)
       await window.api.setUIState(uiDefaults)
+      setAiProvider(config.aiProvider)
       setHasChanges(false)
       closeSettings()
     } catch (error) {

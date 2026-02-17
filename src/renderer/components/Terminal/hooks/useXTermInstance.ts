@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
@@ -13,6 +13,7 @@ export function useXTermInstance(
 ) {
   const xtermRef = useRef<XTerm | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+  const [xtermReady, setXtermReady] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || xtermRef.current) return
@@ -52,6 +53,7 @@ export function useXTermInstance(
 
     xtermRef.current = xterm
     fitAddonRef.current = fitAddon
+    setXtermReady(true)
 
     xterm.onData((data) => {
       window.api.writeTerminal(terminalId, data)
@@ -61,9 +63,10 @@ export function useXTermInstance(
       xterm.dispose()
       xtermRef.current = null
       fitAddonRef.current = null
+      setXtermReady(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terminalId, fontSize])
 
-  return { xtermRef, fitAddonRef }
+  return { xtermRef, fitAddonRef, xtermReady }
 }

@@ -1,18 +1,92 @@
-const OSC_START = '\x1b]0;'
-const OSC_START_LEN = 4
+const OSC_START = '\x1b]'
+const OSC_START_LEN = 2
+const OSC_TITLE_COMMANDS = new Set(['0', '2'])
+const OSC_NOTIFICATION_COMMAND = '9'
+const COMMAND_SEPARATOR = ';'
 const BEL = '\x07'
 const ST = '\x1b\\'
 const MAX_BUFFER_SIZE = 4096
 
+const CLAUDE_IDLE_PREFIX = '\u2733'
+const CLAUDE_HINT_RE = /claude code|(?:^|[^a-z0-9_])claude(?:[^a-z0-9_]|$)/i
+
+export type AgentProviderHint = 'claude' | 'codex'
+
+export type OscEventType = 'title' | 'notification'
+export type OscNotificationKind = 'codex-turn-complete' | 'generic'
+
+interface OscTitleEventPayload {
+  source: 'title'
+  title: string
+  isWorking: boolean | null
+  providerHint?: AgentProviderHint
+}
+
+interface OscNotificationEventPayload {
+  source: 'notification'
+  title: string
+  isWorking: false
+  kind: OscNotificationKind
+  providerHint?: AgentProviderHint
+}
+
+export type OscEvent = OscTitleEventPayload | OscNotificationEventPayload
+
+/** @deprecated Use OscEvent instead */
+export type OscTitleEvent = OscEvent
+
+const CODEX_TURN_COMPLETE_RE = [
+  /\bturn\s+(complete|completed|done|finished)\b/i,
+  /\btask\s+(complete|completed|done|finished)\b/i,
+  /\bwaiting\s+for\s+input\b/i,
+  /\ball[_\s-]?idle\b/i,
+  /\bidle[_\s-]?state\b/i
+]
+
+function inferNotificationKind(payload: string): OscNotificationKind {
+  if (CODEX_TURN_COMPLETE_RE.some(pattern => pattern.test(payload))) {
+    return 'codex-turn-complete'
+  }
+  return 'generic'
+}
+
+function inferProviderHint(title: string): AgentProviderHint | null {
+  if (title.startsWith(CLAUDE_IDLE_PREFIX) || CLAUDE_HINT_RE.test(title)) {
+    return 'claude'
+  }
+
+  return null
+}
+
+function inferWorkingState(title: string, providerHint: AgentProviderHint | null): boolean | null {
+  if (title.startsWith(CLAUDE_IDLE_PREFIX)) {
+    return false
+  }
+
+  if (providerHint === 'claude') {
+    return title.trim().length > 0 ? true : null
+  }
+
+  return title.trim().length > 0 ? true : null
+}
+
 /**
- * Buffers partial OSC title sequences across PTY data chunks
- * and invokes a callback with the parsed working/idle state.
+ * Buffers partial OSC sequences across PTY data chunks
+ * and invokes callbacks for parsed title (OSC 0/2) and notification (OSC 9) events.
  */
 export class OscTitleParser {
   private buffers: Map<string, string> = new Map()
 
-  /** Parse OSC title sequences from a PTY data chunk */
-  parse(id: string, data: string, onTitle: (isWorking: boolean) => void): void {
+  private storePartial(id: string, partial: string): void {
+    if (partial.length > MAX_BUFFER_SIZE) {
+      this.buffers.delete(id)
+      return
+    }
+    this.buffers.set(id, partial)
+  }
+
+  /** Parse OSC sequences from a PTY data chunk */
+  parse(id: string, data: string, onEvent: (event: OscEvent) => void): void {
     let buf = (this.buffers.get(id) || '') + data
 
     while (true) {
@@ -23,8 +97,16 @@ export class OscTitleParser {
       }
 
       const afterOsc = oscStart + OSC_START_LEN
-      const belIdx = buf.indexOf(BEL, afterOsc)
-      const stIdx = buf.indexOf(ST, afterOsc)
+      const commandEnd = buf.indexOf(COMMAND_SEPARATOR, afterOsc)
+      if (commandEnd === -1) {
+        this.storePartial(id, buf.slice(oscStart))
+        return
+      }
+
+      const command = buf.slice(afterOsc, commandEnd)
+      const payloadStart = commandEnd + 1
+      const belIdx = buf.indexOf(BEL, payloadStart)
+      const stIdx = buf.indexOf(ST, payloadStart)
 
       let endIdx = -1
       let endLen = 0
@@ -37,18 +119,34 @@ export class OscTitleParser {
       }
 
       if (endIdx === -1) {
-        // Incomplete sequence — keep from oscStart, guard against unbounded growth
-        const partial = buf.slice(oscStart)
-        if (partial.length > MAX_BUFFER_SIZE) {
-          this.buffers.delete(id)
-        } else {
-          this.buffers.set(id, partial)
-        }
+        this.storePartial(id, buf.slice(oscStart))
         return
       }
 
-      const title = buf.slice(afterOsc, endIdx)
-      onTitle(!title.startsWith('\u2733'))
+      if (OSC_TITLE_COMMANDS.has(command)) {
+        const title = buf.slice(payloadStart, endIdx)
+        const providerHint = inferProviderHint(title)
+        const event: OscEvent = {
+          source: 'title',
+          title,
+          isWorking: inferWorkingState(title, providerHint)
+        }
+        if (providerHint) {
+          event.providerHint = providerHint
+        }
+        onEvent(event)
+      } else if (command === OSC_NOTIFICATION_COMMAND) {
+        // OSC 9 = iTerm2 notification protocol — Codex emits this when a turn completes
+        const payload = buf.slice(payloadStart, endIdx)
+        const kind = inferNotificationKind(payload)
+        onEvent({
+          source: 'notification',
+          title: payload,
+          isWorking: false,
+          kind,
+          providerHint: kind === 'codex-turn-complete' ? 'codex' : undefined
+        })
+      }
 
       buf = buf.slice(endIdx + endLen)
     }

@@ -3,24 +3,25 @@
 State management for the renderer process.
 
 ## Stores
-- **useTerminalStore** — terminal sessions, output buffers, active terminal tracking, per-repo last-active tracking
-- **useAppStore** — UI layout (open tabs, active tab, sidebars, settings modal, quit dialog, focus mode, grid columns, collapsedGroups for repo group collapse state, activeView for terminals/bugs toggle)
-- **useRepoStore** — repository list and `additionalPaths` from main process; exports `groupReposBySource()` helper, `RepoGroup` interface, and `PathGroupInfo` minimal interface for grouped repo display. `loadAdditionalPaths()` fetches config and updates `additionalPaths` state.
-- **useBugStore** — bug tracker state: bugs list, selected bug, filter, Claude loading state, fix terminal tracking, streaming state (`streamingBugId`, `streamingText`, `streamingRepoPath`, `streamingActivities`). Actions: loadBugs, createBug, updateBug, deleteBug, addFix, updateFix, askClaude (streaming), applyFix, markFixResult, subscribeToStream (returns cleanup fn, subscribes to delta/done/activity IPC events). Exports memoized selectors: `selectFilteredBugs`, `selectSelectedBug`. Data persisted via BugStorage in main process.
-- **useNotificationStore** — toast notification queue with typed toasts (`ToastType`: bell, error, success, info). `addToast()` for bell notifications (deduplicates by terminalId), `notify(type, title, message)` for generic toasts. `NotificationToast` has `type`, `title` (was `repoName`), optional `terminalId`
+- **useTerminalStore** — terminal map/output buffers, active terminal selection, repo-local last active map, global terminal event bridge, `syncFromMain()` reconciliation.
+- **useAppStore** — UI layout and modal state.
+- **useRepoStore** — repositories, branches, status, additional paths.
+- **useBugStore** — bug tracker state and assistant streaming state.
+- **useNotificationStore** — toast queue.
 
 ## Rules
-- Main process is source of truth for terminal data — renderer syncs via `syncFromMain()`
-- `syncFromMain()` guards against concurrent calls with `syncing` flag
-- `syncFromMain()` logic decomposed into pure helper functions: `reconcileTerminals`, `resolveActiveTerminal`, `rebuildLastActiveByRepo`
-- Tab switching auto-selects the last active terminal for that repo (`lastActiveByRepo` map)
-- Closing a tab kills all terminals for that repo and unwatches file tree
-- UI state persists to main process via `saveUIState()` on every layout change
-- BugTracker components use granular selectors `useBugStore((s) => s.field)` — never destructure entire store
-- Use exported memoized selectors (`selectFilteredBugs`, `selectSelectedBug`) instead of calling methods in render
-- `subscribeToStream` should be called via `useBugStore.getState().subscribeToStream()` with `[]` dependency to avoid re-subscribe on every store update
+- Main process is source of truth for terminals.
+- Terminal spawn/kill UX paths must call `syncFromMain()` after IPC mutations.
+- `syncFromMain()` consumes `TERMINAL_SNAPSHOT` and rebuilds `terminals`, `outputs`, `activeTerminalId`, and `lastActiveByRepo`.
+- After spawning a new terminal, callers must explicitly call `setActiveTerminal(newId)` after `syncFromMain()` to focus the new terminal (syncFromMain preserves the current active terminal if still valid).
+- Live terminal output should append incrementally in renderer (no head-trimming) to avoid ANSI redraw artifacts; snapshot sync merges without rolling back newer live output.
+
+## Neighbor Focus on Close
+- `removeTerminal()` focuses the **previous neighbor** (or next if closing the first) **within the same repo** instead of the first terminal.
+- `findNeighborTerminalId(closedId, terminals, repoPath?)` is a pure helper that computes the neighbor from the terminal map **before** deletion. When `repoPath` is provided, only terminals from that repo are considered — this prevents Cmd+W from jumping focus to a different repo's terminal.
+- If no same-repo terminals remain after close, `activeTerminalId` becomes `null` (user stays on the same tab with no active terminal).
 
 ## Watch Out
-- `useAppStore.setActiveTab` cross-references `useTerminalStore` and `useRepoStore` — stores are coupled
-- `syncFromMain` reconnects orphaned terminals by fetching their output buffer from main
-- Terminal removal cascades: updates `lastActiveByRepo`, selects next available terminal
+- Terminal bridge listener lifetime is app-level, not terminal-panel-level.
+- `useAppStore.setActiveTab` and `closeTab` cross-reference terminal/repo stores; keep side effects minimal and deterministic.
+- Bug assistant stream handlers append large text and activities in-memory; avoid unnecessary re-subscriptions.

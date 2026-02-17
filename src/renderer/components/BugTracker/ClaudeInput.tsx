@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Loader, FileText, Search, Terminal, FolderSearch, Pencil } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBugStore } from '../../stores/useBugStore'
+import { useAppStore } from '../../stores/useAppStore'
+import { getProviderLabel } from '../../../shared/ai-provider'
 
 const TOOL_LABELS: Record<string, { label: string; icon: typeof FileText }> = {
   Read: { label: 'Reading file', icon: FileText },
@@ -43,14 +45,16 @@ const DISPLAY_TEXT_LIMIT = 300
 
 export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
   const [input, setInput] = useState('')
+  const aiProvider = useAppStore((s) => s.aiProvider)
   const selectedBugId = useBugStore((s) => s.selectedBugId)
-  const claudeLoading = useBugStore((s) => s.claudeLoading)
-  const askClaude = useBugStore((s) => s.askClaude)
+  const assistantLoading = useBugStore((s) => s.assistantLoading)
+  const askAssistant = useBugStore((s) => s.askAssistant)
   const streamingBugId = useBugStore((s) => s.streamingBugId)
   const streamingText = useBugStore((s) => s.streamingText)
   const streamingActivities = useBugStore((s) => s.streamingActivities)
   const previewRef = useRef<HTMLDivElement>(null)
 
+  const providerLabel = getProviderLabel(aiProvider)
   const showPreview = streamingBugId === selectedBugId && (streamingText.length > 0 || streamingActivities.length > 0)
 
   useEffect(() => {
@@ -61,13 +65,13 @@ export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || !selectedBugId || claudeLoading) return
+    if (!input.trim() || !selectedBugId || assistantLoading) return
     const msg = input.trim()
     setInput('')
     try {
-      await askClaude(repoPath, selectedBugId, msg)
+      await askAssistant(repoPath, selectedBugId, msg)
     } catch (err) {
-      console.error('Failed to ask Claude:', err)
+      console.error(`Failed to ask ${providerLabel}:`, err)
     }
   }
 
@@ -126,22 +130,22 @@ export default function ClaudeInput({ repoPath }: ClaudeInputProps) {
         )}
       </AnimatePresence>
       <form className="claude-input" onSubmit={handleSubmit}>
-        <label htmlFor="claude-input-field" className="visually-hidden">Ask Claude about this bug</label>
+        <label htmlFor="claude-input-field" className="visually-hidden">Ask {providerLabel} about this bug</label>
         <input
           id="claude-input-field"
           className="claude-input__field"
-          placeholder={selectedBugId ? 'Ask Claude about this bug...' : 'Select a bug first...'}
+          placeholder={selectedBugId ? `Ask ${providerLabel} about this bug...` : 'Select a bug first...'}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          disabled={!selectedBugId || claudeLoading}
+          disabled={!selectedBugId || assistantLoading}
         />
         <button
           type="submit"
           className="claude-input__btn"
-          disabled={!input.trim() || !selectedBugId || claudeLoading}
-          aria-label={claudeLoading ? 'Claude is thinking...' : 'Send message to Claude'}
+          disabled={!input.trim() || !selectedBugId || assistantLoading}
+          aria-label={assistantLoading ? `${providerLabel} is thinking...` : `Send message to ${providerLabel}`}
         >
-          {claudeLoading ? <Loader size={16} className="claude-input__spinner" /> : <Send size={16} />}
+          {assistantLoading ? <Loader size={16} className="claude-input__spinner" /> : <Send size={16} />}
         </button>
       </form>
     </div>

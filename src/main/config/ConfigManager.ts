@@ -2,6 +2,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import type { Config, UIState, WorkLog } from '../../shared/types'
 import { DEFAULT_CONFIG, DEFAULT_UI_STATE } from '../../shared/constants'
+import { isAIProvider } from '../../shared/ai-provider'
 import { getConfigDir } from '../platform'
 
 export class ConfigManager {
@@ -32,6 +33,9 @@ export class ConfigManager {
   private migrateConfig(config: Record<string, unknown>): Config {
     if (!Array.isArray(config.additionalPaths)) {
       config.additionalPaths = []
+    }
+    if (!isAIProvider(config.aiProvider)) {
+      config.aiProvider = DEFAULT_CONFIG.aiProvider
     }
     return { ...DEFAULT_CONFIG, ...config } as Config
   }

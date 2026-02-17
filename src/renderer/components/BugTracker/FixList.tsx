@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useBugStore, selectSelectedBug } from '../../stores/useBugStore'
+import { useAppStore } from '../../stores/useAppStore'
+import { getProviderLabel } from '../../../shared/ai-provider'
 import FixCard from './FixCard'
 
 interface FixListProps {
@@ -8,12 +10,14 @@ interface FixListProps {
 }
 
 export default function FixList({ repoPath }: FixListProps) {
+  const aiProvider = useAppStore((s) => s.aiProvider)
   const bug = useBugStore(selectSelectedBug)
   const applyFix = useBugStore((s) => s.applyFix)
   const applyingFixId = useBugStore((s) => s.applyingFixId)
   const addFix = useBugStore((s) => s.addFix)
   const [showManual, setShowManual] = useState(false)
   const [manualSummary, setManualSummary] = useState('')
+  const providerLabel = getProviderLabel(aiProvider)
 
   if (!bug) {
     return <div className="fix-list__empty">Select a bug to see fixes</div>
@@ -78,7 +82,7 @@ export default function FixList({ repoPath }: FixListProps) {
         ))}
         {bug.fixes.length === 0 && (
           <div className="fix-list__empty-fixes">
-            No fixes yet. Ask Claude or add one manually.
+            No fixes yet. Ask {providerLabel} or add one manually.
           </div>
         )}
       </div>

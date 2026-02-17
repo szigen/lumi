@@ -1,34 +1,22 @@
 # Terminal Management
 
-PTY process spawn/management, output buffering, state queries.
+PTY process spawn/management, output buffering, and status tracking.
 
 ## Files
-- **TerminalManager.ts** — PTY lifecycle (spawn, kill, write, resize), delegates to injected dependencies
-- **StatusStateMachine.ts** — Pure state machine: 6 states (idle, working, waiting-unseen, waiting-focused, waiting-seen, error), driven by title change and focus/blur events. Uses `ClaudeStatus` from shared/types.ts. Exit code 0 → idle, non-zero → error
-- **OscTitleParser.ts** — Buffers partial OSC title sequences across PTY data chunks, invokes callback with working/idle state. Max 4KB buffer guard against unbounded growth
-- **OutputBuffer.ts** — Encapsulates output buffering with ANSI-safe truncation at newline boundaries
-- **types.ts** — `ManagedTerminal`, `SpawnResult` (re-exported from shared), `ITerminalNotifier`, `ICodenameTracker` interfaces
-- **codenames.ts** — Random codename generator (50 adj x 50 nouns = 2500 combos)
+- **TerminalManager.ts** — PTY lifecycle (spawn, kill, write, resize), output buffering, snapshot/status queries.
+- **StatusStateMachine.ts** — Pure state machine for `TerminalStatus` (`idle`, `working`, `waiting-unseen`, `waiting-focused`, `waiting-seen`, `error`).
+- **OscTitleParser.ts** — Parses OSC title/notification events and provider hints.
+- **OutputBuffer.ts** — Output truncation (newline-aware, ~500KB default).
+- **types.ts** — `ManagedTerminal`, `SpawnResult` re-export, notifier/tracker interfaces.
 
 ## Rules
-- Main process is the single source of truth — TerminalManager owns all terminal metadata and output buffers
-- Output buffer keeps last ~100KB per terminal (truncated at nearest newline to preserve ANSI escape sequences)
-- Max 12 terminals (configurable via ConfigManager)
-- Each terminal gets a random codename on spawn from `codenames.ts`
-- Terminals support an optional `task` field set by actions, personas, or manual spawn
-- TerminalManager uses dependency injection: `ITerminalNotifier` and `ICodenameTracker` interfaces (DIP)
-- Status detection uses OSC title sequences via `OscTitleParser`: `✳` prefix = idle/finished, anything else = working
-- OSC title sequences are buffered across PTY data chunks — partial sequences accumulate until BEL/ST terminator is received (max 4KB buffer)
-- Focus/blur events from renderer drive waiting-* state transitions
-- `getTerminalList()` includes current `status` from StatusStateMachine for sync
-- `getStatus(id)` allows renderer to query current status on demand (used by useTerminalIPC on mount)
+- Main process is the single source of truth for terminal metadata/output.
+- Renderer reconciliation must use `getTerminalSnapshots()` via `TERMINAL_SNAPSHOT`.
+- Focus events from renderer drive waiting state transitions through `TERMINAL_FOCUS`.
+- Status push channel is `TERMINAL_STATUS`; one-off pull uses `TERMINAL_GET_STATUS`.
 
 ## Watch Out
-- `write()` strips focus reporting events (`\x1b[I`, `\x1b[O`) before forwarding to PTY — Claude CLI enables focus reporting (`\x1b[?1004h`) and stops spinner animation on focus-out, which breaks status detection. We manage focus ourselves via StatusStateMachine
-- `syncFromMain()` in renderer reconciles state on startup, visibility change, and powerMonitor resume
-- IPC channels for state sync: `TERMINAL_LIST`, `TERMINAL_BUFFER`, `TERMINAL_SYNC`, `TERMINAL_GET_STATUS`
-- PTY shell resolved via `src/main/platform` module (`getDefaultShell()`, `getShellArgs()`) — supports macOS, Windows, and Linux with fallback chains
-- Codename discovery is tracked in `~/.ai-orchestrator/discovered-codenames.json` via ConfigManager
-- Terminal exit handler cleans up from both the Map and notifier
-- `statusMachine.setOnChange` callback sends both `TERMINAL_STATUS` IPC and calls `notifier.notifyStatusChange` — notifications are status-driven with repeating intervals, not BEL-driven
-- On Windows, PTY spawns with `useConpty: false` (winpty fallback) — ConPTY strips alternate screen buffer sequences (`\x1b[?1049h/l`), causing xterm.js to accumulate output in the main buffer instead of switching screens. Winpty passes VT sequences through unchanged.
+- `write()` strips focus reporting control sequences (`\x1b[I`, `\x1b[O`) before PTY write.
+- Codex fallback status detection is activity-timer based and scoped by `agentHint === 'codex'`.
+- Cleanup order on exit is important: remove terminal + notifier context before stale status notifications can fire.
+- **Window focus awareness:** `StatusStateMachine` tracks both tab-level focus (`onFocus`/`onBlur`) and window-level focus (`onWindowFocus`/`onWindowBlur`). A terminal is effectively focused only when both its tab is active AND the app window is focused. `TerminalManager.setWindowFocused()` propagates BrowserWindow focus/blur events to all terminals. This ensures native OS notifications fire when the app is in the background, even for the active tab.

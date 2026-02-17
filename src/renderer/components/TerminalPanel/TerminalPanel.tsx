@@ -6,9 +6,9 @@ import { useRepoStore } from '../../stores/useRepoStore'
 import Terminal from '../Terminal'
 import { EmptyState } from '../ui'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
+import { getProviderLabel, getProviderLaunchCommand } from '../../../shared/ai-provider'
 import PersonaDropdown from './PersonaDropdown'
 import type { Persona } from '../../../shared/persona-types'
-import type { SpawnResult } from '../../../shared/types'
 
 const GRID_GAP = 12 // --spacing-md
 
@@ -22,8 +22,8 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 }
 
 export default function TerminalPanel() {
-  const { terminals, addTerminal, removeTerminal, getTerminalCount } = useTerminalStore()
-  const { activeTab, gridColumns, setGridColumns, focusModeActive } = useAppStore()
+  const { terminals, getTerminalCount, syncFromMain } = useTerminalStore()
+  const { activeTab, gridColumns, setGridColumns, focusModeActive, aiProvider } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
@@ -32,37 +32,20 @@ export default function TerminalPanel() {
     ? allTerminals.filter(t => t.repoPath === activeRepo.path)
     : []
 
-  const registerSpawnedTerminal = useCallback((
-    result: SpawnResult,
-    repoPath: string,
-    options?: { task?: string; initialCommand?: string }
-  ) => {
-    addTerminal({
-      id: result.id,
-      name: result.name,
-      repoPath,
-      status: 'idle',
-      task: options?.task,
-      isNew: result.isNew,
-      createdAt: new Date()
-    })
-    if (options?.initialCommand) {
-      window.api.writeTerminal(result.id, options.initialCommand)
-    }
-  }, [addTerminal])
-
   const handleNewTerminal = useCallback(async () => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
 
     try {
       const result = await window.api.spawnTerminal(activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { initialCommand: 'claude\r' })
+        await window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
+        await syncFromMain()
+        useTerminalStore.getState().setActiveTerminal(result.id)
       }
     } catch (error) {
       console.error('Failed to spawn terminal:', error)
     }
-  }, [activeRepo, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, aiProvider, getTerminalCount, syncFromMain])
 
   const handlePersonaSelect = useCallback(async (persona: Persona) => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
@@ -70,21 +53,22 @@ export default function TerminalPanel() {
     try {
       const result = await window.api.spawnPersona(persona.id, activeRepo.path)
       if (result) {
-        registerSpawnedTerminal(result, activeRepo.path, { task: persona.label })
+        await syncFromMain()
+        useTerminalStore.getState().setActiveTerminal(result.id)
       }
     } catch (error) {
       console.error('Failed to spawn persona:', error)
     }
-  }, [activeRepo, getTerminalCount, registerSpawnedTerminal])
+  }, [activeRepo, getTerminalCount, syncFromMain])
 
   const handleCloseTerminal = useCallback(async (terminalId: string) => {
     try {
       await window.api.killTerminal(terminalId)
+      await syncFromMain()
     } catch (error) {
       console.error('Failed to kill terminal:', error)
     }
-    removeTerminal(terminalId)
-  }, [removeTerminal])
+  }, [syncFromMain])
 
   const gridRef = useRef<HTMLDivElement>(null)
   const [containerWidth, setContainerWidth] = useState(0)
@@ -139,6 +123,7 @@ export default function TerminalPanel() {
 
   const GridIcon = gridColumns === 2 ? Grid2x2 : gridColumns === 3 ? Columns3 : LayoutGrid
   const gridTooltip = gridColumns === 'auto' ? 'Auto grid' : `${gridColumns} columns`
+  const providerLabel = getProviderLabel(aiProvider)
 
   if (!activeTab) {
     return (
@@ -170,7 +155,7 @@ export default function TerminalPanel() {
             </button>
             <PersonaDropdown
               disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
-              onNewClaude={handleNewTerminal}
+              onNewProvider={handleNewTerminal}
               onPersonaSelect={handlePersonaSelect}
               repoPath={activeRepo?.path}
             />
@@ -183,10 +168,10 @@ export default function TerminalPanel() {
           <EmptyState
             icon={<TerminalSquare size={48} />}
             title="No terminals running"
-            description="Spawn a new terminal to start coding with Claude"
+            description={`Spawn a new terminal to start coding with ${providerLabel}`}
             action={
               <PersonaDropdown
-                onNewClaude={handleNewTerminal}
+                onNewProvider={handleNewTerminal}
                 onPersonaSelect={handlePersonaSelect}
                 repoPath={activeRepo?.path}
               />

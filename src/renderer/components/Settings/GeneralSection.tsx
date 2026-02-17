@@ -1,6 +1,7 @@
 import { FolderOpen } from 'lucide-react'
 import AdditionalPathsField from './AdditionalPathsField'
 import type { Config } from '../../../shared/types'
+import type { AIProvider } from '../../../shared/ai-provider'
 
 interface Props {
   config: Config
@@ -42,6 +43,22 @@ export default function GeneralSection({ config, onChange }: Props) {
         projectsRoot={config.projectsRoot}
         onChange={(paths) => onChange({ additionalPaths: paths })}
       />
+
+      <div className="settings-field">
+        <label className="settings-label">AI Provider</label>
+        <p className="settings-hint">Select which assistant CLI to use across terminals and bug tools.</p>
+        <div className="settings-theme-options">
+          {(['claude', 'codex'] as AIProvider[]).map((provider) => (
+            <button
+              key={provider}
+              className={`settings-theme-btn ${config.aiProvider === provider ? 'settings-theme-btn--active' : ''}`}
+              onClick={() => onChange({ aiProvider: provider })}
+            >
+              {provider === 'codex' ? 'Codex' : 'Claude'}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="settings-field">
         <label className="settings-label">Theme</label>

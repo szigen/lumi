@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { StatusDot } from '../icons'
-import { useXTermInstance, useTerminalResize, useTerminalIPC, useTerminalDragDrop } from './hooks'
-import { writeChunked } from './utils'
+import { useXTermInstance, useTerminalResize, useTerminalOutputRenderer, useTerminalDragDrop } from './hooks'
 import '@xterm/xterm/css/xterm.css'
 
 interface TerminalProps {
@@ -16,7 +15,6 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   const [fontSize, setFontSize] = useState(13)
 
   const terminal = useTerminalStore((s) => s.terminals.get(terminalId))
-  const output = useTerminalStore((s) => s.outputs.get(terminalId) || '')
   const activeTerminalId = useTerminalStore((s) => s.activeTerminalId)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
 
@@ -24,10 +22,10 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
   const isActive = activeTerminalId === terminalId
 
   const { isDragOver, dragHandlers } = useTerminalDragDrop(terminalId)
-  const { xtermRef, fitAddonRef } = useXTermInstance(terminalRef, fontSize, terminalId)
+  const { xtermRef, fitAddonRef, xtermReady } = useXTermInstance(terminalRef, fontSize, terminalId)
 
   useTerminalResize(terminalRef, xtermRef, fitAddonRef, terminalId)
-  useTerminalIPC(terminalId, xtermRef)
+  useTerminalOutputRenderer(terminalId, xtermRef, xtermReady)
 
   // Load font size from config
   useEffect(() => {
@@ -36,15 +34,6 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       if (typeof size === 'number') setFontSize(size)
     })
   }, [])
-
-  // Write initial output after xterm mounts
-  useEffect(() => {
-    if (xtermRef.current && output) {
-      writeChunked(xtermRef.current, output)
-    }
-    // Only on initial mount — IPC hook handles subsequent output
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [xtermRef.current])
 
   // Focus xterm when this terminal becomes active
   useEffect(() => {

@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { createIpcListener, invokeIpc } from './ipc-utils'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import type { SpawnResult } from '../main/terminal/types'
+import type { TerminalSnapshot } from '../shared/types'
 
 const api = {
   // Platform info
@@ -16,10 +17,8 @@ const api = {
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_KILL, terminalId),
   resizeTerminal: (terminalId: string, cols: number, rows: number) =>
     invokeIpc<boolean>(IPC_CHANNELS.TERMINAL_RESIZE, terminalId, cols, rows),
-  listTerminals: () =>
-    invokeIpc<Array<{ id: string; name: string; repoPath: string; createdAt: string; task?: string; status: string }>>(IPC_CHANNELS.TERMINAL_LIST),
-  getTerminalBuffer: (terminalId: string) =>
-    invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_BUFFER, terminalId),
+  getTerminalSnapshots: () =>
+    invokeIpc<TerminalSnapshot[]>(IPC_CHANNELS.TERMINAL_SNAPSHOT),
   getTerminalStatus: (terminalId: string) =>
     invokeIpc<string | null>(IPC_CHANNELS.TERMINAL_GET_STATUS, terminalId),
 
@@ -91,6 +90,8 @@ const api = {
     invokeIpc<void>(IPC_CHANNELS.ACTIONS_LOAD_PROJECT, repoPath),
   createNewAction: (repoPath: string) =>
     invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_CREATE_NEW, repoPath),
+  editAction: (actionId: string, scope: string, repoPath?: string) =>
+    invokeIpc<SpawnResult | null>(IPC_CHANNELS.ACTIONS_EDIT, actionId, scope, repoPath),
   getActionHistory: (actionId: string) =>
     invokeIpc<string[]>(IPC_CHANNELS.ACTIONS_HISTORY, actionId),
   restoreAction: (actionId: string, timestamp: string) =>
@@ -127,14 +128,14 @@ const api = {
     invokeIpc<unknown>(IPC_CHANNELS.BUGS_ADD_FIX, repoPath, bugId, fix),
   updateFix: (repoPath: string, bugId: string, fixId: string, updates: Record<string, unknown>) =>
     invokeIpc<unknown>(IPC_CHANNELS.BUGS_UPDATE_FIX, repoPath, bugId, fixId, updates),
-  askClaude: (repoPath: string, bugId: string, prompt: string) =>
-    invokeIpc<{ started: boolean }>(IPC_CHANNELS.BUGS_ASK_CLAUDE, repoPath, bugId, prompt),
-  onClaudeStreamDelta: (cb: (bugId: string, text: string) => void) =>
-    createIpcListener<[string, string]>(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DELTA, cb),
-  onClaudeStreamDone: (cb: (bugId: string, fullText: string | null, error?: string) => void) =>
-    createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_CLAUDE_STREAM_DONE, cb),
-  onClaudeStreamActivity: (cb: (bugId: string, activity: { type: string; tool?: string }) => void) =>
-    createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_CLAUDE_STREAM_ACTIVITY, cb),
+  askBugAssistant: (repoPath: string, bugId: string, prompt: string) =>
+    invokeIpc<{ started: boolean }>(IPC_CHANNELS.BUGS_ASK_ASSISTANT, repoPath, bugId, prompt),
+  onBugAssistantStreamDelta: (cb: (bugId: string, text: string) => void) =>
+    createIpcListener<[string, string]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, cb),
+  onBugAssistantStreamDone: (cb: (bugId: string, fullText: string | null, error?: string) => void) =>
+    createIpcListener<[string, string | null, string | undefined]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, cb),
+  onBugAssistantStreamActivity: (cb: (bugId: string, activity: { type: string; tool?: string }) => void) =>
+    createIpcListener<[string, { type: string; tool?: string }]>(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, cb),
   applyFix: (repoPath: string, prompt: string) =>
     invokeIpc<{ id: string; name: string; isNew: boolean } | null>(IPC_CHANNELS.BUGS_APPLY_FIX, repoPath, prompt),
 

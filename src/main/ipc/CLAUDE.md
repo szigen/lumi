@@ -1,28 +1,29 @@
 # IPC Handlers
 
-Central registration point for all main process IPC handlers.
+Main-process IPC registration and dependency wiring.
 
 ## Architecture
-- `setupIpcHandlers()` initializes all managers (TerminalManager, RepoManager, ConfigManager, ActionStore, ActionEngine, PersonaStore, SystemChecker, BugStorage) and registers all `ipcMain.handle` calls
-- `setMainWindow()` and getter functions expose managers to `index.ts`
-- All channel names come from `src/shared/ipc-channels.ts`
+- `handlers.ts` initializes shared services/managers and builds a typed context.
+- Handler registration is split by domain under `handlers/`:
+  - `register-terminal-handlers.ts`
+  - `register-repo-git-handlers.ts`
+  - `register-config-window-handlers.ts`
+  - `register-action-persona-handlers.ts`
+  - `register-system-handlers.ts`
+  - `register-bug-handlers.ts`
+- Assistant streaming is delegated to `src/main/assistant/AssistantOrchestrator`.
 
 ## Rules
-- Every new IPC handler must be registered here and its channel constant added to `ipc-channels.ts`
-- Handler groups: Terminal, Repository, Git, Config, UI State, Window, Dialog, Context Menu, System Checks, Actions, Personas, Collection, Bugs
-- Change events (`ACTIONS_CHANGED`, `PERSONAS_CHANGED`, `REPOS_CHANGED`) are sent via `mainWindow.webContents.send()`
-- `BUGS_ASK_CLAUDE` spawns `claude -p --output-format stream-json --include-partial-messages` and streams deltas via `BUGS_CLAUDE_STREAM_DELTA`/`BUGS_CLAUDE_STREAM_DONE` push channels, plus tool activity via `BUGS_CLAUDE_STREAM_ACTIVITY`. Parses `stream_event` types for live tool usage (content_block_start/stop) with fallback to `assistant` events. Returns `{ started: true }` immediately without blocking.
-- All bug IPC handlers validate `repoPath` via `isValidRepoPath()` (absolute path, no `..`, must exist)
-- `BUGS_ASK_CLAUDE` enforces max 2 concurrent Claude processes (`MAX_CLAUDE_PROCESSES`), 5-minute timeout, and 1MB buffer limit
-- `BUGS_APPLY_FIX` uses heredoc stdin (`<<'__EOF__'`) to pass prompts safely — never shell-interpolated
-- Stream handlers use `sendToRenderer()` helper that checks `mainWindow` isn't destroyed before sending
+- Every new IPC channel must be added in `src/shared/ipc-channels.ts` and wired from one registration module.
+- Keep handler modules thin: validation + orchestration only, core business logic belongs to domain services.
+- Terminal sync uses `TERMINAL_SNAPSHOT` as the single pull API for renderer reconciliation.
+- Bug stream channel family is `BUGS_ASSISTANT_STREAM_*` (legacy Claude alias channels are removed).
+- All bug handlers must validate repo path with absolute-path + existence checks.
 
 ## Watch Out
-- `WINDOW_MINIMIZE` and `WINDOW_CLOSE` — used by Linux custom window controls (renderer buttons call these via preload)
-- `WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY` is guarded with `process.platform === 'darwin'` — safe no-op on Windows/Linux
-- `CONTEXT_REVEAL_IN_FILE_MANAGER` renamed from `CONTEXT_REVEAL_IN_FINDER` for cross-platform naming
-- `mainWindow` can be null — handlers that need it should check before use
-- `ACTIONS_CREATE_NEW` builds an inline action with `CREATE_ACTION_PROMPT` as `appendSystemPrompt`
-- `PERSONAS_SPAWN` uses `buildClaudeCommand` with `claude ""` as base command
-- Config changes propagate to managers: `maxTerminals` → TerminalManager, `projectsRoot` → RepoManager
-- `activeClaudeProcesses` map tracks running Claude processes by bugId — cleaned up on close/error/timeout
+- `mainWindow` can be null or destroyed; stream emitters and UI push events must guard for that.
+- `BUGS_APPLY_FIX` writes prompt via randomized heredoc delimiter to avoid fixed-marker collisions.
+- `ACTIONS_CREATE_NEW` (Codex path) also uses randomized heredoc delimiter for injected prompt safety.
+- `ACTIONS_CREATE_NEW`, `ACTIONS_EDIT`, and `PERSONAS_SPAWN` must use `buildAgentCommand()` for provider-specific command construction.
+- `ACTIONS_EDIT` spawns an edit terminal with current YAML content embedded in the system prompt.
+- Config updates must propagate side effects (`maxTerminals`, repo root, additional paths) and emit `REPOS_CHANGED` when needed.

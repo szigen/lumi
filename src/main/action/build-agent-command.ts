@@ -1,7 +1,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
-import type { ClaudeConfig } from '../../shared/action-types'
+import type { Action, ClaudeConfig, CodexConfig } from '../../shared/action-types'
+import type { AIProvider } from '../../shared/ai-provider'
+import { getProviderBinary } from '../../shared/ai-provider'
 
 const TEMP_DIR = path.join(os.tmpdir(), 'ai-orchestrator')
 
@@ -72,4 +74,34 @@ export function buildClaudeCommand(content: string, config: ClaudeConfig): strin
 
   const flagStr = flags.join(' ')
   return content.replace(/^(\s*)claude /, `$1claude ${flagStr} -- `)
+}
+
+function buildCodexCommand(content: string, config?: CodexConfig): string {
+  const trimmed = content.trimStart()
+  if (!/^(codex)(\s|\r|$)/.test(trimmed)) {
+    return content
+  }
+  if (!config?.model) {
+    return content
+  }
+  if (/\s--model(\s|=)/.test(trimmed)) {
+    return content
+  }
+  return content.replace(/^(\s*)codex(?=\s|\r|$)/, `$1codex --model ${config.model}`)
+}
+
+export function remapProviderCommand(content: string, provider: AIProvider): string {
+  const binary = getProviderBinary(provider)
+  return content.replace(/^(\s*)claude\b/, `$1${binary}`)
+}
+
+export function buildAgentCommand(content: string, action: Pick<Action, 'provider' | 'claude' | 'codex'>): string {
+  const provider = action.provider ?? 'claude'
+  const remapped = remapProviderCommand(content, provider)
+
+  if (provider === 'claude') {
+    return action.claude ? buildClaudeCommand(remapped, action.claude) : remapped
+  }
+
+  return buildCodexCommand(remapped, action.codex)
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { UIState } from '../../shared/types'
 import { DEFAULT_UI_STATE } from '../../shared/constants'
+import type { AIProvider } from '../../shared/ai-provider'
 import { useTerminalStore } from './useTerminalStore'
 import { useRepoStore } from './useRepoStore'
 
@@ -8,6 +9,7 @@ interface AppState extends UIState {
   settingsOpen: boolean
   quitDialogOpen: boolean
   quitTerminalCount: number
+  aiProvider: AIProvider
   focusModeActive: boolean
   collapsedGroups: Set<string>
   enterFocusMode: () => void
@@ -17,6 +19,7 @@ interface AppState extends UIState {
   closeSettings: () => void
   showQuitDialog: (count: number) => void
   hideQuitDialog: () => void
+  setAiProvider: (provider: AIProvider) => void
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
@@ -35,10 +38,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   quitDialogOpen: false,
   quitTerminalCount: 0,
+  aiProvider: 'claude',
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   showQuitDialog: (count) => set({ quitDialogOpen: true, quitTerminalCount: count }),
   hideQuitDialog: () => set({ quitDialogOpen: false, quitTerminalCount: 0 }),
+  setAiProvider: (provider) => set({ aiProvider: provider }),
   focusModeActive: false,
   collapsedGroups: new Set<string>(),
   enterFocusMode: () => set({ focusModeActive: true }),
@@ -92,10 +97,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       const terminalState = useTerminalStore.getState()
       const repoTerminals = terminalState.getTerminalsByRepo(repo.path)
 
-      repoTerminals.forEach(terminal => {
-        window.api.killTerminal(terminal.id)
-        terminalState.removeTerminal(terminal.id)
-      })
+      Promise.all(repoTerminals.map((terminal) => window.api.killTerminal(terminal.id)))
+        .catch((err) => console.error('Failed to kill terminals:', err))
+        .finally(() => {
+          terminalState.syncFromMain()
+        })
 
       window.api.unwatchFileTree(repo.path)
     }
@@ -109,10 +115,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().saveUIState()
   },
 
-  setActiveView: (view) => set({ activeView: view }),
-  toggleBugView: () => set((s) => ({
-    activeView: s.activeView === 'bugs' ? 'terminals' : 'bugs'
-  })),
+  setActiveView: (view) => {
+    set({ activeView: view })
+    get().saveUIState()
+  },
+  toggleBugView: () => {
+    set((s) => ({ activeView: s.activeView === 'bugs' ? 'terminals' : 'bugs' }))
+    get().saveUIState()
+  },
 
   toggleLeftSidebar: () => {
     set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen }))
@@ -140,7 +150,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const state = await window.api.getUIState()
       if (state) {
-        set(state)
+        set({ ...state, activeView: 'terminals' })
       }
     } catch (error) {
       console.error('Failed to load UI state:', error)

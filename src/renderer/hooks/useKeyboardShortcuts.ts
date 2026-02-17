@@ -3,11 +3,12 @@ import { useAppStore } from '../stores/useAppStore'
 import { useRepoStore } from '../stores/useRepoStore'
 import { useTerminalStore } from '../stores/useTerminalStore'
 import { DEFAULT_CONFIG } from '../../shared/constants'
+import { getProviderLaunchCommand } from '../../shared/ai-provider'
 
 export function useKeyboardShortcuts() {
-  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings, toggleFocusMode } = useAppStore()
+  const { openTabs, activeTab, setActiveTab, toggleLeftSidebar, toggleRightSidebar, openSettings, toggleFocusMode, aiProvider } = useAppStore()
   const { repos, getRepoByName } = useRepoStore()
-  const { addTerminal, getTerminalCount, activeTerminalId, removeTerminal, terminals, setActiveTerminal } = useTerminalStore()
+  const { getTerminalCount, activeTerminalId, terminals, setActiveTerminal, syncFromMain } = useTerminalStore()
 
   // Handle new terminal action
   const handleNewTerminal = useCallback(() => {
@@ -15,20 +16,15 @@ export function useKeyboardShortcuts() {
     if (!activeRepo) return
     if (getTerminalCount() >= DEFAULT_CONFIG.maxTerminals) return
 
-    window.api.spawnTerminal(activeRepo.path).then((result) => {
-      if (result) {
-        addTerminal({
-          id: result.id,
-          name: result.name,
-          repoPath: activeRepo.path,
-          status: 'running',
-          isNew: result.isNew,
-          createdAt: new Date()
-        })
-        window.api.writeTerminal(result.id, 'claude\r')
-      }
+    window.api.spawnTerminal(activeRepo.path).then(async (result) => {
+      if (!result) return
+      await window.api.writeTerminal(result.id, getProviderLaunchCommand(aiProvider))
+      await syncFromMain()
+      useTerminalStore.getState().setActiveTerminal(result.id)
+    }).catch((error) => {
+      console.error('Failed to spawn terminal from shortcut:', error)
     })
-  }, [activeTab, getRepoByName, getTerminalCount, addTerminal])
+  }, [activeTab, aiProvider, getRepoByName, getTerminalCount, syncFromMain])
 
   // Handle close terminal action (or close repo tab if no terminal)
   const handleCloseTerminal = useCallback(() => {
@@ -39,10 +35,14 @@ export function useKeyboardShortcuts() {
       }
       return
     }
-    window.api.killTerminal(activeTerminalId).then(() => {
-      removeTerminal(activeTerminalId)
+    const closingId = activeTerminalId
+    window.api.killTerminal(closingId).then(async () => {
+      useTerminalStore.getState().removeTerminal(closingId)
+      await syncFromMain()
+    }).catch((error) => {
+      console.error('Failed to close terminal from shortcut:', error)
     })
-  }, [activeTerminalId, removeTerminal])
+  }, [activeTerminalId, syncFromMain])
 
   // Listen for menu shortcuts from main process
   useEffect(() => {

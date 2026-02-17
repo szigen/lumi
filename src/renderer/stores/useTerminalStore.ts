@@ -1,5 +1,7 @@
 import { create } from 'zustand'
-import type { Terminal, TerminalInfo } from '../../shared/types'
+import type { TerminalStatus, Terminal, TerminalSnapshot } from '../../shared/types'
+
+let terminalBridgeCleanup: (() => void) | null = null
 
 interface TerminalState {
   terminals: Map<string, Terminal>
@@ -8,49 +10,64 @@ interface TerminalState {
   lastActiveByRepo: Map<string, string>
   syncing: boolean
 
-  addTerminal: (terminal: Terminal) => void
   removeTerminal: (id: string) => void
   updateTerminal: (id: string, updates: Partial<Terminal>) => void
   appendOutput: (id: string, data: string) => void
   setActiveTerminal: (id: string | null) => void
   getTerminalsByRepo: (repoPath: string) => Terminal[]
   getTerminalCount: () => number
+  connectTerminalEventBridge: () => void
+  disconnectTerminalEventBridge: () => void
   syncFromMain: () => Promise<void>
 }
 
-/** Reconcile main process terminal list with renderer state */
-async function reconcileTerminals(
-  mainTerminals: TerminalInfo[],
+export function appendTerminalOutput(current: string, chunk: string): string {
+  return current + chunk
+}
+
+export function mergeSnapshotOutput(current: string, snapshot: string): string {
+  if (!current) return snapshot
+  if (!snapshot) return current
+
+  // Snapshot is ahead (renderer missed events) -> trust snapshot.
+  if (snapshot.startsWith(current)) return snapshot
+
+  // Renderer is ahead (sync raced with live output) -> keep current to avoid rollback flicker.
+  if (current.startsWith(snapshot)) return current
+
+  // Diverged streams: prefer longer buffer to reduce destructive full redraws.
+  return current.length >= snapshot.length ? current : snapshot
+}
+
+/** Reconcile main process snapshots with renderer state */
+export function reconcileTerminals(
+  snapshots: TerminalSnapshot[],
   currentTerminals: Map<string, Terminal>,
   currentOutputs: Map<string, string>
-) {
+): { terminals: Map<string, Terminal>; outputs: Map<string, string> } {
   const terminals = new Map<string, Terminal>()
   const outputs = new Map<string, string>()
 
-  for (const mt of mainTerminals) {
-    const existing = currentTerminals.get(mt.id)
-    if (existing) {
-      terminals.set(mt.id, existing)
-      outputs.set(mt.id, currentOutputs.get(mt.id) || '')
-    } else {
-      const buffer = await window.api.getTerminalBuffer(mt.id)
-      terminals.set(mt.id, {
-        id: mt.id,
-        name: mt.name,
-        repoPath: mt.repoPath,
-        status: mt.status || 'idle',
-        task: mt.task,
-        createdAt: new Date(mt.createdAt)
-      })
-      outputs.set(mt.id, buffer || '')
-    }
+  for (const snapshot of snapshots) {
+    const existing = currentTerminals.get(snapshot.id)
+    terminals.set(snapshot.id, {
+      id: snapshot.id,
+      name: snapshot.name,
+      repoPath: snapshot.repoPath,
+      status: snapshot.status || existing?.status || 'idle',
+      task: snapshot.task,
+      isNew: existing?.isNew,
+      createdAt: new Date(snapshot.createdAt)
+    })
+    const currentOutput = currentOutputs.get(snapshot.id) || ''
+    outputs.set(snapshot.id, mergeSnapshotOutput(currentOutput, snapshot.output || ''))
   }
 
   return { terminals, outputs }
 }
 
 /** Pick the active terminal: keep current if still valid, otherwise pick first available */
-function resolveActiveTerminal(
+export function resolveActiveTerminal(
   currentActive: string | null,
   validIds: Set<string>,
   terminals: Map<string, Terminal>
@@ -60,7 +77,7 @@ function resolveActiveTerminal(
 }
 
 /** Rebuild per-repo last-active map, preserving valid previous selections */
-function rebuildLastActiveByRepo(
+export function rebuildLastActiveByRepo(
   terminals: Map<string, Terminal>,
   previousLastActive: Map<string, string>
 ): Map<string, string> {
@@ -83,6 +100,23 @@ function rebuildLastActiveByRepo(
   return lastActive
 }
 
+/** Find the previous neighbor (or next if closing the first) for focus after close.
+ *  When repoPath is provided, only terminals from that repo are considered. */
+export function findNeighborTerminalId(
+  closedId: string,
+  terminals: Map<string, Terminal>,
+  repoPath?: string
+): string | null {
+  const entries = repoPath
+    ? Array.from(terminals.entries()).filter(([, t]) => t.repoPath === repoPath)
+    : Array.from(terminals.entries())
+  const keys = entries.map(([id]) => id)
+  const idx = keys.indexOf(closedId)
+  if (idx === -1) return keys[0] || null
+  if (idx > 0) return keys[idx - 1]
+  return keys[1] || null
+}
+
 export const useTerminalStore = create<TerminalState>((set, get) => ({
   terminals: new Map(),
   outputs: new Map(),
@@ -90,21 +124,15 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   lastActiveByRepo: new Map(),
   syncing: false,
 
-  addTerminal: (terminal) => {
-    set((state) => {
-      const newTerminals = new Map(state.terminals)
-      newTerminals.set(terminal.id, terminal)
-      const newOutputs = new Map(state.outputs)
-      if (!newOutputs.has(terminal.id)) {
-        newOutputs.set(terminal.id, '')
-      }
-      return { terminals: newTerminals, outputs: newOutputs, activeTerminalId: terminal.id }
-    })
-  },
-
   removeTerminal: (id) => {
     set((state) => {
       const terminal = state.terminals.get(id)
+
+      // Compute neighbor BEFORE deleting so index is correct
+      const neighborId = state.activeTerminalId === id
+        ? findNeighborTerminalId(id, state.terminals, terminal?.repoPath)
+        : null
+
       const newTerminals = new Map(state.terminals)
       newTerminals.delete(id)
       const newOutputs = new Map(state.outputs)
@@ -125,7 +153,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       }
 
       const newActive = state.activeTerminalId === id
-        ? Array.from(newTerminals.keys())[0] || null
+        ? (neighborId && newTerminals.has(neighborId) ? neighborId : null)
         : state.activeTerminalId
 
       return {
@@ -152,7 +180,8 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     set((state) => {
       const newOutputs = new Map(state.outputs)
       const current = newOutputs.get(id) || ''
-      newOutputs.set(id, current + data)
+      const next = appendTerminalOutput(current, data)
+      newOutputs.set(id, next)
       return { outputs: newOutputs }
     })
   },
@@ -179,16 +208,43 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
   getTerminalCount: () => get().terminals.size,
 
+  connectTerminalEventBridge: () => {
+    if (terminalBridgeCleanup) {
+      return
+    }
+
+    const cleanupOutput = window.api.onTerminalOutput((terminalId: string, data: string) => {
+      get().appendOutput(terminalId, data)
+    })
+    const cleanupStatus = window.api.onTerminalStatus((terminalId: string, status: string) => {
+      get().updateTerminal(terminalId, { status: status as TerminalStatus })
+    })
+    const cleanupExit = window.api.onTerminalExit((terminalId: string) => {
+      get().removeTerminal(terminalId)
+    })
+
+    terminalBridgeCleanup = () => {
+      cleanupOutput()
+      cleanupStatus()
+      cleanupExit()
+      terminalBridgeCleanup = null
+    }
+  },
+
+  disconnectTerminalEventBridge: () => {
+    if (!terminalBridgeCleanup) return
+    terminalBridgeCleanup()
+  },
+
   syncFromMain: async () => {
     if (get().syncing) return
     set({ syncing: true })
 
     try {
-      const mainTerminals = await window.api.listTerminals()
-      const mainIds = new Set(mainTerminals.map(t => t.id))
-
-      const { terminals, outputs } = await reconcileTerminals(
-        mainTerminals,
+      const snapshots = await window.api.getTerminalSnapshots()
+      const mainIds = new Set(snapshots.map(t => t.id))
+      const { terminals, outputs } = reconcileTerminals(
+        snapshots,
         get().terminals,
         get().outputs
       )
