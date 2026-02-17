@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Desktop dashboard for managing multiple Claude Code CLI instances</strong>
+  <strong>Desktop dashboard for managing multiple AI coding CLI sessions</strong>
 </p>
 
 <p align="center">
@@ -18,23 +18,27 @@
 
 ---
 
-AI Orchestrator is an Electron-based desktop application that lets you run and manage multiple [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI sessions from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
+AI Orchestrator is an Electron-based desktop application that lets you run and manage multiple AI coding CLI sessions (Claude Code or OpenAI Codex) from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
 
 ## Features
 
-- **Multi-terminal management** — Spawn up to 12 Claude Code sessions, each with its own terminal, running in parallel
-- **Action system** — Define reusable YAML-based workflows (run tests, sync plugins, update docs) with Claude CLI flag support
+- **Multi-terminal management** — Spawn up to 12 AI sessions, each with its own terminal, running in parallel
+- **Multi-provider support** — Switch between [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenAI Codex](https://platform.openai.com/docs/guides/codex) in Settings; all terminals and bug-fix tools use the selected provider
+- **Action system** — Define reusable YAML-based workflows (run tests, sync plugins, update docs); create or edit actions via AI with automatic backup history
 - **Persona system** — Switch between predefined AI personas (architect, reviewer, fixer, expert) with custom system prompts
-- **Git integration** — Built-in branch management, file changes view, and commit history per repository
+- **Git integration** — Built-in branch management, reactive file-changes view with right-click context menu, and commit history per repository
 - **Multi-repo support** — Work across multiple repositories with tab-based navigation
 - **Terminal codenames** — Each session gets a unique codename (e.g., "brave-alpaca") with a collectible discovery system
-- **Keyboard shortcuts** — Configurable shortcuts for common actions
-- **Native notifications** — Terminal bell detection with OS-level notifications
+- **Smart terminal status** — Activity-based status detection via OSC9 signals, with window-focus-aware notifications
+- **Keyboard shortcuts** — Platform-adaptive shortcuts (`Cmd` on macOS, `Ctrl+Shift` on Windows/Linux)
+- **Native notifications** — Terminal bell and activity detection with OS-level notifications
 
 ## Prerequisites
 
 - **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
-- **Claude Code CLI** installed and authenticated (`npm install -g @anthropic-ai/claude-code`)
+- **AI CLI** — at least one of:
+  - Claude Code: `npm install -g @anthropic-ai/claude-code` (then authenticate)
+  - OpenAI Codex: install and configure per [Codex docs](https://platform.openai.com/docs/guides/codex)
 - **macOS** (primary platform), **Windows**, or **Linux**
 
 ## Installation
@@ -78,6 +82,10 @@ claude:
   permissionMode: bypassPermissions
 ```
 
+**Action editing:** Right-click any action in the sidebar to open an AI-assisted edit flow. Changes are preserved across app restarts — default actions are never overwritten once you've modified them.
+
+**Auto-backup:** Every save to a user action is automatically backed up in `~/.ai-orchestrator/actions/.history/<action-id>/` (up to 20 snapshots, oldest pruned automatically).
+
 ### Personas
 
 Personas customize the AI behavior with system prompts. Stored in `~/.ai-orchestrator/personas/` or `<repo>/.ai-orchestrator/personas/`.
@@ -97,6 +105,7 @@ Built-in personas: **Architect**, **Expert**, **Fixer**, **Reviewer**
 ```bash
 npm run dev          # Development mode (Vite + Electron with HMR)
 npm run build        # Production build
+npm test             # Vitest unit tests
 npm run lint         # ESLint
 npm run typecheck    # TypeScript type checking
 ```
@@ -117,10 +126,15 @@ npm run typecheck    # TypeScript type checking
 
 ```
 src/
-├── main/           # Electron main process (terminal, git, actions, personas)
-├── preload/        # Secure IPC bridge (contextBridge)
-├── renderer/       # React UI (components, stores, hooks)
-└── shared/         # Shared types and constants
+├── main/
+│   ├── action/         # YAML action system (engine, store, AI edit flow)
+│   ├── assistant/      # Multi-provider AI orchestrator (Claude + Codex stream parsers)
+│   ├── ipc/            # IPC handlers (split by domain: terminal, git, actions, config…)
+│   ├── terminal/       # node-pty sessions, OSC9 status state machine
+│   └── …               # persona, git, notification, config, system
+├── preload/            # Secure IPC bridge (contextBridge)
+├── renderer/           # React UI (components, stores, hooks)
+└── shared/             # Shared types and constants
 ```
 
 ## Contributing
