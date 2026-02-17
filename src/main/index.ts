@@ -119,6 +119,14 @@ function createWindow(): void {
     }
   })
 
+  // Track window-level focus for notification decisions
+  mainWindow.on('focus', () => {
+    getTerminalManager()?.setWindowFocused(true)
+  })
+  mainWindow.on('blur', () => {
+    getTerminalManager()?.setWindowFocused(false)
+  })
+
   mainWindow.webContents.on('did-fail-load', (_, code, desc, url) => {
     console.error(`Renderer failed to load: ${code} ${desc} (${url})`)
   })

@@ -19,3 +19,4 @@ PTY process spawn/management, output buffering, and status tracking.
 - `write()` strips focus reporting control sequences (`\x1b[I`, `\x1b[O`) before PTY write.
 - Codex fallback status detection is activity-timer based and scoped by `agentHint === 'codex'`.
 - Cleanup order on exit is important: remove terminal + notifier context before stale status notifications can fire.
+- **Window focus awareness:** `StatusStateMachine` tracks both tab-level focus (`onFocus`/`onBlur`) and window-level focus (`onWindowFocus`/`onWindowBlur`). A terminal is effectively focused only when both its tab is active AND the app window is focused. `TerminalManager.setWindowFocused()` propagates BrowserWindow focus/blur events to all terminals. This ensures native OS notifications fire when the app is in the background, even for the active tab.

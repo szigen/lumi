@@ -218,6 +218,16 @@ export class TerminalManager extends EventEmitter {
     }
   }
 
+  setWindowFocused(focused: boolean): void {
+    for (const terminal of this.terminals.values()) {
+      if (focused) {
+        terminal.statusMachine.onWindowFocus()
+      } else {
+        terminal.statusMachine.onWindowBlur()
+      }
+    }
+  }
+
   private setProviderHint(terminal: ManagedTerminal, provider: AgentProviderHint): void {
     if (terminal.agentHint === provider) return
     terminal.agentHint = provider
