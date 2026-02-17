@@ -104,3 +104,25 @@ export interface FileChange {
   path: string
   status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
 }
+
+export interface CommitDiffFile {
+  path: string
+  status: string
+  original: string
+  modified: string
+}
+
+export type FileViewerMode = 'view' | 'diff' | 'commit-diff'
+
+export interface FileViewerState {
+  isOpen: boolean
+  mode: FileViewerMode
+  filePath?: string
+  repoPath?: string
+  content?: string
+  originalContent?: string
+  modifiedContent?: string
+  fileName?: string
+  commitHash?: string
+  commitFiles?: CommitDiffFile[]
+}

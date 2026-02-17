@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, Eye } from 'lucide-react'
 import type { FileChange } from '../../../shared/types'
+import { useAppStore } from '../../stores/useAppStore'
 import ContextMenu from '../LeftSidebar/ContextMenu'
 
 interface FileChangeItemProps {
@@ -22,6 +23,24 @@ export default function FileChangeItem({ file, isSelected, repoPath, onToggle }:
   const config = STATUS_CONFIG[file.status]
   const fileName = file.path.split('/').pop() || file.path
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const openFileViewer = useAppStore((s) => s.openFileViewer)
+
+  const handleViewDiff = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const { original, modified } = await window.api.getFileDiff(repoPath, file.path)
+      openFileViewer({
+        isOpen: true,
+        mode: 'diff',
+        originalContent: original,
+        modifiedContent: modified,
+        fileName: file.path,
+        repoPath,
+      })
+    } catch (error) {
+      console.error('Failed to get file diff:', error)
+    }
+  }
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -43,6 +62,15 @@ export default function FileChangeItem({ file, isSelected, repoPath, onToggle }:
         </span>
         <span className="file-change__name" title={file.path}>
           {fileName}
+        </span>
+        <span
+          className="file-change__diff-btn"
+          role="button"
+          tabIndex={-1}
+          onClick={handleViewDiff}
+          title="View diff"
+        >
+          <Eye size={14} />
         </span>
       </button>
       {contextMenu && (

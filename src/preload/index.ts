@@ -64,6 +64,12 @@ const api = {
     invokeIpc<unknown[]>(IPC_CHANNELS.GIT_STATUS, repoPath),
   commitFiles: (repoPath: string, files: string[], message: string) =>
     invokeIpc<{ success: boolean; error?: string }>(IPC_CHANNELS.GIT_COMMIT, repoPath, files, message),
+  readFile: (repoPath: string, filePath: string) =>
+    invokeIpc<string>(IPC_CHANNELS.GIT_READ_FILE, repoPath, filePath),
+  getFileDiff: (repoPath: string, filePath: string) =>
+    invokeIpc<{ original: string; modified: string }>(IPC_CHANNELS.GIT_FILE_DIFF, repoPath, filePath),
+  getCommitDiff: (repoPath: string, commitHash: string) =>
+    invokeIpc<Array<{ path: string; status: string; original: string; modified: string }>>(IPC_CHANNELS.GIT_COMMIT_DIFF, repoPath, commitHash),
 
   // Config operations
   isFirstRun: () => invokeIpc<boolean>(IPC_CHANNELS.CONFIG_IS_FIRST_RUN),

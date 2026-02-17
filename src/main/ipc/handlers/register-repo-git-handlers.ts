@@ -52,4 +52,15 @@ export function registerRepoGitHandlers(context: IpcHandlerContext): void {
     shell.showItemInFolder(absolutePath)
   })
 
+  ipcMain.handle(IPC_CHANNELS.GIT_READ_FILE, async (_, repoPath: string, filePath: string) => {
+    return repoManager.readFile(repoPath, filePath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.GIT_FILE_DIFF, async (_, repoPath: string, filePath: string) => {
+    return repoManager.getFileDiff(repoPath, filePath)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.GIT_COMMIT_DIFF, async (_, repoPath: string, commitHash: string) => {
+    return repoManager.getCommitDiff(repoPath, commitHash)
+  })
 }

@@ -31,6 +31,9 @@ export const IPC_CHANNELS = {
   GIT_BRANCHES: 'git:branches',
   GIT_STATUS: 'git:status',
   GIT_COMMIT: 'git:commit',
+  GIT_READ_FILE: 'git:read-file',
+  GIT_FILE_DIFF: 'git:file-diff',
+  GIT_COMMIT_DIFF: 'git:commit-diff',
 
   // Config operations
   CONFIG_GET: 'config:get',

@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import ignore, { Ignore } from 'ignore'
-import type { Repository, Commit, Branch, FileTreeNode, FileChange, AdditionalPath } from '../../shared/types'
+import type { Repository, Commit, Branch, FileTreeNode, FileChange, AdditionalPath, CommitDiffFile } from '../../shared/types'
 
 export class RepoManager {
   private projectsRoot: string
@@ -284,6 +284,78 @@ export class RepoManager {
       clearTimeout(timer)
       this.debounceTimers.delete(repoPath)
     }
+  }
+
+  async readFile(repoPath: string, filePath: string): Promise<string> {
+    const expandedPath = this.expandPath(repoPath)
+    const absolutePath = path.join(expandedPath, filePath)
+
+    // Security: ensure the file is within the repo directory
+    const resolved = path.resolve(absolutePath)
+    const repoResolved = path.resolve(expandedPath)
+    if (!resolved.startsWith(repoResolved + path.sep) && resolved !== repoResolved) {
+      throw new Error('File path is outside repository')
+    }
+
+    return fs.readFileSync(resolved, 'utf-8')
+  }
+
+  async getFileDiff(repoPath: string, filePath: string): Promise<{ original: string; modified: string }> {
+    const expandedPath = this.expandPath(repoPath)
+    const git: SimpleGit = simpleGit(expandedPath)
+
+    let original = ''
+    try {
+      original = await git.show([`HEAD:${filePath}`])
+    } catch {
+      // File is new (untracked), no HEAD version
+    }
+
+    const modified = fs.readFileSync(path.join(expandedPath, filePath), 'utf-8')
+
+    return { original, modified }
+  }
+
+  async getCommitDiff(repoPath: string, commitHash: string): Promise<CommitDiffFile[]> {
+    const expandedPath = this.expandPath(repoPath)
+    const git: SimpleGit = simpleGit(expandedPath)
+
+    const diffTree = await git.raw(['diff-tree', '--no-commit-id', '-r', '--name-status', commitHash])
+    const files: CommitDiffFile[] = []
+
+    for (const line of diffTree.trim().split('\n')) {
+      if (!line) continue
+      const [status, ...pathParts] = line.split('\t')
+      const filePath = pathParts.join('\t')
+
+      let original = ''
+      let modified = ''
+
+      try {
+        if (status !== 'A') {
+          original = await git.show([`${commitHash}~1:${filePath}`])
+        }
+      } catch {
+        // Parent commit doesn't have this file
+      }
+
+      try {
+        if (status !== 'D') {
+          modified = await git.show([`${commitHash}:${filePath}`])
+        }
+      } catch {
+        // Commit doesn't have this file (deleted)
+      }
+
+      files.push({
+        path: filePath,
+        status: status === 'M' ? 'modified' : status === 'A' ? 'added' : status === 'D' ? 'deleted' : status === 'R' ? 'renamed' : status,
+        original,
+        modified
+      })
+    }
+
+    return files
   }
 
   dispose(): void {

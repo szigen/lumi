@@ -11,9 +11,10 @@ interface TreeNodeProps {
   expandedPaths: Set<string>
   onToggle: (path: string) => void
   onContextMenu: (e: React.MouseEvent, node: FileTreeNode) => void
+  onFileClick?: (filePath: string) => void
 }
 
-function TreeNode({ node, depth, expandedPaths, onToggle, onContextMenu }: TreeNodeProps) {
+function TreeNode({ node, depth, expandedPaths, onToggle, onContextMenu, onFileClick }: TreeNodeProps) {
   const isFolder = node.type === 'folder'
   const hasChildren = isFolder && node.children && node.children.length > 0
   const isExpanded = expandedPaths.has(node.path)
@@ -26,8 +27,10 @@ function TreeNode({ node, depth, expandedPaths, onToggle, onContextMenu }: TreeN
   const handleClick = useCallback(() => {
     if (isFolder) {
       onToggle(node.path)
+    } else {
+      onFileClick?.(node.path)
     }
-  }, [isFolder, onToggle, node.path])
+  }, [isFolder, onToggle, onFileClick, node.path])
 
   return (
     <div className="tree-node">
@@ -66,6 +69,7 @@ function TreeNode({ node, depth, expandedPaths, onToggle, onContextMenu }: TreeN
               expandedPaths={expandedPaths}
               onToggle={onToggle}
               onContextMenu={onContextMenu}
+              onFileClick={onFileClick}
             />
           ))}
         </div>
@@ -79,7 +83,7 @@ export default function ProjectContext() {
   const [expandedMap, setExpandedMap] = useState<Map<string, Set<string>>>(new Map())
   const [expanded, setExpanded] = useState(true)
   const [loading, setLoading] = useState(false)
-  const { activeTab } = useAppStore()
+  const { activeTab, openFileViewer } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -171,6 +175,22 @@ export default function ProjectContext() {
     })
   }, [activeRepoPath])
 
+  const handleFileClick = useCallback(async (filePath: string) => {
+    if (!activeRepoPath) return
+    try {
+      const content = await window.api.readFile(activeRepoPath, filePath)
+      openFileViewer({
+        isOpen: true,
+        mode: 'view',
+        content,
+        filePath,
+        repoPath: activeRepoPath,
+      })
+    } catch (error) {
+      console.error('Failed to read file:', error)
+    }
+  }, [activeRepoPath, openFileViewer])
+
   // Auto-expand root folders on first load for a repo
   const initRootExpansion = useCallback((tree: FileTreeNode[], repoPath: string) => {
     setExpandedMap(prev => {
@@ -261,6 +281,7 @@ export default function ProjectContext() {
                   expandedPaths={expandedPaths}
                   onToggle={handleToggle}
                   onContextMenu={handleContextMenu}
+                  onFileClick={handleFileClick}
                 />
               ))}
             </div>

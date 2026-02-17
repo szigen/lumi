@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, GitBranch } from 'lucide-react'
-import type { Commit, Branch } from '../../../shared/types'
+import type { Commit, Branch, CommitDiffFile } from '../../../shared/types'
+import { useAppStore } from '../../stores/useAppStore'
 import { Badge } from '../ui'
 
 interface BranchSectionProps {
@@ -7,9 +8,26 @@ interface BranchSectionProps {
   commits: Commit[]
   isExpanded: boolean
   onToggle: () => void
+  repoPath: string
 }
 
-export default function BranchSection({ branch, commits, isExpanded, onToggle }: BranchSectionProps) {
+export default function BranchSection({ branch, commits, isExpanded, onToggle, repoPath }: BranchSectionProps) {
+  const openFileViewer = useAppStore((s) => s.openFileViewer)
+
+  const handleCommitClick = async (commit: Commit) => {
+    try {
+      const files = await window.api.getCommitDiff(repoPath, commit.hash)
+      openFileViewer({
+        isOpen: true,
+        mode: 'commit-diff',
+        commitHash: commit.hash,
+        commitFiles: files as CommitDiffFile[],
+        repoPath,
+      })
+    } catch (error) {
+      console.error('Failed to get commit diff:', error)
+    }
+  }
   const formatDate = (date: Date) => {
     const now = new Date()
     const diff = now.getTime() - new Date(date).getTime()
@@ -40,9 +58,11 @@ export default function BranchSection({ branch, commits, isExpanded, onToggle }:
             const isHead = index === 0 && branch.isCurrent
 
             return (
-              <div 
-                key={commit.hash} 
+              <div
+                key={commit.hash}
                 className={`commit-item ${isHead ? 'commit-item--head' : ''}`}
+                onClick={() => handleCommitClick(commit)}
+                style={{ cursor: 'pointer' }}
               >
                 <span className="commit-hash">{commit.shortHash}</span>
                 {isHead && <Badge variant="success">HEAD</Badge>}

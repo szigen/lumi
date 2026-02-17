@@ -72,6 +72,7 @@ export default function CommitTree() {
                 commits={getCommitsForBranch(activeRepo.path, branch.name)}
                 isExpanded={expandedBranches.has(branch.name)}
                 onToggle={() => toggleBranch(branch.name)}
+                repoPath={activeRepo.path}
               />
             ))}
           </div>

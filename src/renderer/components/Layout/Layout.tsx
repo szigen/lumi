@@ -15,6 +15,7 @@ import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
 import { FocusExitControl } from '../FocusMode'
 import { SetupScreen } from '../Setup'
+import { FileViewerModal } from '../FileViewer'
 
 export default function Layout() {
   useKeyboardShortcuts()
@@ -180,6 +181,7 @@ export default function Layout() {
       <SettingsModal />
       <QuitDialog />
       <ToastContainer />
+      <FileViewerModal />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { UIState } from '../../shared/types'
+import type { UIState, FileViewerState } from '../../shared/types'
 import { DEFAULT_UI_STATE } from '../../shared/constants'
 import type { AIProvider } from '../../shared/ai-provider'
 import { useTerminalStore } from './useTerminalStore'
@@ -29,6 +29,9 @@ interface AppState extends UIState {
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
   toggleGroupCollapse: (groupKey: string) => void
+  fileViewer: FileViewerState | null
+  openFileViewer: (state: FileViewerState) => void
+  closeFileViewer: () => void
   loadUIState: () => Promise<void>
   saveUIState: () => Promise<void>
 }
@@ -46,6 +49,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setAiProvider: (provider) => set({ aiProvider: provider }),
   focusModeActive: false,
   collapsedGroups: new Set<string>(),
+  fileViewer: null,
+  openFileViewer: (state) => set({ fileViewer: { ...state, isOpen: true } }),
+  closeFileViewer: () => set({ fileViewer: null }),
   enterFocusMode: () => set({ focusModeActive: true }),
   exitFocusMode: () => set({ focusModeActive: false }),
   toggleFocusMode: () => set((state) => ({ focusModeActive: !state.focusModeActive })),
