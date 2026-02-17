@@ -2,7 +2,7 @@
 
 ## Context
 
-AI Orchestrator terminallerde kullanici komutlarini/promptlarini izleyemiyor ve tekrarlayan kaliplari tespit edemiyor. Kullanicilar ayni komut dizilerini gunlerce tekrar yaziyor ama bunlari otomatik action haline getirmenin bir yolu yok. Bu ozellik, terminal kullanimini sessizce gozlemleyerek tekrarlayan kaliplari tespit edecek ve YAML action onerileri uretecek. Ogrenilenler context'e enjekte edilmez — YAML dosyalarina "derlenir", boylece context sismez ve user'a bagimlilik minimumda kalir.
+Pulpo terminallerde kullanici komutlarini/promptlarini izleyemiyor ve tekrarlayan kaliplari tespit edemiyor. Kullanicilar ayni komut dizilerini gunlerce tekrar yaziyor ama bunlari otomatik action haline getirmenin bir yolu yok. Bu ozellik, terminal kullanimini sessizce gozlemleyerek tekrarlayan kaliplari tespit edecek ve YAML action onerileri uretecek. Ogrenilenler context'e enjekte edilmez — YAML dosyalarina "derlenir", boylece context sismez ve user'a bagimlilik minimumda kalir.
 
 ## Mimari Ozet
 
@@ -11,7 +11,7 @@ User terminal'e yazar → CommandCapture yakalar → SessionRecorder diske yazar
                                                          ↓
 User "Discover" tiklar → DiscoveryEngine session history'yi toplar
                                                          ↓
-                         Claude analiz eder → ~/.ai-orchestrator/suggestions/*.yaml
+                         Claude analiz eder → ~/.pulpo/suggestions/*.yaml
                                                          ↓
                          SuggestionStore izler → UI'da Accept/Dismiss kartlari gosterir
 ```
@@ -98,7 +98,7 @@ interface CapturedCommand {
 
 Terminal kapandiginda komut gecmisini diske yazar.
 
-**Storage:** `~/.ai-orchestrator/session-history/YYYY-MM-DD/<repoName>_<id-prefix>.json`
+**Storage:** `~/.pulpo/session-history/YYYY-MM-DD/<repoName>_<id-prefix>.json`
 
 **Schema:**
 ```typescript
@@ -171,7 +171,7 @@ terminalManager.on('exit', ({ terminalId, repoPath }) => {
 - Max 5 oneri uret
 - En az 3+ tekrar gorulmus kaliplar icin oner
 - Mevcut action'lari duplike etme
-- Her oneriyi `~/.ai-orchestrator/suggestions/` dizinine yaz
+- Her oneriyi `~/.pulpo/suggestions/` dizinine yaz
 - Her YAML'da ekstra `reason` alani: neden onerildigini 1 cumleyle acikla
 - Dosyalari direkt olustur, onay isteme
 
@@ -193,7 +193,7 @@ terminalManager.on('exit', ({ terminalId, repoPath }) => {
 
 **Yeni dosya:** `src/main/discovery/SuggestionStore.ts`
 
-`~/.ai-orchestrator/suggestions/` dizinini izler.
+`~/.pulpo/suggestions/` dizinini izler.
 
 **Interface:**
 ```typescript
@@ -344,8 +344,8 @@ Suggestion card stilleri — mevcut tasarim diline uygun (glass-morphism, purple
 1. `npm run typecheck` — tip hatalari yok
 2. `npm run dev` ile uygulamayi baslat
 3. Bir repo ac, 3-4 terminal session'i olustur, cesitli komutlar yaz
-4. Terminal'leri kapat, `~/.ai-orchestrator/session-history/` dizininde JSON dosyalari olustuunu dogrula
+4. Terminal'leri kapat, `~/.pulpo/session-history/` dizininde JSON dosyalari olustuunu dogrula
 5. "Discover" butonuna tikla, Claude terminal'inin acilip analiz yaptigini gor
-6. `~/.ai-orchestrator/suggestions/` dizininde YAML dosyalari olustuunu dogrula
+6. `~/.pulpo/suggestions/` dizininde YAML dosyalari olustuunu dogrula
 7. UI'da oneri kartlarinin gorundugunu, Accept/Dismiss calistigini dogrula
 8. Accept edilen action'in QuickActions'ta gorundugunu dogrula

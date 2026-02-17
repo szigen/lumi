@@ -10,7 +10,7 @@ import LeftSidebar from '../LeftSidebar/LeftSidebar'
 import RightSidebar from '../RightSidebar/RightSidebar'
 import TerminalPanel from '../TerminalPanel/TerminalPanel'
 import { BugTracker } from '../BugTracker'
-import { Logo } from '../icons'
+import { Mascot } from '../icons'
 import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
 import { FocusExitControl } from '../FocusMode'
@@ -131,8 +131,8 @@ export default function Layout() {
     return (
       <div className="loading-screen">
         <div className="loading-content">
-          <Logo size={48} className="loading-logo" />
-          <div className="loading-title">AI Orchestrator</div>
+          <Mascot variant="loading" size={80} className="loading-logo" />
+          <div className="loading-title">Pulpo</div>
           <div className="loading-status">Initializing...</div>
         </div>
       </div>

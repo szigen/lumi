@@ -1,5 +1,5 @@
 {
-  "name": "ai-orchestrator",
+  "name": "pulpo",
   "version": "0.1.0",
   "main": "dist/main/index.js",
   "scripts": {
@@ -29,7 +29,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sezginsazliogullari/ai-orchestrator.git"
+    "url": "https://github.com/szigen/pulpo.git"
   },
   "description": "Desktop dashboard for managing multiple Claude Code CLI instances",
   "engines": {

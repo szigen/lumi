@@ -42,7 +42,7 @@ export default function QuitDialog() {
               <AlertTriangle size={32} />
             </div>
 
-            <h2 className="quit-dialog__title">Quit AI Orchestrator?</h2>
+            <h2 className="quit-dialog__title">Quit Pulpo?</h2>
 
             <p className="quit-dialog__message">
               You have <strong>{quitTerminalCount} active terminal session{quitTerminalCount !== 1 ? 's' : ''}</strong>.

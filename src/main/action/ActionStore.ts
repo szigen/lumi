@@ -182,7 +182,7 @@ export class ActionStore {
   }
 
   loadProjectActions(repoPath: string): void {
-    const dir = path.join(repoPath, '.ai-orchestrator', 'actions')
+    const dir = path.join(repoPath, '.pulpo', 'actions')
     if (fs.existsSync(dir)) {
       this.projectActions.set(repoPath, this.loadDir(dir, 'project'))
       this.watchDir(dir, 'project', repoPath)
@@ -204,7 +204,7 @@ export class ActionStore {
   }
 
   deleteAction(actionId: string, scope: 'user' | 'project', repoPath?: string): boolean {
-    const dir = scope === 'user' ? this.userDir : path.join(repoPath!, '.ai-orchestrator', 'actions')
+    const dir = scope === 'user' ? this.userDir : path.join(repoPath!, '.pulpo', 'actions')
     const files = fs.existsSync(dir)
       ? fs.readdirSync(dir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
       : []
@@ -229,7 +229,7 @@ export class ActionStore {
   }
 
   getProjectDir(repoPath: string): string {
-    return path.join(repoPath, '.ai-orchestrator', 'actions')
+    return path.join(repoPath, '.pulpo', 'actions')
   }
 
   getDefaultIds(): string[] {
@@ -238,7 +238,7 @@ export class ActionStore {
 
   getActionContent(actionId: string, scope: 'user' | 'project', repoPath?: string): string | null {
     const dir = scope === 'project' && repoPath
-      ? path.join(repoPath, '.ai-orchestrator', 'actions')
+      ? path.join(repoPath, '.pulpo', 'actions')
       : this.userDir
     if (!fs.existsSync(dir)) return null
 
@@ -256,7 +256,7 @@ export class ActionStore {
 
   getActionFilePath(actionId: string, scope: 'user' | 'project', repoPath?: string): string | null {
     const dir = scope === 'project' && repoPath
-      ? path.join(repoPath, '.ai-orchestrator', 'actions')
+      ? path.join(repoPath, '.pulpo', 'actions')
       : this.userDir
     if (!fs.existsSync(dir)) return null
 

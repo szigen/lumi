@@ -306,7 +306,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   try {
-    rmSync(join(tmpdir(), 'ai-orchestrator'), { recursive: true, force: true })
+    rmSync(join(tmpdir(), 'pulpo'), { recursive: true, force: true })
   } catch { /* ignore */ }
 })
 

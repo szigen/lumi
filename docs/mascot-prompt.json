@@ -1,0 +1,42 @@
+{
+  "name": "Pulpo",
+  "concept": "Friendly octopus mascot for a developer tool that orchestrates multiple AI coding CLI sessions",
+  "prompts": {
+    "main_mascot": "A friendly cartoon octopus mascot named Pulpo, soft purple-violet gradient body (#a78bfa to #7c3aed), large expressive eyes with bright highlights, 8 tentacles each holding a different developer tool — one holds a terminal window, one holds a code bracket </>, one holds a git branch icon, one holds a gear, others gently curling. Minimal flat design, dark background (#0a0a12), soft glow around the body, tech/dev aesthetic, suitable for app icon and brand identity. No text.",
+    "app_icon": "Minimal octopus head icon, front-facing, soft purple-violet gradient (#a78bfa to #7c3aed), large friendly eyes with white highlights, rounded dome shape, dark background (#0a0a12), subtle glow effect, flat design, app icon style, 1024x1024, no text, no tentacles visible — just the head as a clean recognizable symbol.",
+    "loading_screen": "Cute purple octopus character floating in a dark void (#0a0a12), 8 tentacles gently waving, each tentacle tip glowing softly like a cursor blinking, dreamy atmosphere, subtle particle effects, developer tool aesthetic, the octopus looks focused and determined, minimal style.",
+    "error_state": "Cute purple octopus mascot looking confused/worried, one tentacle scratching its head, tangled tentacles, small sweat drop, dark background, flat illustration style, purple-violet colors (#a78bfa to #7c3aed), empathetic and friendly expression.",
+    "success_state": "Happy purple octopus mascot celebrating, tentacles raised in joy, one tentacle giving thumbs up, small sparkle effects, dark background (#0a0a12), flat illustration style, purple-violet gradient, warm and encouraging expression.",
+    "onboarding": "Friendly purple octopus mascot waving hello with one tentacle, welcoming pose, other tentacles holding small icons (terminal, folder, gear, code), soft glow, dark background, flat minimal style, inviting and approachable."
+  },
+  "style_guide": {
+    "primary_colors": ["#a78bfa", "#8b5cf6", "#7c3aed"],
+    "background": "#0a0a12",
+    "eye_color": "#1a1025",
+    "eye_highlight": "#e0d4ff",
+    "art_style": "Flat minimal illustration with soft gradients and subtle glow effects",
+    "personality": "Friendly, capable, slightly playful but professional. Like a helpful senior dev who also has a sense of humor.",
+    "do": [
+      "Keep the design minimal and recognizable at small sizes",
+      "Use the purple-violet gradient consistently",
+      "Give expressive, large eyes — they're the soul of the character",
+      "Show tentacles as useful extensions (holding tools, typing, pointing)",
+      "Add subtle glow/light effects for the tech aesthetic"
+    ],
+    "dont": [
+      "Don't make it look scary or realistic — keep it cute and approachable",
+      "Don't use more than 3-4 colors total",
+      "Don't add excessive detail — it should work as a 16px favicon too",
+      "Don't give it a mouth unless the expression requires it",
+      "Don't make tentacles look like snakes or worms"
+    ]
+  },
+  "usage_contexts": {
+    "app_icon": "1024x1024, macOS/Windows/Linux app icon — head only",
+    "header_logo": "22px inline SVG, next to 'Pulpo' text — head only, minimal",
+    "loading_screen": "48px centered, with animation — full body",
+    "onboarding": "56px, welcoming pose — full body with tools",
+    "error_pages": "Medium size, empathetic expression",
+    "marketing": "Full illustration with all tentacles and tools"
+  }
+}

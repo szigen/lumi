@@ -3,7 +3,7 @@
 Persistent configuration, UI state, work logs, and codename collection tracking.
 
 ## Architecture
-- All data lives in the platform config dir (macOS/Linux: `~/.ai-orchestrator/`, Windows: `%APPDATA%/ai-orchestrator`), resolved via `src/main/platform` module:
+- All data lives in the platform config dir (macOS/Linux: `~/.pulpo/`, Windows: `%APPDATA%/pulpo`), resolved via `src/main/platform` module:
   - `config.json` — app config (projectsRoot, maxTerminals, theme, terminalFontSize)
   - `ui-state.json` — UI layout state (openTabs, activeTab, sidebars, gridColumns)
   - `work-logs/<date>/<repo>_<id>.json` — per-session work logs

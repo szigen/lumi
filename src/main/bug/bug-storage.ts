@@ -14,7 +14,7 @@ export class BugStorage {
   private locks = new Map<string, Promise<void>>()
 
   constructor() {
-    this.baseDir = path.join(os.homedir(), '.ai-orchestrator', 'bugs')
+    this.baseDir = path.join(os.homedir(), '.pulpo', 'bugs')
     if (!existsSync(this.baseDir)) {
       mkdirSync(this.baseDir, { recursive: true })
     }

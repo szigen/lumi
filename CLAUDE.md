@@ -1,4 +1,4 @@
-# AI Orchestrator
+# Pulpo
 
 Electron desktop dashboard for managing multiple Claude Code CLI instances.
 

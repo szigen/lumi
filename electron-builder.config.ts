@@ -1,8 +1,9 @@
 import type { Configuration } from 'electron-builder'
 
 const config: Configuration = {
-  appId: 'com.ai-orchestrator.app',
-  productName: 'AI Orchestrator',
+  appId: 'com.pulpo.app',
+  productName: 'Pulpo',
+  icon: 'build/icon.png',
   directories: {
     output: 'release'
   },

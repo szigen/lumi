@@ -1,12 +1,12 @@
-# Contributing to AI Orchestrator
+# Contributing to Pulpo
 
 Thanks for your interest in contributing! Here's how to get started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/sezginsazliogullari/ai-orchestrator.git
-cd ai-orchestrator
+git clone https://github.com/sezginsazliogullari/pulpo.git
+cd pulpo
 npm install
 npm run dev
 ```

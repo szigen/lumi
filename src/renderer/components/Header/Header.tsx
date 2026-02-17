@@ -1,7 +1,7 @@
 import { Menu, GitBranch, Settings, Maximize2, Minus, Square, X } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { IconButton } from '../ui'
-import { Logo } from '../icons'
+import { Mascot } from '../icons'
 import RepoTab from './RepoTab'
 import RepoSelector from './RepoSelector'
 
@@ -29,8 +29,8 @@ export default function Header() {
           onClick={toggleLeftSidebar}
           tooltip="Toggle sidebar"
         />
-        <Logo size={22} animated />
-        <span className="app-title">AI Orchestrator</span>
+        <Mascot variant="app-icon" size={26} />
+        <span className="app-title">Pulpo</span>
       </div>
 
       <div className="header-center">

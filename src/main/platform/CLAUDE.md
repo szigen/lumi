@@ -6,7 +6,7 @@ Centralizes all platform-specific logic for cross-platform support.
 - **index.ts** — Platform detection (`isMac`, `isWin`, `isLinux`) + re-exports
 - **shell.ts** — `getDefaultShell()`, `getShellArgs()` with per-platform fallback chains (macOS: zsh->bash->sh, Windows: powershell->cmd, Linux: bash->zsh->sh). Caches result after first resolution.
 - **window.ts** — `getWindowConfig()` returns BrowserWindow options (macOS: hiddenInset + trafficLightPosition, Windows: hidden + titleBarOverlay with native controls, Linux: hidden without titleBarOverlay — overlay is unstable on Wayland/tiling WMs)
-- **paths.ts** — `getConfigDir()` returns platform-appropriate config directory (macOS/Linux: ~/.ai-orchestrator, Windows: %APPDATA%/ai-orchestrator)
+- **paths.ts** — `getConfigDir()` returns platform-appropriate config directory (macOS/Linux: ~/.pulpo, Windows: %APPDATA%/pulpo)
 - **systemChecks.ts** — `getPlatformChecks()` returns platform-specific health checks (macOS: spawn-helper, Windows: ConPTY version)
 
 ## Rules

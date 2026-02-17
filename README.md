@@ -1,7 +1,7 @@
-# AI Orchestrator
+# Pulpo
 
 <p align="center">
-  <img src="docs/logo.svg" alt="AI Orchestrator" width="120" />
+  <img src="docs/logo.svg" alt="Pulpo" width="120" />
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ---
 
-AI Orchestrator is an Electron-based desktop application that lets you run and manage multiple AI coding CLI sessions (Claude Code or OpenAI Codex) from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
+Pulpo is an Electron-based desktop application that lets you run and manage multiple AI coding CLI sessions (Claude Code or OpenAI Codex) from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
 
 ## Features
 
@@ -45,8 +45,8 @@ AI Orchestrator is an Electron-based desktop application that lets you run and m
 
 ```bash
 # Clone the repository
-git clone https://github.com/sezginsazliogullari/ai-orchestrator.git
-cd ai-orchestrator
+git clone https://github.com/sezginsazliogullari/pulpo.git
+cd pulpo
 
 # Install dependencies
 npm install
@@ -69,7 +69,7 @@ npm run dev:linux
 
 ### Actions
 
-Actions are YAML-based workflows stored in `~/.ai-orchestrator/actions/` (user-level) or `<repo>/.ai-orchestrator/actions/` (project-level).
+Actions are YAML-based workflows stored in `~/.pulpo/actions/` (user-level) or `<repo>/.pulpo/actions/` (project-level).
 
 ```yaml
 name: Run Tests
@@ -84,11 +84,11 @@ claude:
 
 **Action editing:** Right-click any action in the sidebar to open an AI-assisted edit flow. Changes are preserved across app restarts — default actions are never overwritten once you've modified them.
 
-**Auto-backup:** Every save to a user action is automatically backed up in `~/.ai-orchestrator/actions/.history/<action-id>/` (up to 20 snapshots, oldest pruned automatically).
+**Auto-backup:** Every save to a user action is automatically backed up in `~/.pulpo/actions/.history/<action-id>/` (up to 20 snapshots, oldest pruned automatically).
 
 ### Personas
 
-Personas customize the AI behavior with system prompts. Stored in `~/.ai-orchestrator/personas/` or `<repo>/.ai-orchestrator/personas/`.
+Personas customize the AI behavior with system prompts. Stored in `~/.pulpo/personas/` or `<repo>/.pulpo/personas/`.
 
 ```yaml
 name: Architect

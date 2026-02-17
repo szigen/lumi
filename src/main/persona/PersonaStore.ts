@@ -93,7 +93,7 @@ export class PersonaStore {
   }
 
   loadProjectPersonas(repoPath: string): void {
-    const dir = path.join(repoPath, '.ai-orchestrator', 'personas')
+    const dir = path.join(repoPath, '.pulpo', 'personas')
     if (fs.existsSync(dir)) {
       this.projectPersonas.set(repoPath, this.loadDir(dir, 'project'))
       this.watchDir(dir, 'project', repoPath)

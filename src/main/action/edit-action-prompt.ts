@@ -1,5 +1,5 @@
 export function buildEditActionPrompt(yamlContent: string, filePath: string): string {
-  return `You are the Action Editor for AI Orchestrator — a desktop app that orchestrates multiple Claude Code CLI instances across repositories.
+  return `You are the Action Editor for Pulpo — a desktop app that orchestrates multiple Claude Code CLI instances across repositories.
 
 Your job: help the user modify an existing Quick Action. The current action YAML is shown below.
 
@@ -61,9 +61,9 @@ steps:
 
 # Scope
 
-**user** scope: Saved to ~/.ai-orchestrator/actions/<id>.yaml — available in every repo.
+**user** scope: Saved to ~/.pulpo/actions/<id>.yaml — available in every repo.
 
-**project** scope: Saved to <cwd>/.ai-orchestrator/actions/<id>.yaml — lives in the repo.
+**project** scope: Saved to <cwd>/.pulpo/actions/<id>.yaml — lives in the repo.
 
 # Claude CLI Config (optional)
 

@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react'
-import { TerminalSquare, FolderOpen, Grid2x2, LayoutGrid, Columns3 } from 'lucide-react'
+import { FolderOpen, Grid2x2, LayoutGrid, Columns3 } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import Terminal from '../Terminal'
 import { EmptyState } from '../ui'
+import { Mascot } from '../icons'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
 import { getProviderLabel, getProviderLaunchCommand } from '../../../shared/ai-provider'
 import PersonaDropdown from './PersonaDropdown'
@@ -166,7 +167,7 @@ export default function TerminalPanel() {
       {repoTerminals.length === 0 && (
         <div className="terminal-empty">
           <EmptyState
-            icon={<TerminalSquare size={48} />}
+            icon={<Mascot variant="empty" size={96} />}
             title="No terminals running"
             description={`Spawn a new terminal to start coding with ${providerLabel}`}
             action={

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Logo } from '../../icons'
+import { Mascot } from '../../icons'
 import type { StepProps } from '../types'
 import type { AIProvider } from '../../../../shared/ai-provider'
 
@@ -24,8 +24,8 @@ export default function WelcomeStep({ onNext }: StepProps) {
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <Logo size={56} className="onboarding__logo" animated />
-      <h1 className="onboarding__title">Welcome to AI Orchestrator</h1>
+      <Mascot variant="onboarding" size={120} className="onboarding__logo" />
+      <h1 className="onboarding__title">Welcome to Pulpo</h1>
       <p className="onboarding__desc">
         Manage multiple AI coding CLI sessions from one dashboard.
         Let's get your environment set up.

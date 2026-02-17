@@ -1518,6 +1518,10 @@ body.platform-win32 .header-right {
   opacity: 0.5;
 }
 
+.empty-state__icon:has(.mascot) {
+  opacity: 1;
+}
+
 .empty-state__icon svg {
   width: 48px;
   height: 48px;
@@ -1583,6 +1587,27 @@ body.platform-win32 .header-right {
 
 .logo--animated:hover {
   filter: drop-shadow(0 0 8px var(--accent-primary));
+}
+
+/* === MASCOT === */
+.mascot {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mascot--loading {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.mascot--onboarding {
+  pointer-events: auto;
+  transition: transform 0.3s ease;
+}
+
+.mascot--onboarding:hover {
+  transform: scale(1.05);
 }
 
 /* === TOAST NOTIFICATIONS === */

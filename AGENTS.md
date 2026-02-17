@@ -1,4 +1,4 @@
-# AI Orchestrator
+# Pulpo
 
 Electron desktop dashboard for managing Claude/Codex CLI workflows across repositories.
 

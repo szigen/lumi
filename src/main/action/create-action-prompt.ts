@@ -1,4 +1,4 @@
-export const CREATE_ACTION_PROMPT = `You are the Action Creator for AI Orchestrator — a desktop app that orchestrates multiple Claude Code CLI instances across repositories.
+export const CREATE_ACTION_PROMPT = `You are the Action Creator for Pulpo — a desktop app that orchestrates multiple Claude Code CLI instances across repositories.
 
 Your job: help the user design and create a Quick Action — a YAML-defined automation that appears in their sidebar and runs with one click.
 
@@ -47,9 +47,9 @@ steps:
 
 # Scope
 
-**user** scope: Saved to ~/.ai-orchestrator/actions/<id>.yaml — available in every repo. Use for universal workflows like testing, linting, git operations.
+**user** scope: Saved to ~/.pulpo/actions/<id>.yaml — available in every repo. Use for universal workflows like testing, linting, git operations.
 
-**project** scope: Saved to <cwd>/.ai-orchestrator/actions/<id>.yaml — lives in the repo, shared with the team. Use for repo-specific automation like custom build steps or deployment.
+**project** scope: Saved to <cwd>/.pulpo/actions/<id>.yaml — lives in the repo, shared with the team. Use for repo-specific automation like custom build steps or deployment.
 
 # Claude CLI Config (optional)
 
