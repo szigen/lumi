@@ -9,7 +9,7 @@ import ChangesSection from './ChangesSection'
 
 export default function RightSidebar() {
   const { activeTab } = useAppStore()
-  const { getRepoByName, changes, loadChanges } = useRepoStore()
+  const { getRepoByName, changes, loadChanges, loadAllBranchCommits, loadBranches } = useRepoStore()
 
   const activeRepo = useMemo(
     () => (activeTab ? getRepoByName(activeTab) : null),
@@ -21,6 +21,18 @@ export default function RightSidebar() {
       loadChanges(activeRepo.path)
     }
   }, [activeRepo, loadChanges])
+
+  useEffect(() => {
+    const cleanup = window.api.onFileTreeChanged((changedRepoPath: string) => {
+      if (activeRepo && changedRepoPath === activeRepo.path) {
+        loadChanges(activeRepo.path)
+        loadBranches(activeRepo.path).then(() => {
+          loadAllBranchCommits(activeRepo.path)
+        })
+      }
+    })
+    return cleanup
+  }, [activeRepo, loadChanges, loadBranches, loadAllBranchCommits])
 
   const changeCount = useMemo(
     () => (activeRepo ? (changes.get(activeRepo.path) || []).length : 0),
