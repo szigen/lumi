@@ -41,24 +41,24 @@ export default function Logo({ size = 24, className = '', animated = false }: Lo
 
       {/* Inner orchestrator nodes */}
       <g filter="url(#glow)">
+        {/* Connection lines (drawn first so circles render on top) */}
+        <line x1="16" y1="8" x2="16" y2="16" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.8" />
+        <line x1="16" y1="16" x2="22.9" y2="12" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.8" />
+        <line x1="16" y1="16" x2="22.9" y2="20" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.8" />
+        <line x1="16" y1="16" x2="16" y2="24" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.8" />
+        <line x1="16" y1="16" x2="9.1" y2="20" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.8" />
+        <line x1="16" y1="16" x2="9.1" y2="12" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.8" />
+
         {/* Center node */}
         <circle cx="16" cy="16" r="3" fill="url(#logoGradient)" />
 
         {/* Orbital nodes */}
-        <circle cx="16" cy="8" r="2" fill="url(#logoGradient)" opacity="0.8" />
-        <circle cx="22.9" cy="12" r="2" fill="url(#logoGradient)" opacity="0.8" />
-        <circle cx="22.9" cy="20" r="2" fill="url(#logoGradient)" opacity="0.8" />
-        <circle cx="16" cy="24" r="2" fill="url(#logoGradient)" opacity="0.8" />
-        <circle cx="9.1" cy="20" r="2" fill="url(#logoGradient)" opacity="0.8" />
-        <circle cx="9.1" cy="12" r="2" fill="url(#logoGradient)" opacity="0.8" />
-
-        {/* Connection lines */}
-        <line x1="16" y1="16" x2="16" y2="8" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="16" y1="16" x2="22.9" y2="12" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="16" y1="16" x2="22.9" y2="20" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="16" y1="16" x2="16" y2="24" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="16" y1="16" x2="9.1" y2="20" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
-        <line x1="16" y1="16" x2="9.1" y2="12" stroke="url(#logoGradient)" strokeWidth="1" opacity="0.6" />
+        <circle cx="16" cy="8" r="2" fill="url(#logoGradient)" />
+        <circle cx="22.9" cy="12" r="2" fill="url(#logoGradient)" />
+        <circle cx="22.9" cy="20" r="2" fill="url(#logoGradient)" />
+        <circle cx="16" cy="24" r="2" fill="url(#logoGradient)" />
+        <circle cx="9.1" cy="20" r="2" fill="url(#logoGradient)" />
+        <circle cx="9.1" cy="12" r="2" fill="url(#logoGradient)" />
       </g>
     </svg>
   )
