@@ -57,7 +57,7 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
     >
       <div className="terminal-card__header">
         <StatusDot status={status} />
-        <span className="terminal-card__title">{terminal?.task || terminal?.name || 'Terminal'}</span>
+        <span className="terminal-card__title">{terminal?.oscTitle || terminal?.task || terminal?.name || 'Terminal'}</span>
         <button
           className="terminal-card__close"
           onClick={(e) => { e.stopPropagation(); onClose() }}

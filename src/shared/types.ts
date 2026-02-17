@@ -15,6 +15,7 @@ export interface Terminal {
   repoPath: string
   status: TerminalStatus
   task?: string
+  oscTitle?: string
   isNew?: boolean
   createdAt: Date
 }
@@ -26,6 +27,7 @@ export interface TerminalInfo {
   repoPath: string
   createdAt: string
   task?: string
+  oscTitle?: string
   status: Terminal['status']
 }
 

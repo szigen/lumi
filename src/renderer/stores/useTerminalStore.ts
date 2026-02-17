@@ -56,6 +56,7 @@ export function reconcileTerminals(
       repoPath: snapshot.repoPath,
       status: snapshot.status || existing?.status || 'idle',
       task: snapshot.task,
+      oscTitle: snapshot.oscTitle || existing?.oscTitle,
       isNew: existing?.isNew,
       createdAt: new Date(snapshot.createdAt)
     })
@@ -219,6 +220,9 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     const cleanupStatus = window.api.onTerminalStatus((terminalId: string, status: string) => {
       get().updateTerminal(terminalId, { status: status as TerminalStatus })
     })
+    const cleanupTitle = window.api.onTerminalTitle((terminalId: string, title: string) => {
+      get().updateTerminal(terminalId, { oscTitle: title })
+    })
     const cleanupExit = window.api.onTerminalExit((terminalId: string) => {
       get().removeTerminal(terminalId)
     })
@@ -226,6 +230,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     terminalBridgeCleanup = () => {
       cleanupOutput()
       cleanupStatus()
+      cleanupTitle()
       cleanupExit()
       terminalBridgeCleanup = null
     }

@@ -91,6 +91,16 @@ export class TerminalManager extends EventEmitter {
           return
         }
 
+        if (event.source === 'title' && event.title) {
+          const cleanTitle = event.title.replace(/^.\s*/, '')
+          if (cleanTitle) {
+            terminal.oscTitle = cleanTitle
+            if (!window.isDestroyed()) {
+              window.webContents.send(IPC_CHANNELS.TERMINAL_TITLE, id, cleanTitle)
+            }
+          }
+        }
+
         if (event.isWorking === null) return
         if (event.isWorking) {
           terminal.lastActivityAt = Date.now()
@@ -198,6 +208,7 @@ export class TerminalManager extends EventEmitter {
       repoPath: t.repoPath,
       createdAt: t.createdAt.toISOString(),
       task: t.task,
+      oscTitle: t.oscTitle,
       status: t.statusMachine.getStatus(),
       output: t.outputBuffer.get()
     }))

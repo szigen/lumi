@@ -14,6 +14,7 @@ export interface ManagedTerminal {
   repoPath: string
   createdAt: Date
   task?: string
+  oscTitle?: string
   agentHint: TerminalAgentHint
   lastActivityAt?: number
   activityTimer?: ReturnType<typeof setTimeout>
