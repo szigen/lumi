@@ -33,7 +33,7 @@ export class TerminalManager extends EventEmitter {
     this.codenameTracker = codenameTracker
   }
 
-  spawn(repoPath: string, window: BrowserWindow, trackCollection = true): SpawnResult | null {
+  spawn(repoPath: string, window: BrowserWindow): SpawnResult | null {
     if (this.terminals.size >= this.maxTerminals) {
       console.error(`Max terminals (${this.maxTerminals}) reached`)
       return null
@@ -41,7 +41,7 @@ export class TerminalManager extends EventEmitter {
 
     const id = uuidv4()
     const name = generateCodename()
-    const isNew = trackCollection ? this.codenameTracker.addDiscoveredCodename(name) : false
+    const isNew = false
     const shell = getDefaultShell()
 
     const ptyProcess = pty.spawn(shell, getShellArgs(), {

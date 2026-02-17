@@ -66,7 +66,7 @@ export function registerBugHandlers(context: IpcHandlerContext): void {
     if (!isValidRepoPath(repoPath)) throw new Error('Invalid repo path')
 
     const provider = getActiveProvider()
-    const result = terminalManager.spawn(repoPath, mainWindow, false)
+    const result = terminalManager.spawn(repoPath, mainWindow)
     if (result) {
       terminalManager.setTask(result.id, 'Applying fix')
 

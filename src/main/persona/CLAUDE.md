@@ -13,5 +13,4 @@ YAML-based personas that spawn Claude CLI sessions with preconfigured behavior.
 - The `claude` block supports same flags as actions: `systemPrompt`, `appendSystemPrompt`, `model`, `allowedTools`, `permissionMode`, etc.
 
 ## Watch Out
-- Persona terminals spawn with `trackCollection = false` (codenames not tracked)
 - PersonaStore follows identical pattern to ActionStore (constructor, seedDefaults, loadDir, watchDir, dispose)

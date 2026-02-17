@@ -1,11 +1,10 @@
 import { ipcMain, shell } from 'electron'
 import * as path from 'path'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
-import { TOTAL_CODENAMES } from '../../terminal/codenames'
 import type { IpcHandlerContext } from './types'
 
 export function registerRepoGitHandlers(context: IpcHandlerContext): void {
-  const { repoManager, configManager } = context
+  const { repoManager } = context
 
   ipcMain.handle(IPC_CHANNELS.REPOS_LIST, async () => {
     return repoManager.listRepos()
@@ -53,8 +52,4 @@ export function registerRepoGitHandlers(context: IpcHandlerContext): void {
     shell.showItemInFolder(absolutePath)
   })
 
-  ipcMain.handle(IPC_CHANNELS.COLLECTION_GET, async () => {
-    const discovered = configManager.getDiscoveredCodenames()
-    return { discovered: discovered.length, total: TOTAL_CODENAMES }
-  })
 }

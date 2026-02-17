@@ -113,10 +113,6 @@ const api = {
   onPersonasChanged: (callback: () => void) =>
     createIpcListener<[]>(IPC_CHANNELS.PERSONAS_CHANGED, callback),
 
-  // Collection operations
-  getCollection: () =>
-    invokeIpc<{ discovered: number; total: number }>(IPC_CHANNELS.COLLECTION_GET),
-
   // Bug operations
   listBugs: (repoPath: string) =>
     invokeIpc<unknown[]>(IPC_CHANNELS.BUGS_LIST, repoPath),

@@ -24,7 +24,7 @@ export class ActionEngine {
   async execute(action: Action, repoPath: string): Promise<SpawnResult | null> {
     if (!this.window) throw new Error('No main window')
 
-    const result = this.terminalManager.spawn(repoPath, this.window, false)
+    const result = this.terminalManager.spawn(repoPath, this.window)
     if (!result) return null
 
     const { id: terminalId } = result

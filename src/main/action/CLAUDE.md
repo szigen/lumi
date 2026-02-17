@@ -25,6 +25,5 @@ YAML-based quick actions that spawn terminals and execute step sequences.
 
 ## Watch Out
 - `buildAgentCommand()` is the single entrypoint used by ActionEngine and persona spawning; avoid duplicating provider launch logic in IPC handlers.
-- ActionEngine spawns terminals with `trackCollection = false` (codenames not tracked for action terminals).
 - The `.history` directory is inside the user actions dir but excluded from action loading (only `.yaml`/`.yml` files in the root are loaded).
 - `getActionContent()` and `getActionFilePath()` scan directories by action ID since filenames may not match IDs.

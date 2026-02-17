@@ -153,7 +153,7 @@ export function registerActionPersonaHandlers(context: IpcHandlerContext): void 
     const persona = personas.find((p) => p.id === personaId)
     if (!persona) throw new Error(`Persona not found: ${personaId}`)
 
-    const result = terminalManager.spawn(repoPath, mainWindow, false)
+    const result = terminalManager.spawn(repoPath, mainWindow)
     if (!result) return null
 
     terminalManager.setTask(result.id, persona.label)
