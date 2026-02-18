@@ -7,7 +7,7 @@ Centralizes all platform-specific logic for cross-platform support.
 - **shell.ts** — `getDefaultShell()`, `getShellArgs()` with per-platform fallback chains (macOS: zsh->bash->sh, Windows: powershell->cmd, Linux: bash->zsh->sh). Caches result after first resolution.
 - **window.ts** — `getWindowConfig()` returns BrowserWindow options (macOS: hiddenInset + trafficLightPosition, Windows: hidden + titleBarOverlay with native controls, Linux: hidden without titleBarOverlay — overlay is unstable on Wayland/tiling WMs)
 - **paths.ts** — `getConfigDir()` returns platform-appropriate config directory (macOS/Linux: ~/.lumi, Windows: %APPDATA%/lumi)
-- **systemChecks.ts** — `getPlatformChecks()` returns platform-specific health checks (macOS: spawn-helper, Windows: ConPTY version)
+- **systemChecks.ts** — `getPlatformChecks()` returns platform-specific health checks (macOS: spawn-helper, Windows: ConPTY version). `autoFixSpawnHelper()` silently fixes spawn-helper execute permissions at startup (called from `main/index.ts` before IPC setup). Uses `app.getAppPath()` for path resolution (works in both dev and production/asar builds).
 
 ## Rules
 - All platform-specific logic MUST go through this module — never use inline `process.platform` checks elsewhere

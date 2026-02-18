@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { app } from 'electron'
 import { isMac, isWin } from './index'
 import type { SystemCheckResult } from '../system/SystemChecker'
 
@@ -12,23 +13,42 @@ interface PlatformCheck {
 }
 
 function getSpawnHelperPaths() {
-  const nodeModules = path.resolve(__dirname, '..', '..', 'node_modules')
-  const prebuildsDir = path.join(nodeModules, 'node-pty', 'prebuilds')
+  const appPath = app.getAppPath()
+  const prebuildsDir = path.join(appPath, 'node_modules', 'node-pty', 'prebuilds')
   const darwinDirs = fs.existsSync(prebuildsDir)
     ? fs.readdirSync(prebuildsDir).filter((d) => d.startsWith('darwin-'))
     : []
   return { prebuildsDir, darwinDirs }
 }
 
+export function autoFixSpawnHelper(): void {
+  if (!isMac) return
+  try {
+    const { prebuildsDir, darwinDirs } = getSpawnHelperPaths()
+    for (const dir of darwinDirs) {
+      const helperPath = path.join(prebuildsDir, dir, 'spawn-helper')
+      if (fs.existsSync(helperPath)) {
+        try {
+          fs.accessSync(helperPath, fs.constants.X_OK)
+        } catch {
+          fs.chmodSync(helperPath, 0o755)
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Auto-fix spawn-helper failed:', err)
+  }
+}
+
 function macOSSpawnHelperCheck(): PlatformCheck {
   return {
     id: 'spawn-helper',
-    label: 'macOS spawn-helper',
+    label: 'Terminal Permissions',
     run: (): SystemCheckResult => {
       try {
         const { prebuildsDir, darwinDirs } = getSpawnHelperPaths()
         if (!fs.existsSync(prebuildsDir)) {
-          return { id: 'spawn-helper', label: 'macOS spawn-helper', status: 'warn', message: 'Prebuilds directory not found — node-pty may use a compiled build' }
+          return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: 'Terminal prebuild not found — may not affect operation' }
         }
 
         const helpers: string[] = []
@@ -40,7 +60,7 @@ function macOSSpawnHelperCheck(): PlatformCheck {
         }
 
         if (helpers.length === 0) {
-          return { id: 'spawn-helper', label: 'macOS spawn-helper', status: 'warn', message: 'spawn-helper not found in prebuilds' }
+          return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: 'Terminal helper not found — may not affect operation' }
         }
 
         const nonExecutable = helpers.filter((h) => {
@@ -55,17 +75,17 @@ function macOSSpawnHelperCheck(): PlatformCheck {
         if (nonExecutable.length > 0) {
           return {
             id: 'spawn-helper',
-            label: 'macOS spawn-helper',
+            label: 'Terminal Permissions',
             status: 'fail',
-            message: 'spawn-helper missing execute permission',
+            message: 'Terminal needs a quick permission fix to work',
             fixable: true
           }
         }
 
-        return { id: 'spawn-helper', label: 'macOS spawn-helper', status: 'pass', message: 'spawn-helper is executable' }
+        return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'pass', message: 'Terminal is ready' }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
-        return { id: 'spawn-helper', label: 'macOS spawn-helper', status: 'warn', message: msg }
+        return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: msg }
       }
     },
     fix: (): SystemCheckResult => {
@@ -79,10 +99,10 @@ function macOSSpawnHelperCheck(): PlatformCheck {
           }
         }
 
-        return { id: 'spawn-helper', label: 'macOS spawn-helper', status: 'pass', message: 'Fixed: spawn-helper is now executable' }
+        return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'pass', message: 'Fixed! Terminal is ready' }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
-        return { id: 'spawn-helper', label: 'macOS spawn-helper', status: 'fail', message: `Fix failed: ${msg}` }
+        return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'fail', message: `Could not fix automatically: ${msg}` }
       }
     }
   }
