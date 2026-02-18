@@ -9,7 +9,7 @@ const config: Configuration = {
     output: 'release'
   },
   files: [
-    'dist/**/*',
+    'out/**/*',
     'default-actions/**/*',
     'default-personas/**/*'
   ],

@@ -1,7 +1,7 @@
 {
   "name": "lumi-app",
   "version": "0.1.0",
-  "main": "dist/main/index.js",
+  "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "dev:linux": "ELECTRON_DISABLE_SANDBOX=1 electron-vite dev",
