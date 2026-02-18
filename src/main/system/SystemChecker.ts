@@ -1,8 +1,29 @@
 import { execSync } from 'child_process'
+import { accessSync, constants } from 'fs'
+import { join } from 'path'
+import { homedir } from 'os'
 import { shell } from 'electron'
 import * as pty from 'node-pty'
 import { isWin, getDefaultShell, getPlatformChecks } from '../platform'
 import type { AIProvider } from '../../shared/ai-provider'
+
+/** Try well-known install paths when `which` fails (e.g. Electron's restricted PATH) */
+function findExecutableFallback(name: string): string | null {
+  const candidates = [
+    join(homedir(), '.local', 'bin', name),
+    `/usr/local/bin/${name}`,
+    `/opt/homebrew/bin/${name}`
+  ]
+  for (const p of candidates) {
+    try {
+      accessSync(p, constants.X_OK)
+      return p
+    } catch {
+      continue
+    }
+  }
+  return null
+}
 
 export interface SystemCheckResult {
   id: string
@@ -74,6 +95,13 @@ export class SystemChecker {
             const result = execSync(cmd, { encoding: 'utf-8', timeout: 5000 }).trim()
             return { id: 'claude-cli', label: 'Claude CLI', status: 'pass', message: `Found: ${result.split('\n')[0]}` }
           } catch {
+            // Fallback: check well-known install paths directly
+            if (!isWin) {
+              const fallback = findExecutableFallback('claude')
+              if (fallback) {
+                return { id: 'claude-cli', label: 'Claude CLI', status: 'pass', message: `Found: ${fallback}` }
+              }
+            }
             if (selected !== 'claude') {
               return {
                 id: 'claude-cli',
@@ -111,6 +139,13 @@ export class SystemChecker {
             const result = execSync(cmd, { encoding: 'utf-8', timeout: 5000 }).trim()
             return { id: 'codex-cli', label: 'Codex CLI', status: 'pass', message: `Found: ${result.split('\n')[0]}` }
           } catch {
+            // Fallback: check well-known install paths directly
+            if (!isWin) {
+              const fallback = findExecutableFallback('codex')
+              if (fallback) {
+                return { id: 'codex-cli', label: 'Codex CLI', status: 'pass', message: `Found: ${fallback}` }
+              }
+            }
             if (selected !== 'codex') {
               return {
                 id: 'codex-cli',

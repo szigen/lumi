@@ -1,4 +1,5 @@
 [![CI](https://github.com/szigen/lumi/actions/workflows/ci.yml/badge.svg)](https://github.com/szigen/lumi/actions)
+[![Release](https://img.shields.io/github/v/release/szigen/lumi)](https://github.com/szigen/lumi/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 # Lumi
@@ -39,17 +40,57 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 
 ## Download
 
-Pre-built binaries for the latest release:
-
-| Platform | Download |
-|----------|----------|
-| macOS | [Lumi.dmg](https://github.com/szigen/lumi/releases/latest) |
-| Windows | [Lumi-Setup.exe](https://github.com/szigen/lumi/releases/latest) |
-| Linux | [Lumi.AppImage](https://github.com/szigen/lumi/releases/latest) |
+| Platform | Installer | Portable |
+|----------|-----------|----------|
+| macOS (Apple Silicon) | [Lumi-0.1.0-arm64.dmg](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi-0.1.0-arm64.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi-0.1.0-arm64-mac.zip) |
+| Windows | [Lumi.Setup.0.1.0.exe](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi.Setup.0.1.0.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi.0.1.0.exe) |
+| Linux | [Lumi-0.1.0.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi-0.1.0.AppImage) | — |
 
 > All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
 
-## Prerequisites
+### Installation
+
+**Before you start:** You need at least one AI CLI installed and authenticated:
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code): `npm install -g @anthropic-ai/claude-code`
+- [OpenAI Codex CLI](https://github.com/openai/codex): install and configure per their docs
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+1. Download the `.dmg` file
+2. Open it and drag **Lumi** into your **Applications** folder
+3. On first launch, right-click the app → **Open** (macOS Gatekeeper will warn about unsigned apps)
+4. Launch Lumi and select a repository to start
+
+> **Portable:** Extract the `.zip` and run `Lumi.app` directly — no installation needed.
+
+</details>
+
+<details>
+<summary><strong>Windows</strong></summary>
+
+1. Download `Lumi.Setup.0.1.0.exe`
+2. Run the installer — you can choose the installation directory
+3. Launch from the Start Menu or Desktop shortcut
+
+> **Portable:** Download `Lumi.0.1.0.exe` and run it directly — no installation needed.
+
+</details>
+
+<details>
+<summary><strong>Linux</strong></summary>
+
+**AppImage (recommended):**
+```bash
+chmod +x Lumi-0.1.0.AppImage
+./Lumi-0.1.0.AppImage
+```
+
+> If you get a sandbox error, run with `--no-sandbox` flag.
+
+</details>
+
+## Prerequisites (building from source)
 
 - **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
 - **AI CLI** — at least one of:

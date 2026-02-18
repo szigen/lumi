@@ -43,6 +43,6 @@ export function getDefaultShell(): string {
 }
 
 export function getShellArgs(): string[] {
-  // No special args needed for any shell currently
-  return []
+  // Login shell flag ensures user's profile is loaded (full PATH, aliases, etc.)
+  return isWin ? [] : ['-l']
 }

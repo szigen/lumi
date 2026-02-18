@@ -6,6 +6,7 @@ dist/
 out/
 
 # Electron build artifacts
+release/
 *.dmg
 *.app
 *.exe
