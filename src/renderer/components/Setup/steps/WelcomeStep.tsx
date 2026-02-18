@@ -25,7 +25,7 @@ export default function WelcomeStep({ onNext }: StepProps) {
       transition={{ duration: 0.3 }}
     >
       <Mascot variant="onboarding" size={120} className="onboarding__logo" />
-      <h1 className="onboarding__title">Welcome to Pulpo</h1>
+      <h1 className="onboarding__title">Welcome to Lumi</h1>
       <p className="onboarding__desc">
         Manage multiple AI coding CLI sessions from one dashboard.
         Let's get your environment set up.

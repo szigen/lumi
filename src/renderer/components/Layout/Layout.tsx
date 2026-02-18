@@ -132,7 +132,7 @@ export default function Layout() {
       <div className="loading-screen">
         <div className="loading-content">
           <Mascot variant="loading" size={80} className="loading-logo" />
-          <div className="loading-title">Pulpo</div>
+          <div className="loading-title">Lumi</div>
           <div className="loading-status">Initializing...</div>
         </div>
       </div>

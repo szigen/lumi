@@ -30,7 +30,7 @@ export default function Header() {
           tooltip="Toggle sidebar"
         />
         <Mascot variant="app-icon" size={26} />
-        <span className="app-title">Pulpo</span>
+        <span className="app-title">Lumi</span>
       </div>
 
       <div className="header-center">

@@ -1,7 +1,7 @@
-# Pulpo
+# Lumi
 
 <p align="center">
-  <img src="docs/logo.svg" alt="Pulpo" width="120" />
+  <img src="docs/logo.svg" alt="Lumi" width="120" />
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ---
 
-Pulpo is an Electron-based desktop application that lets you run and manage multiple AI coding CLI sessions (Claude Code or OpenAI Codex) from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
+Lumi is an Electron-based desktop application that lets you run and manage multiple AI coding CLI sessions (Claude Code or OpenAI Codex) from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
 
 ## Features
 
@@ -45,8 +45,8 @@ Pulpo is an Electron-based desktop application that lets you run and manage mult
 
 ```bash
 # Clone the repository
-git clone https://github.com/sezginsazliogullari/pulpo.git
-cd pulpo
+git clone https://github.com/sezginsazliogullari/lumi.git
+cd lumi
 
 # Install dependencies
 npm install
@@ -69,7 +69,7 @@ npm run dev:linux
 
 ### Actions
 
-Actions are YAML-based workflows stored in `~/.pulpo/actions/` (user-level) or `<repo>/.pulpo/actions/` (project-level).
+Actions are YAML-based workflows stored in `~/.lumi/actions/` (user-level) or `<repo>/.lumi/actions/` (project-level).
 
 ```yaml
 name: Run Tests
@@ -84,11 +84,11 @@ claude:
 
 **Action editing:** Right-click any action in the sidebar to open an AI-assisted edit flow. Changes are preserved across app restarts — default actions are never overwritten once you've modified them.
 
-**Auto-backup:** Every save to a user action is automatically backed up in `~/.pulpo/actions/.history/<action-id>/` (up to 20 snapshots, oldest pruned automatically).
+**Auto-backup:** Every save to a user action is automatically backed up in `~/.lumi/actions/.history/<action-id>/` (up to 20 snapshots, oldest pruned automatically).
 
 ### Personas
 
-Personas customize the AI behavior with system prompts. Stored in `~/.pulpo/personas/` or `<repo>/.pulpo/personas/`.
+Personas customize the AI behavior with system prompts. Stored in `~/.lumi/personas/` or `<repo>/.lumi/personas/`.
 
 ```yaml
 name: Architect

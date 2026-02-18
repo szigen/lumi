@@ -1,8 +1,8 @@
 import type { Configuration } from 'electron-builder'
 
 const config: Configuration = {
-  appId: 'com.pulpo.app',
-  productName: 'Pulpo',
+  appId: 'com.lumi.app',
+  productName: 'Lumi',
   icon: 'build/icon.png',
   directories: {
     output: 'release'

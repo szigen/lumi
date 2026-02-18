@@ -1,12 +1,12 @@
-# Contributing to Pulpo
+# Contributing to Lumi
 
 Thanks for your interest in contributing! Here's how to get started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/sezginsazliogullari/pulpo.git
-cd pulpo
+git clone https://github.com/sezginsazliogullari/lumi.git
+cd lumi
 npm install
 npm run dev
 ```

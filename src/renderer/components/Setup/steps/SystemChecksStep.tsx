@@ -54,7 +54,7 @@ export default function SystemChecksStep({ onNext, onBack }: StepProps) {
     >
       <h2 className="onboarding__step-title">System Health Check</h2>
       <p className="onboarding__step-desc">
-        Verifying your environment is ready for Pulpo.
+        Verifying your environment is ready for Lumi.
       </p>
 
       <div className="system-check__list">

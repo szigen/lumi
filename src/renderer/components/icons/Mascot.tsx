@@ -26,7 +26,7 @@ export default function Mascot({ variant, size = 120, className = '' }: MascotPr
   return (
     <img
       src={VARIANT_SRC[variant]}
-      alt={`Pulpo ${variant}`}
+      alt={`Lumi ${variant}`}
       width={size}
       height={size}
       className={`mascot mascot--${variant} ${className}`}

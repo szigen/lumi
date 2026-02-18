@@ -4,7 +4,7 @@ icon: Package
 scope: user
 steps:
   - type: write
-    content: "read \"name?Project name: \" && DEST=\"${PWD:h}/$name\" && mkdir -p \"$DEST/.claude\" && sed \"s/{{PROJECT_NAME}}/$name/g\" ~/.pulpo/templates/CLAUDE.md.template > \"$DEST/CLAUDE.md\" && cp ~/.pulpo/templates/LEARNING.md.template \"$DEST/.claude/LEARNING.md\" && git init \"$DEST\" && echo \"Project created: $DEST\"\r"
+    content: "read \"name?Project name: \" && DEST=\"${PWD:h}/$name\" && mkdir -p \"$DEST/.claude\" && sed \"s/{{PROJECT_NAME}}/$name/g\" ~/.lumi/templates/CLAUDE.md.template > \"$DEST/CLAUDE.md\" && cp ~/.lumi/templates/LEARNING.md.template \"$DEST/.claude/LEARNING.md\" && git init \"$DEST\" && echo \"Project created: $DEST\"\r"
   - type: wait_for
     pattern: "Project created:"
     timeout: 60000

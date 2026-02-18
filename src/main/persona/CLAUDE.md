@@ -3,7 +3,7 @@
 YAML-based personas that spawn Claude CLI sessions with preconfigured behavior.
 
 ## Architecture
-- **PersonaStore** — loads/watches YAML from `~/.pulpo/personas` (user) and `<repo>/.pulpo/personas` (project). Same override logic as ActionStore (project overrides user by `id`).
+- **PersonaStore** — loads/watches YAML from `~/.lumi/personas` (user) and `<repo>/.lumi/personas` (project). Same override logic as ActionStore (project overrides user by `id`).
 - Personas use the same `ClaudeConfig` type as actions for CLI flags
 - Spawning a persona: creates terminal, sets task to persona label, writes `claude ""` command with injected flags via `buildClaudeCommand`
 

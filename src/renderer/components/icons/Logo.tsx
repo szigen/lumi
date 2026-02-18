@@ -6,7 +6,7 @@ interface LogoProps {
 
 export default function Logo({ size = 24, className = '', animated = false }: LogoProps) {
   const animatedClass = animated ? 'logo--animated' : ''
-  const uid = `pulpo-${size}`
+  const uid = `lumi-${size}`
   return (
     <svg
       width={size}

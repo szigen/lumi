@@ -5,7 +5,7 @@ import type { Action, ClaudeConfig, CodexConfig } from '../../shared/action-type
 import type { AIProvider } from '../../shared/ai-provider'
 import { getProviderBinary } from '../../shared/ai-provider'
 
-const TEMP_DIR = path.join(os.tmpdir(), 'pulpo')
+const TEMP_DIR = path.join(os.tmpdir(), 'lumi')
 
 function ensureTempDir(): void {
   if (!fs.existsSync(TEMP_DIR)) {
