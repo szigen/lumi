@@ -185,6 +185,7 @@ npm run typecheck    # TypeScript type checking
 | Terminal | xterm.js 6 + node-pty |
 | Animations | Framer Motion 12 |
 | Git | simple-git |
+| Code Viewer | Monaco Editor 4 |
 | Build | Vite 7 + electron-vite 5 |
 
 ### Project Structure
