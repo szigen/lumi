@@ -51,6 +51,28 @@ export function useXTermInstance(
       // WebGL not available, canvas renderer is fine
     }
 
+    // Windows/Linux: Ctrl+Shift+C → copy, Ctrl+Shift+V → paste
+    if (window.api.platform !== 'darwin') {
+      xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+        if (e.ctrlKey && e.shiftKey && e.type === 'keydown') {
+          if (e.key === 'C' || e.key === 'c') {
+            const selection = xterm.getSelection()
+            if (selection) {
+              navigator.clipboard.writeText(selection)
+            }
+            return false
+          }
+          if (e.key === 'V' || e.key === 'v') {
+            navigator.clipboard.readText().then((text) => {
+              xterm.paste(text)
+            })
+            return false
+          }
+        }
+        return true
+      })
+    }
+
     xtermRef.current = xterm
     fitAddonRef.current = fitAddon
     setXtermReady(true)

@@ -6,7 +6,7 @@ xterm.js wrapper per session. Logic decomposed into hooks, constants, and utilit
 - **Terminal.tsx** — Thin shell that composes hooks and renders the card
 - **constants.ts** — `TERMINAL_CONSTANTS` (debounce ms, scrollback, chunk size) and `XTERM_THEME` (ANSI palette matching app theme)
 - **utils.ts** — `writeChunked(xterm, data)` — writes large buffers in 10KB chunks via `requestAnimationFrame`
-- **hooks/useXTermInstance.ts** — xterm init, addon loading (FitAddon, WebLinksAddon, Unicode11Addon, WebglAddon with fallback), exposes `xtermReady`
+- **hooks/useXTermInstance.ts** — xterm init, addon loading (FitAddon, WebLinksAddon, Unicode11Addon, WebglAddon with fallback), Windows/Linux Ctrl+Shift+C/V copy/paste handler, exposes `xtermReady`
 - **hooks/useTerminalResize.ts** — ResizeObserver + IntersectionObserver, 150ms debounce via `useRef`
 - **hooks/useTerminalOutputRenderer.ts** — applies store output to xterm via patch strategy (`append` delta or `replace` full redraw)
 - **hooks/useTerminalDragDrop.ts** — drag-over/drop state, writes dropped file path to PTY
