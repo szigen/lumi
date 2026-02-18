@@ -273,7 +273,15 @@ body.platform-darwin .header {
   padding-left: 80px; /* macOS traffic lights */
 }
 
-.header > * {
+.header-left,
+.header-center,
+.header-right {
+  -webkit-app-region: drag;
+}
+
+.header-left > *,
+.header-center > *,
+.header-right > * {
   -webkit-app-region: no-drag;
 }
 
