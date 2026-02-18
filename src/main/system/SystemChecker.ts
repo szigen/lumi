@@ -123,13 +123,13 @@ export class SystemChecker {
               id: 'codex-cli',
               label: 'Codex CLI',
               status: 'fail',
-              message: 'Codex CLI not found. Install it from https://developers.openai.com/codex/',
+              message: 'Codex CLI not found. Install it from https://github.com/openai/codex',
               fixable: true
             }
           }
         },
         fix: () => {
-          shell.openExternal('https://developers.openai.com/codex/')
+          shell.openExternal('https://github.com/openai/codex')
           return {
             id: 'codex-cli',
             label: 'Codex CLI',

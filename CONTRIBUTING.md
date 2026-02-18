@@ -5,7 +5,7 @@ Thanks for your interest in contributing! Here's how to get started.
 ## Development Setup
 
 ```bash
-git clone https://github.com/sezginsazliogullari/lumi.git
+git clone https://github.com/szigen/lumi.git
 cd lumi
 npm install
 npm run dev
@@ -53,6 +53,6 @@ When reporting a bug, please include:
 
 ## Adding Actions or Personas
 
-- Place YAML files in `src/default-actions/` or `src/default-personas/`
+- Place YAML files in `default-actions/` or `default-personas/`
 - Follow the existing YAML schema
 - Test by running the app and triggering the action/persona

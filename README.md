@@ -1,7 +1,10 @@
+[![CI](https://github.com/szigen/lumi/actions/workflows/ci.yml/badge.svg)](https://github.com/szigen/lumi/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 # Lumi
 
 <p align="center">
-  <img src="docs/logo.svg" alt="Lumi" width="120" />
+  <img src="src/renderer/assets/mascot/app-icon.png" alt="Lumi" width="120" />
 </p>
 
 <p align="center">
@@ -22,13 +25,13 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 
 ## Features
 
-- **Multi-terminal management** — Spawn up to 12 AI sessions, each with its own terminal, running in parallel
-- **Multi-provider support** — Switch between [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenAI Codex](https://platform.openai.com/docs/guides/codex) in Settings; all terminals and bug-fix tools use the selected provider
+- **Multi-terminal management** — Spawn up to 20 AI sessions (default 12, configurable in Settings), each with its own terminal, running in parallel
+- **Multi-provider support** — Switch between [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenAI Codex CLI](https://github.com/openai/codex) in Settings; all terminals and bug-fix tools use the selected provider
 - **Action system** — Define reusable YAML-based workflows (run tests, sync plugins, update docs); create or edit actions via AI with automatic backup history
 - **Persona system** — Switch between predefined AI personas (architect, reviewer, fixer, expert) with custom system prompts
 - **Git integration** — Built-in branch management, reactive file-changes view with right-click context menu, and commit history per repository
 - **Multi-repo support** — Work across multiple repositories with tab-based navigation
-- **Terminal codenames** — Each session gets a unique codename (e.g., "brave-alpaca") with a collectible discovery system
+- **Terminal codenames** — Each session gets a unique codename (e.g., "brave-alpaca")
 - **Smart terminal status** — Activity-based status detection via OSC9 signals, with window-focus-aware notifications
 - **Keyboard shortcuts** — Platform-adaptive shortcuts (`Cmd` on macOS, `Ctrl+Shift` on Windows/Linux)
 - **Native notifications** — Terminal bell and activity detection with OS-level notifications
@@ -38,14 +41,19 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 - **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
 - **AI CLI** — at least one of:
   - Claude Code: `npm install -g @anthropic-ai/claude-code` (then authenticate)
-  - OpenAI Codex: install and configure per [Codex docs](https://platform.openai.com/docs/guides/codex)
+  - OpenAI Codex: install and configure per [Codex CLI docs](https://github.com/openai/codex)
 - **macOS** (primary platform), **Windows**, or **Linux**
+
+> **Note:** Lumi uses [node-pty](https://github.com/nicktaf/node-pty) for terminal emulation,
+> which requires native compilation. On macOS, Xcode Command Line Tools are needed.
+> On Linux, install `build-essential` and `python3`. On Windows, install
+> [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/).
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/sezginsazliogullari/lumi.git
+git clone https://github.com/szigen/lumi.git
 cd lumi
 
 # Install dependencies
@@ -64,7 +72,7 @@ npm run dev:linux
 
 1. Launch the app with `npm run dev`
 2. Select a repository from the repo selector in the header
-3. Click "New Session" or use `Cmd+N` to spawn a Claude Code terminal
+3. Click "New Session" or use `Cmd+T` (`Ctrl+Shift+T` on Windows/Linux) to spawn a Claude Code terminal
 4. Use the left sidebar to trigger quick actions or switch between sessions
 
 ### Actions
@@ -72,14 +80,17 @@ npm run dev:linux
 Actions are YAML-based workflows stored in `~/.lumi/actions/` (user-level) or `<repo>/.lumi/actions/` (project-level).
 
 ```yaml
-name: Run Tests
-description: Run the test suite and report results
-steps:
-  - write: "npm test"
-  - wait_for: "passed|failed"
+id: run-tests
+label: Run Tests
+icon: TestTube
+scope: user
 claude:
   model: sonnet
-  permissionMode: bypassPermissions
+  allowedTools:
+    - "Bash(npm test *)"
+steps:
+  - type: write
+    content: "claude \"Run the test suite for this project.\"\r"
 ```
 
 **Action editing:** Right-click any action in the sidebar to open an AI-assisted edit flow. Changes are preserved across app restarts — default actions are never overwritten once you've modified them.
@@ -143,4 +154,4 @@ Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 
-[MIT](LICENSE) — Sezgin Sazliogullari
+[MIT](LICENSE) — szigen

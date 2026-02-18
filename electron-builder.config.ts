@@ -3,6 +3,7 @@ import type { Configuration } from 'electron-builder'
 const config: Configuration = {
   appId: 'com.lumi.app',
   productName: 'Lumi',
+  copyright: 'Copyright (c) 2025-2026 Sezgin Sazliogullari',
   icon: 'build/icon.png',
   directories: {
     output: 'release'
