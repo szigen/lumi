@@ -11,10 +11,10 @@
     "lint:fix": "eslint src/ --fix",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:win": "electron-vite build && electron-builder --win",
-    "build:linux": "electron-vite build && electron-builder --linux",
-    "build:all": "electron-vite build && electron-builder --mac --win --linux"
+    "build:mac": "electron-vite build && electron-builder --mac --config electron-builder.config.ts --publish never",
+    "build:win": "electron-vite build && electron-builder --win --config electron-builder.config.ts --publish never",
+    "build:linux": "electron-vite build && electron-builder --linux --config electron-builder.config.ts --publish never",
+    "build:all": "electron-vite build && electron-builder --mac --win --linux --config electron-builder.config.ts --publish never"
   },
   "keywords": [
     "claude",
