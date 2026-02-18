@@ -13,7 +13,8 @@
 
 <p align="center">
   <a href="#features">Features</a> •
-  <a href="#installation">Installation</a> •
+  <a href="#download">Download</a> •
+  <a href="#installation-from-source">Installation</a> •
   <a href="#usage">Usage</a> •
   <a href="#contributing">Contributing</a> •
   <a href="#license">License</a>
@@ -36,6 +37,18 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 - **Keyboard shortcuts** — Platform-adaptive shortcuts (`Cmd` on macOS, `Ctrl+Shift` on Windows/Linux)
 - **Native notifications** — Terminal bell and activity detection with OS-level notifications
 
+## Download
+
+Pre-built binaries for the latest release:
+
+| Platform | Download |
+|----------|----------|
+| macOS | [Lumi.dmg](https://github.com/szigen/lumi/releases/latest) |
+| Windows | [Lumi-Setup.exe](https://github.com/szigen/lumi/releases/latest) |
+| Linux | [Lumi.AppImage](https://github.com/szigen/lumi/releases/latest) |
+
+> All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
+
 ## Prerequisites
 
 - **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
@@ -49,7 +62,7 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 > On Linux, install `build-essential` and `python3`. On Windows, install
 > [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/).
 
-## Installation
+## Installation (from source)
 
 ```bash
 # Clone the repository
