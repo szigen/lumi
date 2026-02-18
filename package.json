@@ -25,7 +25,10 @@
     "terminal",
     "dashboard"
   ],
-  "author": "Sezgin Sazliogullari",
+  "author": {
+    "name": "Sezgin Sazliogullari",
+    "email": "sezginsazlioglu@gmail.com"
+  },
   "license": "MIT",
   "homepage": "https://github.com/szigen/lumi",
   "bugs": {
