@@ -28,7 +28,7 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 ## Features
 
 - **Multi-terminal management** — Spawn up to 20 AI sessions (default 12, configurable in Settings), each with its own terminal, running in parallel
-- **Multi-provider support** — Switch between [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [OpenAI Codex CLI](https://github.com/openai/codex) in Settings; all terminals and bug-fix tools use the selected provider
+- **Multi-provider support** — Switch between [Claude Code](https://code.claude.com/docs/en/setup) and [OpenAI Codex CLI](https://github.com/openai/codex) in Settings; all terminals and bug-fix tools use the selected provider
 - **Action system** — Define reusable YAML-based workflows (run tests, sync plugins, update docs); create or edit actions via AI with automatic backup history
 - **Persona system** — Switch between predefined AI personas (architect, reviewer, fixer, expert) with custom system prompts
 - **Git integration** — Built-in branch management, reactive file-changes view with right-click context menu, and commit history per repository
@@ -44,25 +44,35 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 |----------|-----------|----------|
 | macOS (Apple Silicon) | [Lumi-0.1.1-arm64.dmg](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1-arm64.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1-arm64-mac.zip) |
 | Windows | [Lumi.Setup.0.1.1.exe](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi.Setup.0.1.1.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi.0.1.1.exe) |
-| Linux | [Lumi-0.1.1.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1.AppImage) | — |
+| Linux | [Lumi-0.1.1.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1-amd64.deb) |
 
 > All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
 
 ### Installation
 
 **Before you start:** You need at least one AI CLI installed and authenticated:
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code): `npm install -g @anthropic-ai/claude-code`
-- [OpenAI Codex CLI](https://github.com/openai/codex): install and configure per their docs
+- [Claude Code](https://code.claude.com/docs/en/setup): `curl -fsSL https://claude.ai/install.sh | bash` (macOS/Linux) or `irm https://claude.ai/install.ps1 | iex` (Windows)
+- [OpenAI Codex CLI](https://github.com/openai/codex): `npm install -g @openai/codex` (see [official docs](https://developers.openai.com/codex/cli/))
 
 <details>
 <summary><strong>macOS</strong></summary>
 
+**DMG (recommended):**
 1. Download the `.dmg` file
 2. Open it and drag **Lumi** into your **Applications** folder
-3. On first launch, right-click the app → **Open** (macOS Gatekeeper will warn about unsigned apps)
+3. Since Lumi is unsigned, macOS Gatekeeper will block it. Remove the quarantine attribute:
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/Lumi.app
+   ```
 4. Launch Lumi and select a repository to start
 
-> **Portable:** Extract the `.zip` and run `Lumi.app` directly — no installation needed.
+**Portable (ZIP):**
+1. Extract the `.zip` file
+2. Remove the quarantine attribute:
+   ```bash
+   xattr -dr com.apple.quarantine Lumi.app
+   ```
+3. Run `Lumi.app` directly — no installation needed
 
 </details>
 
@@ -70,10 +80,11 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 <summary><strong>Windows</strong></summary>
 
 1. Download `Lumi.Setup.0.1.1.exe`
-2. Run the installer — you can choose the installation directory
-3. Launch from the Start Menu or Desktop shortcut
+2. Run the installer — Windows SmartScreen may show a warning since Lumi is unsigned. Click **"More info"** → **"Run anyway"** to proceed
+3. Choose the installation directory and complete the setup
+4. Launch from the Start Menu or Desktop shortcut
 
-> **Portable:** Download `Lumi.0.1.1.exe` and run it directly — no installation needed.
+> **Portable:** Download `Lumi.0.1.1.exe` and run it directly — no installation needed. The same SmartScreen warning applies.
 
 </details>
 
@@ -86,7 +97,15 @@ chmod +x Lumi-0.1.1.AppImage
 ./Lumi-0.1.1.AppImage
 ```
 
-> If you get a sandbox error, run with `--no-sandbox` flag.
+**DEB package (Debian/Ubuntu):**
+```bash
+sudo dpkg -i Lumi-0.1.1-amd64.deb
+```
+
+> If you get a sandbox error, either run with the `--no-sandbox` flag or set the environment variable:
+> ```bash
+> ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.1.1.AppImage
+> ```
 
 </details>
 
@@ -94,8 +113,8 @@ chmod +x Lumi-0.1.1.AppImage
 
 - **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
 - **AI CLI** — at least one of:
-  - Claude Code: `npm install -g @anthropic-ai/claude-code` (then authenticate)
-  - OpenAI Codex: install and configure per [Codex CLI docs](https://github.com/openai/codex)
+  - Claude Code: `curl -fsSL https://claude.ai/install.sh | bash` (then authenticate)
+  - OpenAI Codex: `npm install -g @openai/codex` (see [Codex CLI docs](https://developers.openai.com/codex/cli/))
 - **macOS** (primary platform), **Windows**, or **Linux**
 
 > **Note:** Lumi uses [node-pty](https://github.com/nicktaf/node-pty) for terminal emulation,
@@ -124,10 +143,15 @@ npm run dev:linux
 
 ### Quick Start
 
-1. Launch the app with `npm run dev`
+**Installed app:**
+1. Launch Lumi from your Applications folder, Start Menu, or desktop
 2. Select a repository from the repo selector in the header
-3. Click "New Session" or use `Cmd+T` (`Ctrl+Shift+T` on Windows/Linux) to spawn a Claude Code terminal
+3. Click "New Session" or use `Cmd+T` (`Ctrl+Shift+T` on Windows/Linux) to spawn an AI coding terminal
 4. Use the left sidebar to trigger quick actions or switch between sessions
+
+**From source:**
+1. Run `npm run dev` (or `npm run dev:linux` on Linux)
+2. Follow the same steps above — the app will open automatically
 
 ### Actions
 

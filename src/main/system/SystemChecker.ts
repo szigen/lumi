@@ -114,13 +114,13 @@ export class SystemChecker {
               id: 'claude-cli',
               label: 'Claude CLI',
               status: 'fail',
-              message: 'Claude CLI not found. Install it from https://docs.anthropic.com/en/docs/claude-code',
+              message: 'Claude CLI not found. Install it from https://code.claude.com/docs/en/setup',
               fixable: true
             }
           }
         },
         fix: () => {
-          shell.openExternal('https://docs.anthropic.com/en/docs/claude-code')
+          shell.openExternal('https://code.claude.com/docs/en/setup')
           return {
             id: 'claude-cli',
             label: 'Claude CLI',
