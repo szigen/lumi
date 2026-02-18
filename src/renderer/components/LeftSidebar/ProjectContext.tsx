@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
-import { FolderTree, ChevronDown, ChevronRight, Folder, FileText, Trash2, Copy, FolderOpen } from 'lucide-react'
+import { FolderTree, ChevronDown, ChevronRight, Folder, FileText, Trash2, Copy, FolderOpen, Search } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import type { FileTreeNode } from '../../../shared/types'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
+import { SearchInput } from '../ui'
 
 interface TreeNodeProps {
   node: FileTreeNode
@@ -12,6 +13,37 @@ interface TreeNodeProps {
   onToggle: (path: string) => void
   onContextMenu: (e: React.MouseEvent, node: FileTreeNode) => void
   onFileClick?: (filePath: string) => void
+}
+
+function filterTree(nodes: FileTreeNode[], query: string): FileTreeNode[] {
+  const lowerQuery = query.toLowerCase()
+  return nodes.reduce<FileTreeNode[]>((acc, node) => {
+    const nameMatch = node.name.toLowerCase().includes(lowerQuery)
+    if (node.type === 'folder' && node.children) {
+      const filteredChildren = filterTree(node.children, query)
+      if (nameMatch || filteredChildren.length > 0) {
+        acc.push({ ...node, children: filteredChildren.length > 0 ? filteredChildren : node.children })
+      }
+    } else if (nameMatch) {
+      acc.push(node)
+    }
+    return acc
+  }, [])
+}
+
+function collectAllDirPaths(nodes: FileTreeNode[]): Set<string> {
+  const paths = new Set<string>()
+  for (const node of nodes) {
+    if (node.type === 'folder') {
+      paths.add(node.path)
+      if (node.children) {
+        for (const p of collectAllDirPaths(node.children)) {
+          paths.add(p)
+        }
+      }
+    }
+  }
+  return paths
 }
 
 function TreeNode({ node, depth, expandedPaths, onToggle, onContextMenu, onFileClick }: TreeNodeProps) {
@@ -83,6 +115,9 @@ export default function ProjectContext() {
   const [expandedMap, setExpandedMap] = useState<Map<string, Set<string>>>(new Map())
   const [expanded, setExpanded] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [filterText, setFilterText] = useState('')
+  const savedExpandedRef = useRef<Map<string, Set<string>> | null>(null)
   const { activeTab, openFileViewer } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
@@ -253,15 +288,108 @@ export default function ProjectContext() {
     fetchTree()
   }, [activeRepoPath, treeCache, initRootExpansion])
 
-  const fileTree = activeRepoPath ? treeCache.get(activeRepoPath) ?? [] : []
+  const fileTree = useMemo(
+    () => (activeRepoPath ? treeCache.get(activeRepoPath) ?? [] : []),
+    [activeRepoPath, treeCache]
+  )
+
+  const filteredFileTree = useMemo(() => {
+    if (!filterText.trim()) return fileTree
+    return filterTree(fileTree, filterText.trim())
+  }, [fileTree, filterText])
+
+  // Auto-expand all dirs when filtering
+  useEffect(() => {
+    if (!activeRepoPath) return
+    if (filterText.trim()) {
+      // Save expand state on first filter keystroke
+      if (!savedExpandedRef.current) {
+        setExpandedMap(current => {
+          savedExpandedRef.current = new Map(
+            Array.from(current.entries()).map(([k, v]) => [k, new Set(v)])
+          )
+          return current
+        })
+      }
+      const allDirs = collectAllDirPaths(filteredFileTree)
+      setExpandedMap(prev => {
+        const next = new Map(prev)
+        next.set(activeRepoPath, allDirs)
+        return next
+      })
+    } else if (savedExpandedRef.current) {
+      // Restore saved expand state
+      setExpandedMap(savedExpandedRef.current)
+      savedExpandedRef.current = null
+    }
+  }, [filterText, activeRepoPath, filteredFileTree])
+
+  // Reset search when switching repos
+  useEffect(() => {
+    setIsSearchOpen(false)
+    setFilterText('')
+    savedExpandedRef.current = null
+  }, [activeRepoPath])
+
+  const handleSearchOpen = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsSearchOpen(true)
+  }, [])
+
+  const handleSearchClose = useCallback(() => {
+    setFilterText('')
+    setIsSearchOpen(false)
+  }, [])
+
+  const handleSearchBlur = useCallback(() => {
+    if (!filterText.trim()) {
+      handleSearchClose()
+    }
+  }, [filterText, handleSearchClose])
 
   return (
     <div className="sidebar-section file-tree-section">
-      <button className="file-tree-header" onClick={() => setExpanded(!expanded)}>
-        <FolderTree size={16} />
-        <h3>Project Context</h3>
-        {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-      </button>
+      <div className="file-tree-header">
+        <div className="file-tree-header__content">
+          <button
+            className={`file-tree-header__title ${isSearchOpen ? 'file-tree-header__title--hidden' : ''}`}
+            onClick={() => setExpanded(!expanded)}
+          >
+            <FolderTree size={16} />
+            <h3>Project Context</h3>
+          </button>
+
+          {isSearchOpen && (
+            <div className="file-tree-header__search">
+              <SearchInput
+                value={filterText}
+                onChange={setFilterText}
+                onClose={handleSearchClose}
+                onBlur={handleSearchBlur}
+                placeholder="Filter files..."
+                autoFocus
+              />
+            </div>
+          )}
+        </div>
+
+        {!isSearchOpen && (
+          <button
+            className="file-tree-header__action"
+            onClick={handleSearchOpen}
+            title="Filter files"
+          >
+            <Search size={14} />
+          </button>
+        )}
+
+        <button
+          className="file-tree-header__action"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+      </div>
 
       {expanded && (
         <div className="file-tree" ref={scrollRef}>
@@ -269,11 +397,13 @@ export default function ProjectContext() {
             <p className="tree-empty">No repo selected</p>
           ) : loading ? (
             <p className="tree-empty">Loading...</p>
-          ) : fileTree.length === 0 ? (
+          ) : filteredFileTree.length === 0 && filterText.trim() ? (
+            <p className="tree-empty">No matching files</p>
+          ) : filteredFileTree.length === 0 ? (
             <p className="tree-empty">Empty directory</p>
           ) : (
             <div>
-              {fileTree.map(node => (
+              {filteredFileTree.map(node => (
                 <TreeNode
                   key={node.path}
                   node={node}

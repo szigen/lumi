@@ -679,31 +679,82 @@ body.platform-win32 .header-right {
 .file-tree-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm);
-  border-radius: var(--radius-md);
   color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s ease;
   width: 100%;
+  min-height: 36px;
 }
 
-.file-tree-header:hover {
-  background: var(--bg-elevated);
+.file-tree-header__content {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.file-tree-header__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  border-radius: var(--radius-md);
+  transition: color 0.15s ease, opacity 0.12s ease;
+}
+
+.file-tree-header__title--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.file-tree-header__title:hover {
   color: var(--text-primary);
 }
 
-.file-tree-header svg:first-child {
+.file-tree-header__title svg:first-child {
   color: var(--accent-primary);
+  flex-shrink: 0;
 }
 
-.file-tree-header h3 {
+.file-tree-header__title h3 {
   flex: 1;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: left;
+}
+
+.file-tree-header__search {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+}
+
+.file-tree-header__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  transition: color 0.1s ease;
+}
+
+.file-tree-header__action:hover {
+  color: var(--text-primary);
 }
 
 .file-tree {

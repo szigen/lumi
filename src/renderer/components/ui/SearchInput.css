@@ -1,0 +1,55 @@
+/* src/renderer/components/ui/SearchInput.css */
+.search-input {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--spacing-sm);
+  height: 28px;
+  width: 100%;
+  transition: border-color 0.15s ease;
+}
+
+.search-input:focus-within {
+  border-color: var(--accent-primary);
+}
+
+.search-input__icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.search-input__field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.search-input__field::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  transition: color 0.1s ease;
+}
+
+.search-input__clear:hover {
+  color: var(--text-primary);
+}
