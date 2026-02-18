@@ -36,7 +36,7 @@ at an online or offline event.
 ## Enforcement
 
 Instances of unacceptable behavior may be reported to the project maintainers
-at **szigen@pm.me**. All complaints will be reviewed and investigated promptly
+via [GitHub Issues](https://github.com/szigen/lumi/issues). All complaints will be reviewed and investigated promptly
 and fairly. The project team is obligated to maintain confidentiality with regard
 to the reporter of an incident.
 

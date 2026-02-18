@@ -21,7 +21,7 @@ We recommend verifying the download checksums from the [Releases](https://github
 
 If you discover a security vulnerability in Lumi, please report it responsibly.
 
-**Do not open a public issue.** Instead, email: **szigen@pm.me**
+Please report it via [GitHub Issues](https://github.com/szigen/lumi/issues) with the **security** label. Avoid including exploit details in the public issue — just describe the area affected and we'll follow up privately.
 
 Please include:
 
