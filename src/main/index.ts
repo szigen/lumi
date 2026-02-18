@@ -5,7 +5,7 @@ import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
-import { getWindowConfig, isMac, isLinux, autoFixSpawnHelper } from './platform'
+import { getWindowConfig, isMac, isLinux, autoFixSpawnHelper, fixProcessPath } from './platform'
 
 /** Returns platform-appropriate accelerator: Cmd on macOS, Ctrl+Shift on Windows/Linux */
 const accel = (key: string): string => isMac ? `Cmd+${key}` : `Ctrl+Shift+${key}`
@@ -280,6 +280,7 @@ process.on('unhandledRejection', (reason) => {
 })
 
 app.whenReady().then(() => {
+  fixProcessPath()
   autoFixSpawnHelper()
   setupIpcHandlers()
   createWindow()
