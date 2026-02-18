@@ -42,9 +42,9 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 
 | Platform | Installer | Portable |
 |----------|-----------|----------|
-| macOS (Apple Silicon) | [Lumi-0.1.0-arm64.dmg](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi-0.1.0-arm64.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi-0.1.0-arm64-mac.zip) |
-| Windows | [Lumi.Setup.0.1.0.exe](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi.Setup.0.1.0.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi.0.1.0.exe) |
-| Linux | [Lumi-0.1.0.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.0/Lumi-0.1.0.AppImage) | — |
+| macOS (Apple Silicon) | [Lumi-0.1.1-arm64.dmg](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1-arm64.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1-arm64-mac.zip) |
+| Windows | [Lumi.Setup.0.1.1.exe](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi.Setup.0.1.1.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi.0.1.1.exe) |
+| Linux | [Lumi-0.1.1.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.1/Lumi-0.1.1.AppImage) | — |
 
 > All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
 
@@ -69,11 +69,11 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 <details>
 <summary><strong>Windows</strong></summary>
 
-1. Download `Lumi.Setup.0.1.0.exe`
+1. Download `Lumi.Setup.0.1.1.exe`
 2. Run the installer — you can choose the installation directory
 3. Launch from the Start Menu or Desktop shortcut
 
-> **Portable:** Download `Lumi.0.1.0.exe` and run it directly — no installation needed.
+> **Portable:** Download `Lumi.0.1.1.exe` and run it directly — no installation needed.
 
 </details>
 
@@ -82,8 +82,8 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 
 **AppImage (recommended):**
 ```bash
-chmod +x Lumi-0.1.0.AppImage
-./Lumi-0.1.0.AppImage
+chmod +x Lumi-0.1.1.AppImage
+./Lumi-0.1.1.AppImage
 ```
 
 > If you get a sandbox error, run with `--no-sandbox` flag.
