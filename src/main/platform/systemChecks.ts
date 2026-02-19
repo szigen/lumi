@@ -9,35 +9,68 @@ interface PlatformCheck {
   id: string
   label: string
   run: () => SystemCheckResult
-  fix?: () => SystemCheckResult
+}
+
+function getNodePtyDirCandidates(): string[] {
+  const appPath = app.getAppPath()
+  const candidates = new Set<string>([
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'node-pty'),
+    path.join(appPath, 'node_modules', 'node-pty'),
+    path.join(process.cwd(), 'node_modules', 'node-pty')
+  ])
+
+  if (appPath.endsWith('.asar')) {
+    candidates.add(path.join(path.dirname(appPath), 'app.asar.unpacked', 'node_modules', 'node-pty'))
+  }
+
+  return [...candidates]
+}
+
+function resolveNodePtyDir(): string | null {
+  for (const dir of getNodePtyDirCandidates()) {
+    if (fs.existsSync(dir)) {
+      return dir
+    }
+  }
+  return null
 }
 
 function getSpawnHelperPaths() {
-  const appPath = app.getAppPath()
-  const prebuildsDir = path.join(appPath, 'node_modules', 'node-pty', 'prebuilds')
+  const nodePtyDir = resolveNodePtyDir()
+  if (!nodePtyDir) {
+    return { nodePtyDir: null, helperPaths: [] as string[] }
+  }
+
+  const helperPaths = new Set<string>()
+  const prebuildsDir = path.join(nodePtyDir, 'prebuilds')
   const darwinDirs = fs.existsSync(prebuildsDir)
     ? fs.readdirSync(prebuildsDir).filter((d) => d.startsWith('darwin-'))
     : []
-  return { prebuildsDir, darwinDirs }
+
+  for (const dir of darwinDirs) {
+    const helperPath = path.join(prebuildsDir, dir, 'spawn-helper')
+    if (fs.existsSync(helperPath)) {
+      helperPaths.add(helperPath)
+    }
+  }
+
+  const releaseHelperPath = path.join(nodePtyDir, 'build', 'Release', 'spawn-helper')
+  if (fs.existsSync(releaseHelperPath)) {
+    helperPaths.add(releaseHelperPath)
+  }
+
+  return { nodePtyDir, helperPaths: [...helperPaths] }
 }
 
-export function autoFixSpawnHelper(): void {
-  if (!isMac) return
-  try {
-    const { prebuildsDir, darwinDirs } = getSpawnHelperPaths()
-    for (const dir of darwinDirs) {
-      const helperPath = path.join(prebuildsDir, dir, 'spawn-helper')
-      if (fs.existsSync(helperPath)) {
-        try {
-          fs.accessSync(helperPath, fs.constants.X_OK)
-        } catch {
-          fs.chmodSync(helperPath, 0o755)
-        }
-      }
+function getNonExecutableHelpers(helperPaths: string[]): string[] {
+  return helperPaths.filter((helperPath) => {
+    try {
+      fs.accessSync(helperPath, fs.constants.X_OK)
+      return false
+    } catch {
+      return true
     }
-  } catch (err) {
-    console.warn('Auto-fix spawn-helper failed:', err)
-  }
+  })
 }
 
 function macOSSpawnHelperCheck(): PlatformCheck {
@@ -46,39 +79,23 @@ function macOSSpawnHelperCheck(): PlatformCheck {
     label: 'Terminal Permissions',
     run: (): SystemCheckResult => {
       try {
-        const { prebuildsDir, darwinDirs } = getSpawnHelperPaths()
-        if (!fs.existsSync(prebuildsDir)) {
-          return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: 'Terminal prebuild not found — may not affect operation' }
+        const { nodePtyDir, helperPaths } = getSpawnHelperPaths()
+        if (!nodePtyDir) {
+          return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: 'node-pty install not found — may not affect operation' }
         }
 
-        const helpers: string[] = []
-        for (const dir of darwinDirs) {
-          const helperPath = path.join(prebuildsDir, dir, 'spawn-helper')
-          if (fs.existsSync(helperPath)) {
-            helpers.push(helperPath)
-          }
-        }
-
-        if (helpers.length === 0) {
+        if (helperPaths.length === 0) {
           return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: 'Terminal helper not found — may not affect operation' }
         }
 
-        const nonExecutable = helpers.filter((h) => {
-          try {
-            fs.accessSync(h, fs.constants.X_OK)
-            return false
-          } catch {
-            return true
-          }
-        })
+        const nonExecutable = getNonExecutableHelpers(helperPaths)
 
         if (nonExecutable.length > 0) {
           return {
             id: 'spawn-helper',
             label: 'Terminal Permissions',
-            status: 'fail',
-            message: 'Terminal needs a quick permission fix to work',
-            fixable: true
+            status: 'warn',
+            message: 'Terminal helper is not executable. Reinstall Lumi or fix file permissions manually.'
           }
         }
 
@@ -86,23 +103,6 @@ function macOSSpawnHelperCheck(): PlatformCheck {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
         return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'warn', message: msg }
-      }
-    },
-    fix: (): SystemCheckResult => {
-      try {
-        const { prebuildsDir, darwinDirs } = getSpawnHelperPaths()
-
-        for (const dir of darwinDirs) {
-          const helperPath = path.join(prebuildsDir, dir, 'spawn-helper')
-          if (fs.existsSync(helperPath)) {
-            fs.chmodSync(helperPath, 0o755)
-          }
-        }
-
-        return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'pass', message: 'Fixed! Terminal is ready' }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err)
-        return { id: 'spawn-helper', label: 'Terminal Permissions', status: 'fail', message: `Could not fix automatically: ${msg}` }
       }
     }
   }

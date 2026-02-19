@@ -41,7 +41,7 @@ export default function SystemChecksStep({ onNext, onBack }: StepProps) {
     }
   }
 
-  const hasFail = checks.some((c) => c.status === 'fail')
+  const hasFail = checks.some((check) => check.status === 'fail')
   const allDone = checks.length > 0 && !isRunning
 
   return (

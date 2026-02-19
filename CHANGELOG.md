@@ -4,13 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-02-18
+
+### Fixed
+
+- Electron PATH resolution for native CLI detection on macOS
+- node-pty spawn-helper checks — removed unreliable auto-fix logic
+- README and package.json metadata for open-source readiness
+- Download links in README updated to v0.1.1
+
+### Added
+
+- Ctrl+Shift+C/V copy/paste support for Windows/Linux terminals
+- Per-platform installation guide with download table in README
+
+### Changed
+
+- CI workflow limited to release PRs and manual trigger to save action minutes
+
 ## [0.1.0] - 2026-02-18
 
 ### Added
 
-- Initial open source release
-- Multi-terminal AI session management
-- Action system with YAML workflows
-- Persona system
-- Git integration with branch management
-- Multi-repo support
+- Initial open-source release
+- Multi-terminal AI session management (up to 20 sessions, default 12)
+- Multi-provider support: Claude Code and OpenAI Codex CLI
+- YAML-based action system with AI-assisted editing and auto-backup history
+- Persona system with built-in personas (Architect, Expert, Fixer, Reviewer)
+- Git integration: branch management, reactive file-changes view, commit history
+- Multi-repo support with tab-based navigation
+- Terminal codenames (e.g., "brave-alpaca")
+- Smart terminal status detection via OSC9 signals
+- Platform-adaptive keyboard shortcuts (Cmd on macOS, Ctrl+Shift on Windows/Linux)
+- Native OS notifications for terminal bell and activity detection
+- Monaco Editor integration for code viewing

@@ -1,6 +1,6 @@
 {
   "name": "lumi-app",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -38,7 +38,7 @@
     "type": "git",
     "url": "https://github.com/szigen/lumi.git"
   },
-  "description": "Desktop dashboard for managing multiple Claude Code CLI instances",
+  "description": "Desktop dashboard for managing multiple AI coding CLI sessions",
   "engines": {
     "node": ">=22.0.0"
   },
