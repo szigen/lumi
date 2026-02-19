@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.3] - 2026-02-19
+
+### Changed
+
+- Reduced build size ~40% — moved renderer-only deps to devDependencies, bundled main process deps, converted mascot images to WebP, compressed build icon
+- Explicit asar/asarUnpack config in electron-builder
+
 ## [0.1.1] - 2026-02-18
 
 ### Fixed

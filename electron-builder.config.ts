@@ -5,6 +5,8 @@ const config: Configuration = {
   productName: 'Lumi',
   copyright: 'Copyright (c) 2025-2026 Sezgin Sazliogullari',
   icon: 'build/icon.png',
+  asar: true,
+  asarUnpack: ['node_modules/node-pty/**'],
   directories: {
     output: 'release'
   },
