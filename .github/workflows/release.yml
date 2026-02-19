@@ -27,8 +27,6 @@ jobs:
         include:
           - os: macos-latest
             build_cmd: npm run build:mac
-          - os: macos-13
-            build_cmd: npm run build:mac
           - os: ubuntu-latest
             build_cmd: npm run build:linux
           - os: windows-latest
