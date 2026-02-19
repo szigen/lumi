@@ -536,6 +536,7 @@ This is the key abstraction. It lives in the renderer and talks to the preload A
 **Files:**
 - Create: `src/renderer/engines/DebugEngine.ts`
 - Create: `src/renderer/engines/prompts.ts`
+- Create: `src/renderer/engines/command-utils.ts`
 
 **Step 1: Define interface**
 
@@ -617,11 +618,28 @@ export function buildCleanupPrompt(): string {
 }
 ```
 
-**Step 3: Commit**
+**Step 3: Create renderer-side command util (provider-aware)**
+
+```typescript
+// src/renderer/engines/command-utils.ts
+import type { AIProvider } from '../../shared/ai-provider'
+
+/**
+ * Build headless provider command for non-interactive mode.
+ * Uses heredoc to safely pass multi-line prompts.
+ */
+export function buildHeadlessCommand(provider: AIProvider, prompt: string): string {
+  const marker = `__DEBUG_${Date.now()}__`
+  const prefix = provider === 'codex' ? 'codex exec -' : 'claude -p'
+  return `${prefix} <<'${marker}'\n${prompt}\n${marker}\r`
+}
+```
+
+**Step 4: Commit**
 
 ```bash
-git add src/renderer/engines/DebugEngine.ts src/renderer/engines/prompts.ts
-git commit -m "feat(debug): define DebugEngine interface, factory type, and shared prompts"
+git add src/renderer/engines/DebugEngine.ts src/renderer/engines/prompts.ts src/renderer/engines/command-utils.ts
+git commit -m "feat(debug): define DebugEngine interface, factory, shared prompts, and command utils"
 ```
 
 ---
@@ -887,49 +905,590 @@ git commit -m "feat(debug): add engine-aware useDebugStore"
 - Create: `src/renderer/components/DebugMode/stages/VerifyStage.tsx`
 - Create: `src/renderer/components/DebugMode/DebugMode.css`
 
-This task creates all UI components. They are engine-agnostic — they call `useDebugStore` methods which delegate to the active engine.
+All UI components are engine-agnostic — they call `useDebugStore` methods which delegate to the active engine. Terminal rendered via existing `<Terminal terminalId={id} />`.
 
-**Key points:**
-- `DebugMode.tsx` — root: session history vs active session routing, two-column layout (stage content + terminal)
-- `DebugStepper.tsx` — horizontal 5-stage progress bar
-- `SessionHistory.tsx` — list past sessions + "New" button
-- Stage components call store methods (`startInstrument`, `startDiagnose`, `completeSession`, etc.)
-- Terminal rendered via existing `<Terminal terminalId={id} />` component
-- Active terminal ID comes from `engine.getActiveTerminalIds()`
+**Step 1: Create barrel export**
 
-Refer to previous plan (Tasks 9-11) for exact component code. The only change: stage components call `useDebugStore` methods instead of directly spawning terminals.
+```typescript
+// src/renderer/components/DebugMode/index.ts
+export { DebugMode } from './DebugMode'
+```
 
-**DescribeStage change from old plan:**
+**Step 2: Create DebugStepper**
+
 ```tsx
-// Instead of hardcoding engine type, pass it from store's engineFactory context
-const session = await createSession(repoPath, title, description, 'single-session')
-// The store's createSession calls engineFactory(session) to create the engine
-if (session) {
-  await startInstrument(repoPath, session)
+// src/renderer/components/DebugMode/DebugStepper.tsx
+import { motion } from 'framer-motion'
+import type { DebugStage } from '../../../shared/debug-types'
+
+const STAGES: { key: DebugStage; label: string }[] = [
+  { key: 'describe', label: 'Describe' },
+  { key: 'instrument', label: 'Instrument' },
+  { key: 'reproduce', label: 'Reproduce' },
+  { key: 'diagnose', label: 'Diagnose' },
+  { key: 'verify', label: 'Verify' }
+]
+
+interface Props {
+  currentStage: DebugStage
+}
+
+export function DebugStepper({ currentStage }: Props) {
+  const currentIdx = STAGES.findIndex((s) => s.key === currentStage)
+
+  return (
+    <div className="debug-stepper">
+      {STAGES.map((stage, idx) => (
+        <div key={stage.key} className="debug-stepper__item">
+          {idx > 0 && (
+            <div className={`debug-stepper__line ${idx <= currentIdx ? 'debug-stepper__line--active' : ''}`} />
+          )}
+          <motion.div
+            className={`debug-stepper__dot ${
+              idx < currentIdx ? 'debug-stepper__dot--completed' :
+              idx === currentIdx ? 'debug-stepper__dot--current' : ''
+            }`}
+            animate={idx === currentIdx ? { scale: [1, 1.2, 1] } : {}}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+          <span className={`debug-stepper__label ${idx <= currentIdx ? 'debug-stepper__label--active' : ''}`}>
+            {stage.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
 }
 ```
 
-**ReproduceStage change:**
+**Step 3: Create SessionHistory**
+
 ```tsx
-// Instead of directly calling IPC, use store
-const handleProceed = async () => {
-  if (activeSession) {
+// src/renderer/components/DebugMode/SessionHistory.tsx
+import { Plus } from 'lucide-react'
+import type { DebugSession } from '../../../shared/debug-types'
+
+interface Props {
+  sessions: DebugSession[]
+  onSelect: (sessionId: string) => void
+  onNew: () => void
+}
+
+export function SessionHistory({ sessions, onSelect, onNew }: Props) {
+  const sorted = [...sessions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  return (
+    <div className="session-history">
+      <div className="session-history__header">
+        <h2 className="session-history__title">Debug Mode</h2>
+        <button className="session-history__new-btn" onClick={onNew}>
+          <Plus size={16} />
+          <span>New Debug Session</span>
+        </button>
+      </div>
+      {sorted.length === 0 ? (
+        <p className="session-history__empty">No debug sessions yet. Start one to diagnose a bug.</p>
+      ) : (
+        <div className="session-history__list">
+          {sorted.map((session) => (
+            <button key={session.id} className="session-history__card" onClick={() => onSelect(session.id)}>
+              <span className={`session-history__status session-history__status--${session.status}`} />
+              <div className="session-history__info">
+                <span className="session-history__name">{session.title}</span>
+                <span className="session-history__meta">
+                  {session.status} &middot; {new Date(session.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+```
+
+**Step 4: Create DescribeStage**
+
+Note: `engineType` is NOT hardcoded — derived from the `activeEngine` at runtime. The factory (set per worktree in DebugMode.tsx) determines which engine is created. The string stored in persistence is read from `activeEngine.constructor.name` mapping or a static property.
+
+```tsx
+// src/renderer/components/DebugMode/stages/DescribeStage.tsx
+import { useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
+import { useDebugStore } from '../../../stores/useDebugStore'
+import type { DebugEngineType } from '../../../../shared/debug-types'
+
+interface Props {
+  repoPath: string
+  engineType: DebugEngineType
+  onCreated: () => void
+  onBack: () => void
+}
+
+export function DescribeStage({ repoPath, engineType, onCreated, onBack }: Props) {
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const createSession = useDebugStore((s) => s.createSession)
+  const startInstrument = useDebugStore((s) => s.startInstrument)
+
+  const handleSubmit = async () => {
+    if (!title.trim()) return
+    setSubmitting(true)
+    const session = await createSession(repoPath, title, description, engineType)
+    if (session) {
+      await startInstrument(repoPath, session)
+      onCreated()
+    }
+    setSubmitting(false)
+  }
+
+  return (
+    <div className="describe-stage">
+      <button className="describe-stage__back" onClick={onBack}>
+        <ArrowLeft size={16} />
+        <span>Back to sessions</span>
+      </button>
+      <h3 className="describe-stage__heading">Describe the bug</h3>
+      <div className="describe-stage__field">
+        <label className="describe-stage__label">Title</label>
+        <input
+          className="describe-stage__input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Brief bug summary..."
+          autoFocus
+        />
+      </div>
+      <div className="describe-stage__field">
+        <label className="describe-stage__label">Description</label>
+        <textarea
+          className="describe-stage__textarea"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="What's happening? What did you expect?"
+          rows={6}
+        />
+      </div>
+      <button
+        className="describe-stage__submit"
+        onClick={handleSubmit}
+        disabled={!title.trim() || submitting}
+      >
+        {submitting ? 'Starting...' : 'Start Debug'}
+      </button>
+    </div>
+  )
+}
+```
+
+**Step 5: Create InstrumentStage**
+
+```tsx
+// src/renderer/components/DebugMode/stages/InstrumentStage.tsx
+import { Loader } from 'lucide-react'
+import type { DebugSession } from '../../../../shared/debug-types'
+import { useDebugStore } from '../../../stores/useDebugStore'
+
+interface Props {
+  session: DebugSession
+  repoPath: string
+}
+
+export function InstrumentStage({ session }: Props) {
+  const stageProcessing = useDebugStore((s) => s.stageProcessing)
+
+  return (
+    <div className="instrument-stage">
+      {stageProcessing && (
+        <div className="instrument-stage__status">
+          <Loader size={16} className="instrument-stage__spinner" />
+          <span>Analyzing bug and adding debug logs...</span>
+        </div>
+      )}
+
+      {session.logLocations && session.logLocations.length > 0 && (
+        <div className="debug-card">
+          <h4 className="debug-card__title">Added Logs</h4>
+          <ul className="debug-card__list">
+            {session.logLocations.map((loc, i) => (
+              <li key={i} className="debug-card__item">
+                <code>{loc.file}:{loc.line}</code>
+                <span>{loc.logStatement}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {session.reproSteps && session.reproSteps.length > 0 && (
+        <div className="debug-card">
+          <h4 className="debug-card__title">Reproduction Steps</h4>
+          <ol className="debug-card__ordered-list">
+            {session.reproSteps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      <p className="instrument-stage__hint">
+        Watch the terminal on the right. When the AI finishes, the session will advance to Reproduce.
+      </p>
+    </div>
+  )
+}
+```
+
+**Step 6: Create ReproduceStage**
+
+```tsx
+// src/renderer/components/DebugMode/stages/ReproduceStage.tsx
+import { useState, useEffect } from 'react'
+import { Play, Check } from 'lucide-react'
+import type { DebugSession } from '../../../../shared/debug-types'
+import { useDebugStore, selectActiveSession } from '../../../stores/useDebugStore'
+
+interface Props {
+  session: DebugSession
+  repoPath: string
+}
+
+export function ReproduceStage({ session, repoPath }: Props) {
+  const [additionalContext, setAdditionalContext] = useState('')
+  const liveLogEntries = useDebugStore((s) => s.liveLogEntries)
+  const logWatcherActive = useDebugStore((s) => s.logWatcherActive)
+  const startLogWatch = useDebugStore((s) => s.startLogWatch)
+  const stopLogWatch = useDebugStore((s) => s.stopLogWatch)
+  const startDiagnose = useDebugStore((s) => s.startDiagnose)
+  const completeSession = useDebugStore((s) => s.completeSession)
+  const activeSession = useDebugStore(selectActiveSession)
+
+  useEffect(() => {
+    if (session.logFilePath && !logWatcherActive) {
+      startLogWatch(session.logFilePath, session.id)
+    }
+    return () => { stopLogWatch() }
+  }, [session.logFilePath, session.id])
+
+  const handleProceed = async () => {
+    if (!activeSession) return
     await startDiagnose(repoPath, activeSession)
   }
-}
-```
 
-**VerifyStage change:**
-```tsx
-const handleFixed = async () => {
-  if (activeSession) {
-    await startCleanup(repoPath, activeSession)
-    await completeSession(repoPath, activeSession.id, 'fixed', notes)
+  const handleMarkFixed = async () => {
+    await completeSession(repoPath, session.id, 'fixed', 'Fixed during instrumentation')
   }
+
+  return (
+    <div className="reproduce-stage">
+      {session.reproSteps && session.reproSteps.length > 0 && (
+        <div className="debug-card">
+          <h4 className="debug-card__title">Reproduction Steps</h4>
+          <ol className="debug-card__ordered-list">
+            {session.reproSteps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      <div className="debug-card">
+        <h4 className="debug-card__title">
+          Debug Logs
+          {logWatcherActive && <span className="debug-card__live-badge">Live</span>}
+        </h4>
+        <div className="debug-card__log-viewer">
+          {liveLogEntries.length === 0 ? (
+            <span className="debug-card__log-empty">Waiting for log entries...</span>
+          ) : (
+            liveLogEntries.map((entry, i) => (
+              <div key={i} className="debug-card__log-entry">
+                <span className="debug-card__log-time">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                <span className="debug-card__log-message">{entry.message}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="reproduce-stage__context">
+        <input
+          className="reproduce-stage__input"
+          value={additionalContext}
+          onChange={(e) => setAdditionalContext(e.target.value)}
+          placeholder="Enter additional context about the issue..."
+        />
+      </div>
+
+      <div className="reproduce-stage__actions">
+        <button className="reproduce-stage__btn reproduce-stage__btn--secondary" onClick={handleMarkFixed}>
+          <Check size={14} />
+          <span>Mark Fixed</span>
+        </button>
+        <button className="reproduce-stage__btn reproduce-stage__btn--primary" onClick={handleProceed}>
+          <Play size={14} />
+          <span>Proceed</span>
+        </button>
+      </div>
+    </div>
+  )
 }
 ```
 
-**Step 1: Create all component files** (use previous plan's code with the store method adjustments noted above)
+**Step 7: Create DiagnoseStage**
+
+```tsx
+// src/renderer/components/DebugMode/stages/DiagnoseStage.tsx
+import { Loader } from 'lucide-react'
+import type { DebugSession } from '../../../../shared/debug-types'
+import { useDebugStore } from '../../../stores/useDebugStore'
+
+interface Props {
+  session: DebugSession
+  repoPath: string
+}
+
+export function DiagnoseStage({ session }: Props) {
+  const stageProcessing = useDebugStore((s) => s.stageProcessing)
+
+  return (
+    <div className="diagnose-stage">
+      {stageProcessing && (
+        <div className="diagnose-stage__status">
+          <Loader size={16} className="diagnose-stage__spinner" />
+          <span>Analyzing logs and applying fix...</span>
+        </div>
+      )}
+
+      {session.collectedLogs && session.collectedLogs.length > 0 && (
+        <div className="debug-card">
+          <h4 className="debug-card__title">Collected Logs ({session.collectedLogs.length} entries)</h4>
+          <div className="debug-card__log-viewer debug-card__log-viewer--collapsed">
+            {session.collectedLogs.slice(0, 5).map((entry, i) => (
+              <div key={i} className="debug-card__log-entry">
+                <span className="debug-card__log-message">{entry.message}</span>
+              </div>
+            ))}
+            {session.collectedLogs.length > 5 && (
+              <span className="debug-card__log-more">+{session.collectedLogs.length - 5} more</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {session.diagnosis && (
+        <div className="debug-card">
+          <h4 className="debug-card__title">Diagnosis</h4>
+          <p className="debug-card__text">{session.diagnosis}</p>
+        </div>
+      )}
+
+      <p className="diagnose-stage__hint">
+        Watch the terminal on the right. The AI is diagnosing and applying a fix.
+      </p>
+    </div>
+  )
+}
+```
+
+**Step 8: Create VerifyStage**
+
+```tsx
+// src/renderer/components/DebugMode/stages/VerifyStage.tsx
+import { useState } from 'react'
+import { Check, RotateCcw } from 'lucide-react'
+import type { DebugSession } from '../../../../shared/debug-types'
+import { useDebugStore } from '../../../stores/useDebugStore'
+
+interface Props {
+  session: DebugSession
+  repoPath: string
+  onBack: () => void
+}
+
+export function VerifyStage({ session, repoPath, onBack }: Props) {
+  const [notes, setNotes] = useState('')
+  const completeSession = useDebugStore((s) => s.completeSession)
+  const goBackToStage = useDebugStore((s) => s.goBackToStage)
+  const startCleanup = useDebugStore((s) => s.startCleanup)
+
+  const handleFixed = async () => {
+    await startCleanup(repoPath, session)
+    await completeSession(repoPath, session.id, 'fixed', notes)
+    onBack()
+  }
+
+  const handleNotFixed = async () => {
+    await goBackToStage(repoPath, session.id, 'instrument')
+  }
+
+  return (
+    <div className="verify-stage">
+      <h3 className="verify-stage__heading">Verify the fix</h3>
+      <p className="verify-stage__description">
+        Test the fix and confirm whether the bug is resolved.
+      </p>
+
+      {session.diagnosis && (
+        <div className="debug-card">
+          <h4 className="debug-card__title">What was fixed</h4>
+          <p className="debug-card__text">{session.diagnosis}</p>
+        </div>
+      )}
+
+      <div className="verify-stage__field">
+        <label className="verify-stage__label">Notes (optional)</label>
+        <textarea
+          className="verify-stage__textarea"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Any observations about the fix..."
+          rows={3}
+        />
+      </div>
+
+      <div className="verify-stage__actions">
+        <button className="verify-stage__btn verify-stage__btn--secondary" onClick={handleNotFixed}>
+          <RotateCcw size={14} />
+          <span>Not Fixed</span>
+        </button>
+        <button className="verify-stage__btn verify-stage__btn--primary" onClick={handleFixed}>
+          <Check size={14} />
+          <span>Fixed</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+```
+
+**Step 9: Create DebugMode root component**
+
+Note: `engineType` is passed as prop to DescribeStage. On main branch this defaults to `'single-session'`. Each worktree overrides `ENGINE_TYPE` and the `useEffect` factory hookup — this is the ONLY file that differs between worktrees.
+
+```tsx
+// src/renderer/components/DebugMode/DebugMode.tsx
+import { useEffect, useState, useCallback } from 'react'
+import { useAppStore } from '../../stores/useAppStore'
+import { useRepoStore } from '../../stores/useRepoStore'
+import { useDebugStore, selectActiveSession } from '../../stores/useDebugStore'
+import { DebugStepper } from './DebugStepper'
+import { SessionHistory } from './SessionHistory'
+import { DescribeStage } from './stages/DescribeStage'
+import { InstrumentStage } from './stages/InstrumentStage'
+import { ReproduceStage } from './stages/ReproduceStage'
+import { DiagnoseStage } from './stages/DiagnoseStage'
+import { VerifyStage } from './stages/VerifyStage'
+import { Terminal } from '../Terminal'
+import type { DebugEngineType } from '../../../shared/debug-types'
+import './DebugMode.css'
+
+// --- WORKTREE OVERRIDE POINT ---
+// Each worktree replaces this block:
+//   worktree-A: import { SingleSessionEngine } → ENGINE_TYPE = 'single-session'
+//   worktree-B: import { MultiSessionEngine } → ENGINE_TYPE = 'multi-session'
+// On main branch, no engine is wired (UI shell only).
+const ENGINE_TYPE: DebugEngineType = 'single-session'
+// --- END WORKTREE OVERRIDE ---
+
+export function DebugMode() {
+  const activeTab = useAppStore((s) => s.activeTab)
+  const getRepoByName = useRepoStore((s) => s.getRepoByName)
+  const repo = activeTab ? getRepoByName(activeTab) : null
+  const repoPath = repo?.path ?? ''
+
+  const sessions = useDebugStore((s) => s.sessions)
+  const activeSession = useDebugStore(selectActiveSession)
+  const activeEngine = useDebugStore((s) => s.activeEngine)
+  const loadSessions = useDebugStore((s) => s.loadSessions)
+  const selectSession = useDebugStore((s) => s.selectSession)
+
+  const [showHistory, setShowHistory] = useState(true)
+
+  useEffect(() => {
+    if (repoPath) loadSessions(repoPath)
+  }, [repoPath, loadSessions])
+
+  // Subscribe to log entry events
+  useEffect(() => {
+    return useDebugStore.getState().subscribeToLogEntries()
+  }, [])
+
+  const handleNewSession = useCallback(() => {
+    setShowHistory(false)
+    selectSession(null)
+  }, [selectSession])
+
+  const handleSelectSession = useCallback((sessionId: string) => {
+    selectSession(sessionId)
+    setShowHistory(false)
+  }, [selectSession])
+
+  const handleBackToHistory = useCallback(() => {
+    selectSession(null)
+    setShowHistory(true)
+  }, [selectSession])
+
+  if (!repoPath) {
+    return <div className="debug-mode debug-mode--empty">Select a repository to use Debug Mode.</div>
+  }
+
+  if (showHistory && !activeSession) {
+    return <SessionHistory sessions={sessions} onSelect={handleSelectSession} onNew={handleNewSession} />
+  }
+
+  if (!activeSession) {
+    return (
+      <div className="debug-mode">
+        <div className="debug-mode__content">
+          <DescribeStage repoPath={repoPath} engineType={ENGINE_TYPE} onCreated={() => {}} onBack={handleBackToHistory} />
+        </div>
+      </div>
+    )
+  }
+
+  // Get terminal IDs from the active engine
+  const terminalIds = activeEngine?.getActiveTerminalIds() ?? []
+  const activeTerminalId = terminalIds[terminalIds.length - 1] ?? null
+
+  const stageContent = (() => {
+    switch (activeSession.stage) {
+      case 'describe':
+        return <DescribeStage repoPath={repoPath} engineType={ENGINE_TYPE} onCreated={() => {}} onBack={handleBackToHistory} />
+      case 'instrument':
+        return <InstrumentStage session={activeSession} repoPath={repoPath} />
+      case 'reproduce':
+        return <ReproduceStage session={activeSession} repoPath={repoPath} />
+      case 'diagnose':
+        return <DiagnoseStage session={activeSession} repoPath={repoPath} />
+      case 'verify':
+        return <VerifyStage session={activeSession} repoPath={repoPath} onBack={handleBackToHistory} />
+      default:
+        return null
+    }
+  })()
+
+  return (
+    <div className="debug-mode">
+      <DebugStepper currentStage={activeSession.stage} />
+      <div className="debug-mode__body">
+        <div className="debug-mode__left">{stageContent}</div>
+        <div className="debug-mode__right">
+          {activeTerminalId ? (
+            <Terminal terminalId={activeTerminalId} />
+          ) : (
+            <div className="debug-mode__terminal-placeholder">
+              Terminal will appear when AI starts working...
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
 
 **Step 2: Commit**
 
@@ -1091,45 +1650,9 @@ export class SingleSessionEngine implements DebugEngine {
 }
 ```
 
-**Step 2: Create shared prompts file**
+Note: `prompts.ts` already exists from Task 8 (shared foundation). No need to create it here.
 
-```typescript
-// src/renderer/engines/prompts.ts
-export function buildInstrumentPrompt(title: string, description: string): string {
-  return `I need to debug a bug. Here's the description:
-
-Title: ${title}
-Description: ${description}
-
-Please:
-1. Analyze the codebase to identify likely source
-2. Add debug logging with [DEBUG] prefix to relevant locations
-3. Also write debug output to ./debug.log file
-4. Tell me the reproduction steps`
-}
-
-export function buildDiagnosePrompt(title: string, description: string, logs: string): string {
-  return `The bug was reproduced. Here are the debug logs:
-
-${logs || '(No logs collected)'}
-
-Original bug:
-Title: ${title}
-Description: ${description}
-
-Please:
-1. Analyze the logs to find root cause
-2. Apply a fix
-3. Remove all [DEBUG] logging you added
-4. Explain what was wrong and what you fixed`
-}
-
-export function buildCleanupPrompt(): string {
-  return 'Remove all [DEBUG] logging statements from the codebase and delete debug.log if it exists.'
-}
-```
-
-**Step 3: Wire factory in DebugMode.tsx**
+**Step 2: Wire factory in DebugMode.tsx**
 
 ```typescript
 import { SingleSessionEngine } from '../../engines/SingleSessionEngine'
@@ -1140,10 +1663,10 @@ useEffect(() => {
 }, [])
 ```
 
-**Step 4: Commit in worktree-A**
+**Step 3: Commit in worktree-A**
 
 ```bash
-git add src/renderer/engines/SingleSessionEngine.ts src/renderer/engines/prompts.ts src/renderer/components/DebugMode/DebugMode.tsx
+git add src/renderer/engines/SingleSessionEngine.ts src/renderer/components/DebugMode/DebugMode.tsx
 git commit -m "feat(debug): implement SingleSessionEngine — one interactive terminal for all stages"
 ```
 
@@ -1169,21 +1692,27 @@ git worktree add ../ai-orchestrator-multi-session debug/multi-session
 import type { DebugEngine } from './DebugEngine'
 import type { DebugSession, InstrumentResult, DiagnoseResult, LogEntry } from '../../shared/debug-types'
 import { buildInstrumentPrompt, buildDiagnosePrompt, buildCleanupPrompt } from './prompts'
-import { buildDelimitedInputCommand } from './command-utils'
+import { buildHeadlessCommand } from './command-utils'
+import type { AIProvider } from '../../shared/ai-provider'
 
 export class MultiSessionEngine implements DebugEngine {
   private instrumentTerminalId: string | null = null
   private diagnoseTerminalId: string | null = null
+  private provider: AIProvider = 'claude'
 
   async instrument(session: DebugSession): Promise<InstrumentResult> {
+    // Read provider from config
+    const config = await window.api.getConfig() as { aiProvider?: string }
+    this.provider = (config.aiProvider === 'codex' ? 'codex' : 'claude') as AIProvider
+
     // Spawn headless terminal — runs `claude -p` or `codex exec -`
     const result = await window.api.debugSpawnTerminal(session.repoPath, 'Debug: Instrumenting (headless)')
     if (!result) throw new Error('Failed to spawn terminal')
     this.instrumentTerminalId = result.id
 
     const prompt = buildInstrumentPrompt(session.title, session.description)
-    // Headless: write as non-interactive command
-    const command = buildDelimitedInputCommand(prompt)
+    // Headless: write as non-interactive command (provider-aware)
+    const command = buildHeadlessCommand(this.provider, prompt)
     setTimeout(() => {
       window.api.debugWriteTerminal(this.instrumentTerminalId!, command)
     }, 500)
@@ -1244,23 +1773,9 @@ export class MultiSessionEngine implements DebugEngine {
 }
 ```
 
-**Step 2: Create renderer-side command util**
+Note: `command-utils.ts` and `prompts.ts` already exist from Task 8 (shared foundation). No need to create them here.
 
-```typescript
-// src/renderer/engines/command-utils.ts
-
-/**
- * Build headless provider command. Provider detected from config.
- * In multi-session mode, instrument runs headless (claude -p / codex exec -)
- */
-export function buildDelimitedInputCommand(prompt: string): string {
-  const marker = `__DEBUG_${Date.now()}__`
-  // Default to claude -p; provider switching handled at main process level
-  return `claude -p <<'${marker}'\n${prompt}\n${marker}\r`
-}
-```
-
-**Step 3: Wire factory in DebugMode.tsx**
+**Step 2: Wire factory in DebugMode.tsx**
 
 ```typescript
 import { MultiSessionEngine } from '../../engines/MultiSessionEngine'
