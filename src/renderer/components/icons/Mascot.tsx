@@ -1,9 +1,9 @@
-import appIconImg from '../../assets/mascot/app-icon.png'
-import loadingImg from '../../assets/mascot/loading.png'
-import onboardingImg from '../../assets/mascot/onboarding.png'
-import errorImg from '../../assets/mascot/error.png'
-import successImg from '../../assets/mascot/success.png'
-import emptyImg from '../../assets/mascot/empty.png'
+import appIconImg from '../../assets/mascot/app-icon.webp'
+import loadingImg from '../../assets/mascot/loading.webp'
+import onboardingImg from '../../assets/mascot/onboarding.webp'
+import errorImg from '../../assets/mascot/error.webp'
+import successImg from '../../assets/mascot/success.webp'
+import emptyImg from '../../assets/mascot/empty.webp'
 
 const VARIANT_SRC: Record<MascotVariant, string> = {
   'app-icon': appIconImg,

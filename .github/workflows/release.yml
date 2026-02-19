@@ -4,12 +4,30 @@ on:
     branches: [release]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Linux dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential python3
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
   build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos-latest
+            build_cmd: npm run build:mac
+          - os: macos-13
             build_cmd: npm run build:mac
           - os: ubuntu-latest
             build_cmd: npm run build:linux
