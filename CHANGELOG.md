@@ -11,6 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Reduced build size ~40% — moved renderer-only deps to devDependencies, bundled main process deps, converted mascot images to WebP, compressed build icon
 - Explicit asar/asarUnpack config in electron-builder
 
+## [0.1.2] - 2026-02-18
+
+### Changed
+
+- Cleaned up workspace pollution and optimized loading mascot
+- Switched contact method to GitHub Issues
+- Refreshed documentation and community policies (CONTRIBUTING, CODE_OF_CONDUCT, SECURITY)
+
 ## [0.1.1] - 2026-02-18
 
 ### Fixed
