@@ -43,6 +43,7 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 | Platform | Installer | Portable |
 |----------|-----------|----------|
 | macOS (Apple Silicon) | [Lumi-0.1.2-arm64.dmg](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi-0.1.2-arm64.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi-0.1.2-arm64-mac.zip) |
+| macOS (Intel)         | [Lumi-0.1.2.dmg](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi-0.1.2.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi-0.1.2-mac.zip) |
 | Windows | [Lumi.Setup.0.1.2.exe](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi.Setup.0.1.2.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi.0.1.2.exe) |
 | Linux | [Lumi-0.1.2.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi-0.1.2.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.1.2/Lumi-0.1.2-amd64.deb) |
 
