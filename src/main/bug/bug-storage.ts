@@ -1,10 +1,10 @@
 import * as fs from 'fs/promises'
 import { existsSync, mkdirSync } from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import { createHash } from 'crypto'
 import type { Bug, Fix } from '../../shared/bug-types'
 import { v4 as uuidv4 } from 'uuid'
+import { getConfigDir } from '../platform'
 
 const MAX_TITLE_LENGTH = 200
 const MAX_DESCRIPTION_LENGTH = 5000
@@ -14,7 +14,7 @@ export class BugStorage {
   private locks = new Map<string, Promise<void>>()
 
   constructor() {
-    this.baseDir = path.join(os.homedir(), '.lumi', 'bugs')
+    this.baseDir = path.join(getConfigDir(), 'bugs')
     if (!existsSync(this.baseDir)) {
       mkdirSync(this.baseDir, { recursive: true })
     }

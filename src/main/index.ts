@@ -1,11 +1,10 @@
 import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
-import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
-import { getWindowConfig, isMac, isLinux, fixProcessPath } from './platform'
+import { getWindowConfig, getTempDir, isMac, isLinux, fixProcessPath } from './platform'
 
 /** Returns platform-appropriate accelerator: Cmd on macOS, Ctrl+Shift on Windows/Linux */
 const accel = (key: string): string => isMac ? `Cmd+${key}` : `Ctrl+Shift+${key}`
@@ -136,6 +135,7 @@ function createWindow(): void {
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
+    mainWindow.setTitle(`${app.name} [DEV]`)
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -307,7 +307,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   try {
-    rmSync(join(tmpdir(), 'lumi'), { recursive: true, force: true })
+    rmSync(getTempDir(), { recursive: true, force: true })
   } catch { /* ignore */ }
 })
 

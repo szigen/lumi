@@ -535,6 +535,7 @@ This is the key abstraction. It lives in the renderer and talks to the preload A
 
 **Files:**
 - Create: `src/renderer/engines/DebugEngine.ts`
+- Create: `src/renderer/engines/prompts.ts`
 
 **Step 1: Define interface**
 
@@ -578,11 +579,49 @@ export interface DebugEngine {
 export type DebugEngineFactory = (session: DebugSession) => DebugEngine
 ```
 
-**Step 2: Commit**
+**Step 2: Create shared prompts (used by both engines)**
+
+```typescript
+// src/renderer/engines/prompts.ts
+export function buildInstrumentPrompt(title: string, description: string): string {
+  return `I need to debug a bug. Here's the description:
+
+Title: ${title}
+Description: ${description}
+
+Please:
+1. Analyze the codebase to identify likely source
+2. Add debug logging with [DEBUG] prefix to relevant locations
+3. Also write debug output to ./debug.log file
+4. Tell me the reproduction steps`
+}
+
+export function buildDiagnosePrompt(title: string, description: string, logs: string): string {
+  return `The bug was reproduced. Here are the debug logs:
+
+${logs || '(No logs collected)'}
+
+Original bug:
+Title: ${title}
+Description: ${description}
+
+Please:
+1. Analyze the logs to find root cause
+2. Apply a fix
+3. Remove all [DEBUG] logging you added
+4. Explain what was wrong and what you fixed`
+}
+
+export function buildCleanupPrompt(): string {
+  return 'Remove all [DEBUG] logging statements from the codebase and delete debug.log if it exists.'
+}
+```
+
+**Step 3: Commit**
 
 ```bash
-git add src/renderer/engines/DebugEngine.ts
-git commit -m "feat(debug): define DebugEngine interface and factory type"
+git add src/renderer/engines/DebugEngine.ts src/renderer/engines/prompts.ts
+git commit -m "feat(debug): define DebugEngine interface, factory type, and shared prompts"
 ```
 
 ---

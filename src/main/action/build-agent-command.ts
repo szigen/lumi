@@ -1,11 +1,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import * as os from 'os'
 import type { Action, ClaudeConfig, CodexConfig } from '../../shared/action-types'
 import type { AIProvider } from '../../shared/ai-provider'
 import { getProviderBinary } from '../../shared/ai-provider'
+import { getTempDir } from '../platform'
 
-const TEMP_DIR = path.join(os.tmpdir(), 'lumi')
+const TEMP_DIR = getTempDir()
 
 function ensureTempDir(): void {
   if (!fs.existsSync(TEMP_DIR)) {
