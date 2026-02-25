@@ -5,6 +5,7 @@ import { EventEmitter } from 'events'
 import { OutputBuffer } from './OutputBuffer'
 import type { ManagedTerminal, SpawnResult, ITerminalNotifier, ICodenameTracker } from './types'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { safeSend } from '../safeSend'
 import { generateCodename } from './codenames'
 import { StatusStateMachine } from './StatusStateMachine'
 import { OscTitleParser, type AgentProviderHint } from './OscTitleParser'
@@ -68,7 +69,7 @@ export class TerminalManager extends EventEmitter {
 
     statusMachine.setOnChange((status) => {
       if (!window.isDestroyed() && this.terminals.has(id)) {
-        window.webContents.send(IPC_CHANNELS.TERMINAL_STATUS, id, status)
+        safeSend(window, IPC_CHANNELS.TERMINAL_STATUS, id, status)
         this.notifier.notifyStatusChange(id, status, window, repoPath)
       }
     })
@@ -95,9 +96,7 @@ export class TerminalManager extends EventEmitter {
           const cleanTitle = event.title.replace(/^.\s*/, '')
           if (cleanTitle) {
             terminal.oscTitle = cleanTitle
-            if (!window.isDestroyed()) {
-              window.webContents.send(IPC_CHANNELS.TERMINAL_TITLE, id, cleanTitle)
-            }
+            safeSend(window, IPC_CHANNELS.TERMINAL_TITLE, id, cleanTitle)
           }
         }
 
@@ -115,9 +114,7 @@ export class TerminalManager extends EventEmitter {
 
       terminal.outputBuffer.append(data)
 
-      if (!window.isDestroyed()) {
-        window.webContents.send(IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
-      }
+      safeSend(window, IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
       this.emit('output', { terminalId: id, data })
     })
 
@@ -127,9 +124,7 @@ export class TerminalManager extends EventEmitter {
       this.notifier.removeTerminal(id)
       terminal.statusMachine.onExit(exitCode)
       this.oscParser.delete(id)
-      if (!window.isDestroyed()) {
-        window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
-      }
+      safeSend(window, IPC_CHANNELS.TERMINAL_EXIT, id, exitCode)
       this.emit('exit', { terminalId: id, exitCode })
     })
 

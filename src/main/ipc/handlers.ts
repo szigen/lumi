@@ -9,6 +9,7 @@ import { PersonaStore } from '../persona/PersonaStore'
 import { SystemChecker } from '../system/SystemChecker'
 import { BugStorage } from '../bug/bug-storage'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { safeSend } from '../safeSend'
 import type { AIProvider } from '../../shared/ai-provider'
 import { AssistantOrchestrator } from '../assistant/AssistantOrchestrator'
 import { registerTerminalHandlers } from './handlers/register-terminal-handlers'
@@ -62,36 +63,30 @@ export function setupIpcHandlers(): void {
   const assistantOrchestrator = new AssistantOrchestrator({
     getProvider: () => getActiveProvider(configManager),
     emitDelta: (bugId, text) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, bugId, text)
-      }
+      safeSend(mainWindow, IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, bugId, text)
     },
     emitDone: (bugId, fullText, error) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, bugId, fullText, error)
-      }
+      safeSend(mainWindow, IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, bugId, fullText, error)
     },
     emitActivity: (bugId, activity) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, bugId, activity)
-      }
+      safeSend(mainWindow, IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, bugId, activity)
     }
   })
 
   newActionStore.setOnChange(() => {
-    mainWindow?.webContents.send(IPC_CHANNELS.ACTIONS_CHANGED)
+    safeSend(mainWindow, IPC_CHANNELS.ACTIONS_CHANGED)
   })
 
   newPersonaStore.setOnChange(() => {
-    mainWindow?.webContents.send(IPC_CHANNELS.PERSONAS_CHANGED)
+    safeSend(mainWindow, IPC_CHANNELS.PERSONAS_CHANGED)
   })
 
   newRepoManager.setOnReposChange(() => {
-    mainWindow?.webContents.send(IPC_CHANNELS.REPOS_CHANGED)
+    safeSend(mainWindow, IPC_CHANNELS.REPOS_CHANGED)
   })
 
   newRepoManager.setOnFileTreeChange((repoPath) => {
-    mainWindow?.webContents.send(IPC_CHANNELS.FILE_TREE_CHANGED, repoPath)
+    safeSend(mainWindow, IPC_CHANNELS.FILE_TREE_CHANGED, repoPath)
   })
 
   newRepoManager.watchProjectsRoot()

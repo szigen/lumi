@@ -5,6 +5,7 @@ import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } f
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
 import { getWindowConfig, getTempDir, isMac, isLinux, fixProcessPath } from './platform'
+import { safeSend } from './safeSend'
 
 /** Returns platform-appropriate accelerator: Cmd on macOS, Ctrl+Shift on Windows/Linux */
 const accel = (key: string): string => isMac ? `Cmd+${key}` : `Ctrl+Shift+${key}`
@@ -112,7 +113,7 @@ function createWindow(): void {
 
     if (!isQuitting && terminalCount > 0) {
       e.preventDefault()
-      mainWindow?.webContents.send(IPC_CHANNELS.APP_CONFIRM_QUIT, terminalCount)
+      safeSend(mainWindow, IPC_CHANNELS.APP_CONFIRM_QUIT, terminalCount)
     } else {
       terminalManager?.killAll()
       getRepoManager()?.dispose()
@@ -174,18 +175,18 @@ function createMenu(): void {
         {
           label: 'New Session',
           accelerator: accel('T'),
-          click: () => mainWindow?.webContents.send('shortcut', 'new-terminal')
+          click: () => safeSend(mainWindow, 'shortcut', 'new-terminal')
         },
         {
           label: 'Close Terminal',
           accelerator: accel('W'),
-          click: () => mainWindow?.webContents.send('shortcut', 'close-terminal')
+          click: () => safeSend(mainWindow, 'shortcut', 'close-terminal')
         },
         { type: 'separator' },
         {
           label: 'Open Repository',
           accelerator: accel('O'),
-          click: () => mainWindow?.webContents.send('shortcut', 'open-repo-selector')
+          click: () => safeSend(mainWindow, 'shortcut', 'open-repo-selector')
         },
         ...(!isMac
           ? [
@@ -217,23 +218,23 @@ function createMenu(): void {
         {
           label: 'Toggle Left Sidebar',
           accelerator: accel('B'),
-          click: () => mainWindow?.webContents.send('shortcut', 'toggle-left-sidebar')
+          click: () => safeSend(mainWindow, 'shortcut', 'toggle-left-sidebar')
         },
         {
           label: 'Toggle Right Sidebar',
           accelerator: isMac ? 'Cmd+Shift+B' : 'Ctrl+Shift+J',
-          click: () => mainWindow?.webContents.send('shortcut', 'toggle-right-sidebar')
+          click: () => safeSend(mainWindow, 'shortcut', 'toggle-right-sidebar')
         },
         {
           label: 'Settings',
           accelerator: accel(','),
-          click: () => mainWindow?.webContents.send('shortcut', 'open-settings')
+          click: () => safeSend(mainWindow, 'shortcut', 'open-settings')
         },
         { type: 'separator' },
         {
           label: 'Focus Mode',
           accelerator: isMac ? 'Cmd+Shift+F' : 'Ctrl+Shift+F',
-          click: () => mainWindow?.webContents.send('shortcut', 'toggle-focus-mode')
+          click: () => safeSend(mainWindow, 'shortcut', 'toggle-focus-mode')
         },
         { type: 'separator' },
         { role: 'reload' },
@@ -302,7 +303,7 @@ app.whenReady().then(() => {
 
   // Notify renderer to re-sync terminal state after macOS sleep/wake
   powerMonitor.on('resume', () => {
-    mainWindow?.webContents.send(IPC_CHANNELS.TERMINAL_SYNC)
+    safeSend(mainWindow, IPC_CHANNELS.TERMINAL_SYNC)
   })
 })
 
