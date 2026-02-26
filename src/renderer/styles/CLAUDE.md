@@ -17,6 +17,7 @@ Single `globals.css` file with CSS variables, reset, and all component styles.
 ## Conventions
 - Font: JetBrains Mono, 13px base
 - BEM naming throughout
+- Fullscreen override: `body.platform-darwin.fullscreen` reduces header and focus-exit-control padding (traffic lights hidden in fullscreen)
 - Custom scrollbars with rounded thumbs
 - Animations: `fadeIn`, `fadeInUp`, `subtle-pulse`, `glow-pulse`, `spin`, `marquee`
 - xterm viewport forced transparent background

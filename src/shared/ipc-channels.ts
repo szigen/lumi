@@ -57,6 +57,7 @@ export const IPC_CHANNELS = {
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_CLOSE: 'window:close',
   WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY: 'window:set-traffic-light-visibility',
+  WINDOW_FULLSCREEN_CHANGED: 'window:fullscreen-changed',
 
   // Dialog operations
   DIALOG_OPEN_FOLDER: 'dialog:open-folder',

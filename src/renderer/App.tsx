@@ -7,6 +7,13 @@ export default function App() {
     document.body.classList.add(`platform-${window.api?.platform || 'unknown'}`)
   }, [])
 
+  useEffect(() => {
+    const cleanup = window.api.onFullscreenChange((isFullscreen) => {
+      document.body.classList.toggle('fullscreen', isFullscreen)
+    })
+    return cleanup
+  }, [])
+
   return (
     <ErrorBoundary>
       <Layout />

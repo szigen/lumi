@@ -273,6 +273,14 @@ body.platform-darwin .header {
   padding-left: 80px; /* macOS traffic lights */
 }
 
+body.platform-darwin.fullscreen .header {
+  padding-left: 12px;
+}
+
+body.platform-darwin.fullscreen .focus-exit-control {
+  padding-left: var(--spacing-md);
+}
+
 .header-left,
 .header-center,
 .header-right {

@@ -97,6 +97,13 @@ function createWindow(): void {
     configManager.setUIState({ windowMaximized: false })
   })
 
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_FULLSCREEN_CHANGED, true)
+  })
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_FULLSCREEN_CHANGED, false)
+  })
+
   // Intercept window close when terminals are active
   mainWindow.on('close', (e) => {
     // Save final window state before closing

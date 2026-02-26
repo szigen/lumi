@@ -158,6 +158,8 @@ const api = {
   closeWindow: () => invokeIpc<void>(IPC_CHANNELS.WINDOW_CLOSE),
   setTrafficLightVisibility: (visible: boolean) =>
     invokeIpc<void>(IPC_CHANNELS.WINDOW_SET_TRAFFIC_LIGHT_VISIBILITY, visible),
+  onFullscreenChange: (callback: (isFullscreen: boolean) => void) =>
+    createIpcListener<[boolean]>(IPC_CHANNELS.WINDOW_FULLSCREEN_CHANGED, callback),
 
   // App lifecycle
   onConfirmQuit: (callback: (terminalCount: number) => void) =>
