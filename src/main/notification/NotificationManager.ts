@@ -1,5 +1,6 @@
 import { BrowserWindow, Notification } from 'electron'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { safeSend } from '../safeSend'
 
 const UNSEEN_INTERVAL_MS = 60_000   // 1 minute
 const SEEN_INTERVAL_MS = 300_000    // 5 minutes
@@ -75,13 +76,13 @@ export class NotificationManager {
       notification.on('click', () => {
         ctx.window.show()
         ctx.window.focus()
-        ctx.window.webContents.send(IPC_CHANNELS.NOTIFICATION_CLICK, terminalId)
+        safeSend(ctx.window, IPC_CHANNELS.NOTIFICATION_CLICK, terminalId)
       })
 
       notification.show()
     }
 
     // Always send IPC bell event to renderer
-    ctx.window.webContents.send(IPC_CHANNELS.TERMINAL_BELL, terminalId, repoName)
+    safeSend(ctx.window, IPC_CHANNELS.TERMINAL_BELL, terminalId, repoName)
   }
 }

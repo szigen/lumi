@@ -17,7 +17,7 @@ Secure IPC bridge between main and renderer via `contextBridge`.
 - Repository + Git: repo discovery/file tree/watch + commit/branch/status APIs + `readFile`, `getFileDiff`, `getCommitDiff`.
 - Actions + Personas: list/load/execute/edit/spawn and change listeners (`editAction` for terminal-first editing).
 - Bugs: `askBugAssistant` + `onBugAssistantStream*` channels, fix CRUD/apply.
-- Config/UI State, Window controls, Dialog, System checks, App lifecycle.
+- Config/UI State, Window controls (`onFullscreenChange` for body class toggle), Dialog, System checks, App lifecycle.
 
 ## Watch Out
 - Keep listener callbacks strongly typed; always return cleanup function from `createIpcListener` wrappers.

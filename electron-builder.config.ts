@@ -17,6 +17,7 @@ const config: Configuration = {
   ],
   mac: {
     target: ['dmg', 'zip'],
+    artifactName: '${productName}-${version}-${arch}-mac.${ext}',
     category: 'public.app-category.developer-tools'
   },
   win: {
@@ -25,10 +26,15 @@ const config: Configuration = {
   nsis: {
     oneClick: false,
     perMachine: false,
-    allowToChangeInstallationDirectory: true
+    allowToChangeInstallationDirectory: true,
+    artifactName: '${productName}-Setup-${version}-win.${ext}'
+  },
+  portable: {
+    artifactName: '${productName}-${version}-win.${ext}'
   },
   linux: {
     target: ['AppImage', 'deb'],
+    artifactName: '${productName}-${version}-linux-${arch}.${ext}',
     category: 'Development'
   }
 }

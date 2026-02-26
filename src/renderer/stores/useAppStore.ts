@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { UIState, FileViewerState } from '../../shared/types'
+import type { UIState, FileViewerState, GridLayout } from '../../shared/types'
 import { DEFAULT_UI_STATE } from '../../shared/constants'
 import type { AIProvider } from '../../shared/ai-provider'
 import { useTerminalStore } from './useTerminalStore'
@@ -23,7 +23,8 @@ interface AppState extends UIState {
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
   closeTab: (repoName: string) => void
-  setGridColumns: (value: number | 'auto') => void
+  setProjectGridLayout: (repoPath: string, layout: GridLayout) => void
+  getActiveGridLayout: () => GridLayout
   setActiveView: (view: 'terminals' | 'bugs') => void
   toggleBugView: () => void
   toggleLeftSidebar: () => void
@@ -116,9 +117,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     get().saveUIState()
   },
 
-  setGridColumns: (value) => {
-    set({ gridColumns: value })
+  setProjectGridLayout: (repoPath, layout) => {
+    set((state) => ({
+      projectGridLayouts: { ...state.projectGridLayouts, [repoPath]: layout }
+    }))
     get().saveUIState()
+  },
+
+  getActiveGridLayout: () => {
+    const { activeTab, projectGridLayouts } = get()
+    if (!activeTab) return { mode: 'auto', count: 2 }
+    const repo = useRepoStore.getState().getRepoByName(activeTab)
+    if (!repo) return { mode: 'auto', count: 2 }
+    return projectGridLayouts[repo.path] ?? { mode: 'auto', count: 2 }
   },
 
   setActiveView: (view) => {
@@ -156,7 +167,22 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const state = await window.api.getUIState()
       if (state) {
-        set({ ...state, activeView: 'terminals' })
+        // Migrate legacy gridColumns to projectGridLayouts
+        const rawState = state as UIState & { gridColumns?: number | 'auto' }
+        if (rawState.gridColumns !== undefined && !rawState.projectGridLayouts) {
+          const layout: GridLayout = rawState.gridColumns === 'auto'
+            ? { mode: 'auto', count: 2 }
+            : { mode: 'columns', count: rawState.gridColumns }
+          const projectGridLayouts: Record<string, GridLayout> = {}
+          const repos = useRepoStore.getState().repos
+          for (const tab of rawState.openTabs ?? []) {
+            const repo = repos.find(r => r.name === tab)
+            if (repo) projectGridLayouts[repo.path] = layout
+          }
+          set({ ...state, projectGridLayouts, activeView: 'terminals' })
+        } else {
+          set({ ...state, activeView: 'terminals' })
+        }
       }
     } catch (error) {
       console.error('Failed to load UI state:', error)
@@ -164,9 +190,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveUIState: async () => {
-    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns, activeView } = get()
+    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, projectGridLayouts, activeView } = get()
     try {
-      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, gridColumns, activeView })
+      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, projectGridLayouts, activeView })
     } catch (error) {
       console.error('Failed to save UI state:', error)
     }

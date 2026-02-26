@@ -3,8 +3,8 @@
 Type definitions and constants shared between main and renderer.
 
 ## Files
-- **types.ts** — shared domain interfaces, including `TerminalStatus`, `Terminal`, `TerminalInfo`, `TerminalSnapshot`, `FileViewerState`, `CommitDiffFile`, `FileViewerMode`.
-- **ipc-channels.ts** — centralized IPC channel constants (`domain:operation` naming). Includes `ACTIONS_EDIT` for terminal-first action editing.
+- **types.ts** — shared domain interfaces, including `TerminalStatus`, `Terminal`, `TerminalInfo`, `TerminalSnapshot`, `FileViewerState`, `CommitDiffFile`, `FileViewerMode`, `GridLayoutMode`, `GridLayout`.
+- **ipc-channels.ts** — centralized IPC channel constants (`domain:operation` naming). Includes `ACTIONS_EDIT` for terminal-first action editing, `WINDOW_FULLSCREEN_CHANGED` for fullscreen state sync.
 - **action-types.ts** — action/persona config payload types.
 - **bug-types.ts** — bug tracker domain types.
 - **persona-types.ts** — persona definition.

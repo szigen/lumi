@@ -1,11 +1,11 @@
 import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
-import { tmpdir } from 'os'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { ConfigManager } from './config/ConfigManager'
-import { getWindowConfig, isMac, isLinux, fixProcessPath } from './platform'
+import { getWindowConfig, getTempDir, isMac, isLinux, fixProcessPath } from './platform'
+import { safeSend } from './safeSend'
 
 /** Returns platform-appropriate accelerator: Cmd on macOS, Ctrl+Shift on Windows/Linux */
 const accel = (key: string): string => isMac ? `Cmd+${key}` : `Ctrl+Shift+${key}`
@@ -58,6 +58,7 @@ function createWindow(): void {
     ...(useSavedBounds ? { x: savedBounds!.x, y: savedBounds!.y } : {}),
     minWidth: 1000,
     minHeight: 600,
+    acceptFirstMouse: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
@@ -96,6 +97,13 @@ function createWindow(): void {
     configManager.setUIState({ windowMaximized: false })
   })
 
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_FULLSCREEN_CHANGED, true)
+  })
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send(IPC_CHANNELS.WINDOW_FULLSCREEN_CHANGED, false)
+  })
+
   // Intercept window close when terminals are active
   mainWindow.on('close', (e) => {
     // Save final window state before closing
@@ -112,7 +120,7 @@ function createWindow(): void {
 
     if (!isQuitting && terminalCount > 0) {
       e.preventDefault()
-      mainWindow?.webContents.send(IPC_CHANNELS.APP_CONFIRM_QUIT, terminalCount)
+      safeSend(mainWindow, IPC_CHANNELS.APP_CONFIRM_QUIT, terminalCount)
     } else {
       terminalManager?.killAll()
       getRepoManager()?.dispose()
@@ -136,6 +144,7 @@ function createWindow(): void {
 
   if (process.env.NODE_ENV === 'development') {
     mainWindow.loadURL('http://localhost:5173')
+    mainWindow.setTitle(`${app.name} [DEV]`)
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -173,18 +182,18 @@ function createMenu(): void {
         {
           label: 'New Session',
           accelerator: accel('T'),
-          click: () => mainWindow?.webContents.send('shortcut', 'new-terminal')
+          click: () => safeSend(mainWindow, 'shortcut', 'new-terminal')
         },
         {
           label: 'Close Terminal',
           accelerator: accel('W'),
-          click: () => mainWindow?.webContents.send('shortcut', 'close-terminal')
+          click: () => safeSend(mainWindow, 'shortcut', 'close-terminal')
         },
         { type: 'separator' },
         {
           label: 'Open Repository',
           accelerator: accel('O'),
-          click: () => mainWindow?.webContents.send('shortcut', 'open-repo-selector')
+          click: () => safeSend(mainWindow, 'shortcut', 'open-repo-selector')
         },
         ...(!isMac
           ? [
@@ -216,23 +225,23 @@ function createMenu(): void {
         {
           label: 'Toggle Left Sidebar',
           accelerator: accel('B'),
-          click: () => mainWindow?.webContents.send('shortcut', 'toggle-left-sidebar')
+          click: () => safeSend(mainWindow, 'shortcut', 'toggle-left-sidebar')
         },
         {
           label: 'Toggle Right Sidebar',
           accelerator: isMac ? 'Cmd+Shift+B' : 'Ctrl+Shift+J',
-          click: () => mainWindow?.webContents.send('shortcut', 'toggle-right-sidebar')
+          click: () => safeSend(mainWindow, 'shortcut', 'toggle-right-sidebar')
         },
         {
           label: 'Settings',
           accelerator: accel(','),
-          click: () => mainWindow?.webContents.send('shortcut', 'open-settings')
+          click: () => safeSend(mainWindow, 'shortcut', 'open-settings')
         },
         { type: 'separator' },
         {
           label: 'Focus Mode',
           accelerator: isMac ? 'Cmd+Shift+F' : 'Ctrl+Shift+F',
-          click: () => mainWindow?.webContents.send('shortcut', 'toggle-focus-mode')
+          click: () => safeSend(mainWindow, 'shortcut', 'toggle-focus-mode')
         },
         { type: 'separator' },
         { role: 'reload' },
@@ -301,13 +310,13 @@ app.whenReady().then(() => {
 
   // Notify renderer to re-sync terminal state after macOS sleep/wake
   powerMonitor.on('resume', () => {
-    mainWindow?.webContents.send(IPC_CHANNELS.TERMINAL_SYNC)
+    safeSend(mainWindow, IPC_CHANNELS.TERMINAL_SYNC)
   })
 })
 
 app.on('will-quit', () => {
   try {
-    rmSync(join(tmpdir(), 'lumi'), { recursive: true, force: true })
+    rmSync(getTempDir(), { recursive: true, force: true })
   } catch { /* ignore */ }
 })
 

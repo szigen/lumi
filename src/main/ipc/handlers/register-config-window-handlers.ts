@@ -1,6 +1,7 @@
 import { ipcMain, dialog } from 'electron'
 import { isMac } from '../../platform'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
+import { safeSend } from '../../safeSend'
 import type { IpcHandlerContext } from './types'
 
 export function registerConfigWindowHandlers(context: IpcHandlerContext): void {
@@ -31,7 +32,7 @@ export function registerConfigWindowHandlers(context: IpcHandlerContext): void {
     }
 
     if (reposAffected) {
-      getMainWindow()?.webContents.send(IPC_CHANNELS.REPOS_CHANGED)
+      safeSend(getMainWindow(), IPC_CHANNELS.REPOS_CHANGED)
     }
 
     return true
