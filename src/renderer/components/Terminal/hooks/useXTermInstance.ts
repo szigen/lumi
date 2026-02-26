@@ -56,6 +56,7 @@ export function useXTermInstance(
       xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
         if (e.ctrlKey && e.shiftKey && e.type === 'keydown') {
           if (e.key === 'C' || e.key === 'c') {
+            e.preventDefault()
             const selection = xterm.getSelection()
             if (selection) {
               navigator.clipboard.writeText(selection)
@@ -63,6 +64,7 @@ export function useXTermInstance(
             return false
           }
           if (e.key === 'V' || e.key === 'v') {
+            e.preventDefault()
             navigator.clipboard.readText().then((text) => {
               xterm.paste(text)
             })
