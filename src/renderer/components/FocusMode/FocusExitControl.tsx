@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Grid2x2, LayoutGrid, Columns3 } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useRepoStore } from '../../stores/useRepoStore'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
 import { getProviderLaunchCommand } from '../../../shared/ai-provider'
+import GridLayoutPopup from '../TerminalPanel/GridLayoutPopup'
 import PersonaDropdown from '../TerminalPanel/PersonaDropdown'
 import type { Persona } from '../../../shared/persona-types'
 
@@ -22,7 +23,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 }
 
 export default function FocusExitControl() {
-  const { toggleFocusMode, activeTab, gridColumns, setGridColumns, aiProvider } = useAppStore()
+  const { toggleFocusMode, activeTab, aiProvider } = useAppStore()
   const { terminals, getTerminalCount, syncFromMain } = useTerminalStore()
   const { getRepoByName } = useRepoStore()
   const [visible, setVisible] = useState(false)
@@ -105,16 +106,6 @@ export default function FocusExitControl() {
     }
   }, [activeRepo, getTerminalCount, syncFromMain])
 
-  const handleGridToggle = useCallback(() => {
-    const cycle: Array<number | 'auto'> = ['auto', 2, 3]
-    const currentIndex = cycle.indexOf(gridColumns)
-    const nextIndex = (currentIndex + 1) % cycle.length
-    setGridColumns(cycle[nextIndex])
-  }, [gridColumns, setGridColumns])
-
-  const GridIcon = gridColumns === 2 ? Grid2x2 : gridColumns === 3 ? Columns3 : LayoutGrid
-  const gridTooltip = gridColumns === 'auto' ? 'Auto grid' : `${gridColumns} columns`
-
   return (
     <AnimatePresence>
       {visible && (
@@ -132,13 +123,7 @@ export default function FocusExitControl() {
                 <span className="focus-exit-control__count">
                   {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
                 </span>
-                <button
-                  className="focus-exit-control__grid-toggle"
-                  onClick={handleGridToggle}
-                  title={gridTooltip}
-                >
-                  <GridIcon size={14} />
-                </button>
+                <GridLayoutPopup repoPath={activeRepo?.path ?? ''} iconSize={14} />
               </>
             )}
             <PersonaDropdown

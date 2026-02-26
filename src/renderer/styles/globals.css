@@ -1297,20 +1297,118 @@ body.platform-win32 .header-right {
   gap: var(--spacing-sm);
 }
 
-.terminal-panel__grid-toggle {
+/* Grid Layout Popup */
+.grid-layout-popup {
+  position: relative;
+}
+
+.grid-layout-popup__trigger {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: var(--radius-md);
   color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.terminal-panel__grid-toggle:hover {
+.grid-layout-popup__trigger:hover {
   background: var(--bg-elevated);
   color: var(--accent-primary);
+}
+
+.grid-layout-popup__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  min-width: 180px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  z-index: 50;
+}
+
+.grid-layout-popup__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grid-layout-popup__item:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.grid-layout-popup__item--active {
+  color: var(--accent-primary);
+}
+
+.grid-layout-popup__separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.grid-layout-popup__section {
+  padding: 4px 10px 6px;
+}
+
+.grid-layout-popup__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.grid-layout-popup__counts {
+  display: flex;
+  gap: 4px;
+}
+
+.grid-layout-popup__count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.grid-layout-popup__count:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.grid-layout-popup__count--active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--bg-deep);
+  font-weight: 600;
 }
 
 /* Persona Dropdown */
@@ -2404,22 +2502,6 @@ body.platform-win32 .header-right {
   background: var(--bg-surface);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
-}
-
-.focus-exit-control__grid-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  transition: all 0.15s ease;
-}
-
-.focus-exit-control__grid-toggle:hover {
-  background: var(--bg-elevated);
-  color: var(--accent-primary);
 }
 
 .focus-exit-control__btn {

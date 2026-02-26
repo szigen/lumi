@@ -72,12 +72,19 @@ export interface Config {
   terminalFontSize: number
 }
 
+export type GridLayoutMode = 'auto' | 'columns' | 'rows'
+
+export interface GridLayout {
+  mode: GridLayoutMode
+  count: number
+}
+
 export interface UIState {
   openTabs: string[]
   activeTab: string | null
   leftSidebarOpen: boolean
   rightSidebarOpen: boolean
-  gridColumns: number | 'auto'
+  projectGridLayouts: Record<string, GridLayout>
   activeView: 'terminals' | 'bugs'
   windowBounds?: { x: number; y: number; width: number; height: number }
   windowMaximized?: boolean

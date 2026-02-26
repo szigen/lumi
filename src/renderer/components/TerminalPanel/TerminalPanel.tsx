@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react'
-import { FolderOpen, Grid2x2, LayoutGrid, Columns3 } from 'lucide-react'
+import { FolderOpen } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { useAppStore } from '../../stores/useAppStore'
 import { useRepoStore } from '../../stores/useRepoStore'
@@ -9,6 +9,7 @@ import { Mascot } from '../icons'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
 import { getProviderLabel, getProviderLaunchCommand } from '../../../shared/ai-provider'
 import PersonaDropdown from './PersonaDropdown'
+import GridLayoutPopup from './GridLayoutPopup'
 import type { Persona } from '../../../shared/persona-types'
 
 const GRID_GAP = 12 // --spacing-md
@@ -24,7 +25,8 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 
 export default function TerminalPanel() {
   const { terminals, getTerminalCount, syncFromMain } = useTerminalStore()
-  const { activeTab, gridColumns, setGridColumns, focusModeActive, aiProvider } = useAppStore()
+  const { activeTab, focusModeActive, aiProvider } = useAppStore()
+  const gridLayout = useAppStore((s) => s.getActiveGridLayout())
   const { getRepoByName } = useRepoStore()
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
@@ -89,41 +91,85 @@ export default function TerminalPanel() {
     return () => ro.disconnect()
   }, [hasTerminals])
 
-  const handleGridToggle = useCallback(() => {
-    const cycle: Array<number | 'auto'> = ['auto', 2, 3]
-    const currentIndex = cycle.indexOf(gridColumns)
-    const nextIndex = (currentIndex + 1) % cycle.length
-    setGridColumns(cycle[nextIndex])
-  }, [gridColumns, setGridColumns])
-
   const computedColumns = useMemo(() => {
-    if (gridColumns !== 'auto') return gridColumns
+    if (gridLayout.mode === 'columns') return gridLayout.count
+    if (gridLayout.mode === 'rows') {
+      const rows = gridLayout.count
+      return Math.max(1, Math.ceil(repoTerminals.length / rows))
+    }
+    // auto mode
     if (!containerWidth) return 1
     return Math.max(1, Math.floor((containerWidth + GRID_GAP) / (400 + GRID_GAP)))
-  }, [gridColumns, containerWidth])
+  }, [gridLayout, containerWidth, repoTerminals.length])
 
   const gridStyle = useMemo(() => {
-    if (gridColumns === 'auto') return undefined
-    if (!containerWidth) return { gridTemplateColumns: `repeat(${gridColumns}, 1fr)` }
-    const colWidth = Math.floor((containerWidth - (gridColumns - 1) * GRID_GAP) / gridColumns)
-    return { gridTemplateColumns: `repeat(${gridColumns}, ${colWidth}px)` }
-  }, [gridColumns, containerWidth])
+    if (gridLayout.mode === 'auto') return undefined
+
+    const cols = computedColumns
+    if (!containerWidth) return { gridTemplateColumns: `repeat(${cols}, 1fr)` }
+
+    const colWidth = Math.floor((containerWidth - (cols - 1) * GRID_GAP) / cols)
+    const style: React.CSSProperties = { gridTemplateColumns: `repeat(${cols}, ${colWidth}px)` }
+
+    if (gridLayout.mode === 'rows') {
+      const rows = gridLayout.count
+      if (containerHeight) {
+        const rowHeight = Math.floor((containerHeight - (rows - 1) * GRID_GAP) / rows)
+        style.gridTemplateRows = `repeat(${rows}, ${rowHeight}px)`
+        style.gridAutoRows = 'unset'
+      }
+    }
+
+    return style
+  }, [gridLayout, computedColumns, containerWidth, containerHeight])
 
   const focusGridStyle = useMemo(() => {
     if (!focusModeActive || !containerHeight || repoTerminals.length === 0) return undefined
-    const cols = gridColumns === 'auto' ? computedColumns : gridColumns
-    const colTemplate = gridColumns === 'auto'
-      ? `repeat(auto-fit, minmax(400px, 1fr))`
-      : (!containerWidth
-          ? `repeat(${gridColumns}, 1fr)`
-          : `repeat(${gridColumns}, ${Math.floor((containerWidth - (gridColumns - 1) * GRID_GAP) / gridColumns)}px)`)
-    const rows = Math.ceil(repoTerminals.length / cols)
+    const cols = computedColumns
+
+    let colTemplate: string
+    if (gridLayout.mode === 'auto') {
+      colTemplate = `repeat(auto-fit, minmax(400px, 1fr))`
+    } else if (!containerWidth) {
+      colTemplate = `repeat(${cols}, 1fr)`
+    } else {
+      const colWidth = Math.floor((containerWidth - (cols - 1) * GRID_GAP) / cols)
+      colTemplate = `repeat(${cols}, ${colWidth}px)`
+    }
+
+    const rows = gridLayout.mode === 'rows'
+      ? gridLayout.count
+      : Math.ceil(repoTerminals.length / cols)
     const rowHeight = Math.floor((containerHeight - (rows - 1) * GRID_GAP) / rows)
     return { gridTemplateColumns: colTemplate, gridTemplateRows: `repeat(${rows}, ${rowHeight}px)` }
-  }, [focusModeActive, containerHeight, containerWidth, repoTerminals.length, computedColumns, gridColumns])
+  }, [focusModeActive, containerHeight, containerWidth, repoTerminals.length, computedColumns, gridLayout])
 
-  const GridIcon = gridColumns === 2 ? Grid2x2 : gridColumns === 3 ? Columns3 : LayoutGrid
-  const gridTooltip = gridColumns === 'auto' ? 'Auto grid' : `${gridColumns} columns`
+  // Compute column-span styles for terminals on the last incomplete row
+  // so they stretch to fill the full grid width
+  const lastRowSpanStyles = useMemo(() => {
+    if (gridLayout.mode === 'auto') return new Map<string, React.CSSProperties>()
+
+    const count = repoTerminals.length
+    const cols = computedColumns
+    if (cols <= 1 || count === 0) return new Map<string, React.CSSProperties>()
+
+    const remainder = count % cols
+    if (remainder === 0) return new Map<string, React.CSSProperties>()
+
+    const map = new Map<string, React.CSSProperties>()
+    const lastRowStart = count - remainder
+    const baseSpan = Math.floor(cols / remainder)
+    const extraCols = cols % remainder
+
+    for (let i = lastRowStart; i < count; i++) {
+      const posInLastRow = i - lastRowStart
+      const span = posInLastRow >= remainder - extraCols ? baseSpan + 1 : baseSpan
+      map.set(repoTerminals[i].id, { gridColumn: `span ${span}` })
+    }
+
+    return map
+  }, [gridLayout.mode, repoTerminals, computedColumns])
+
   const providerLabel = getProviderLabel(aiProvider)
 
   if (!activeTab) {
@@ -147,13 +193,7 @@ export default function TerminalPanel() {
             {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
           </span>
           <div className="terminal-panel__actions">
-            <button
-              className="terminal-panel__grid-toggle"
-              onClick={handleGridToggle}
-              title={gridTooltip}
-            >
-              <GridIcon size={16} />
-            </button>
+            <GridLayoutPopup repoPath={activeRepo?.path ?? ''} />
             <PersonaDropdown
               disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
               onNewProvider={handleNewTerminal}
@@ -182,17 +222,20 @@ export default function TerminalPanel() {
       )}
       {allTerminals.length > 0 && (
         <div ref={gridRef} className={`terminal-grid${focusModeActive ? ' terminal-grid--focus' : ''}`} style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...(focusModeActive ? focusGridStyle : gridStyle) }}>
-          {allTerminals.map((terminal) => (
+          {allTerminals.map((terminal) => {
+            const isVisible = terminal.repoPath === activeRepo?.path
+            return (
             <div
               key={terminal.id}
-              style={{ display: terminal.repoPath === activeRepo?.path ? 'block' : 'none' }}
+              style={{ display: isVisible ? 'block' : 'none', ...(isVisible ? lastRowSpanStyles.get(terminal.id) : undefined) }}
             >
               <Terminal
                 terminalId={terminal.id}
                 onClose={() => handleCloseTerminal(terminal.id)}
               />
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

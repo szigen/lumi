@@ -4,7 +4,7 @@ State management for the renderer process.
 
 ## Stores
 - **useTerminalStore** — terminal map/output buffers, active terminal selection, repo-local last active map, global terminal event bridge, `syncFromMain()` reconciliation.
-- **useAppStore** — UI layout and modal state.
+- **useAppStore** — UI layout and modal state. Per-project grid layouts via `projectGridLayouts`, `setProjectGridLayout(repoPath, layout)`, `getActiveGridLayout()`.
 - **useRepoStore** — repositories, branches, status, additional paths.
 - **useBugStore** — bug tracker state and assistant streaming state.
 - **useNotificationStore** — toast queue.
