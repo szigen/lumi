@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, ChevronDown } from 'lucide-react'
+import { Plus, ChevronDown, SquareTerminal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../ui'
 import type { Persona } from '../../../shared/persona-types'
@@ -9,6 +9,7 @@ import { getProviderLabel } from '../../../shared/ai-provider'
 interface PersonaDropdownProps {
   disabled?: boolean
   onNewProvider: () => void
+  onNewBash: () => void
   onPersonaSelect: (persona: Persona) => void
   repoPath?: string
   onOpenChange?: (open: boolean) => void
@@ -17,6 +18,7 @@ interface PersonaDropdownProps {
 export default function PersonaDropdown({
   disabled,
   onNewProvider,
+  onNewBash,
   onPersonaSelect,
   repoPath,
   onOpenChange
@@ -71,6 +73,11 @@ export default function PersonaDropdown({
     onPersonaSelect(persona)
   }
 
+  const handleBashClick = () => {
+    setIsOpen(false)
+    onNewBash()
+  }
+
   const providerLabel = getProviderLabel(aiProvider)
 
   return (
@@ -89,7 +96,7 @@ export default function PersonaDropdown({
       </Button>
 
       <AnimatePresence>
-        {isOpen && personas.length > 0 && !disabled && (
+        {isOpen && !disabled && (
           <motion.div
             className="persona-dropdown"
             initial={{ opacity: 0, y: -4 }}
@@ -97,6 +104,16 @@ export default function PersonaDropdown({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
           >
+            <button
+              className="persona-dropdown__item"
+              onClick={handleBashClick}
+            >
+              <SquareTerminal size={14} />
+              New Bash
+            </button>
+            {personas.length > 0 && (
+              <div className="persona-dropdown__separator" />
+            )}
             {personas.map((persona) => (
               <button
                 key={persona.id}

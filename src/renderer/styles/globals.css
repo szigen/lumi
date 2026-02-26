@@ -1352,6 +1352,17 @@ body.platform-win32 .header-right {
   color: var(--text-primary);
 }
 
+.persona-dropdown__item svg {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.persona-dropdown__separator {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+
 /* Terminal Grid */
 .terminal-grid {
   flex: 1;

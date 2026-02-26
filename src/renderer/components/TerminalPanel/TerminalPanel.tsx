@@ -48,6 +48,20 @@ export default function TerminalPanel() {
     }
   }, [activeRepo, aiProvider, getTerminalCount, syncFromMain])
 
+  const handleNewBash = useCallback(async () => {
+    if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
+
+    try {
+      const result = await window.api.spawnTerminal(activeRepo.path)
+      if (result) {
+        await syncFromMain()
+        useTerminalStore.getState().setActiveTerminal(result.id)
+      }
+    } catch (error) {
+      console.error('Failed to spawn bash terminal:', error)
+    }
+  }, [activeRepo, getTerminalCount, syncFromMain])
+
   const handlePersonaSelect = useCallback(async (persona: Persona) => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
 
@@ -157,6 +171,7 @@ export default function TerminalPanel() {
             <PersonaDropdown
               disabled={repoTerminals.length >= DEFAULT_CONFIG.maxTerminals}
               onNewProvider={handleNewTerminal}
+              onNewBash={handleNewBash}
               onPersonaSelect={handlePersonaSelect}
               repoPath={activeRepo?.path}
             />
@@ -173,6 +188,7 @@ export default function TerminalPanel() {
             action={
               <PersonaDropdown
                 onNewProvider={handleNewTerminal}
+                onNewBash={handleNewBash}
                 onPersonaSelect={handlePersonaSelect}
                 repoPath={activeRepo?.path}
               />
