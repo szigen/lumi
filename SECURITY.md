@@ -8,14 +8,12 @@ Lumi is an Electron desktop application that manages AI CLI sessions. Key securi
 - **Terminal access**: AI CLI sessions run via `node-pty` in the main process. Each terminal session is scoped to a user-selected repository directory.
 - **No network server**: Lumi does not expose any local or remote HTTP/WebSocket server. All communication is local IPC within the Electron process.
 
-## Unsigned Binaries
+## Code Signing
 
-Lumi is an independent open-source project and the release binaries are **not code-signed**. This means:
+- **macOS**: Release binaries are **signed with a Developer ID Application certificate** and **notarized by Apple**. Gatekeeper will allow the app without any workaround.
+- **Windows**: Binaries are not code-signed. SmartScreen will show an "unknown publisher" warning. Click "More info" → "Run anyway".
 
-- **macOS**: Gatekeeper will block the app. You need to run `xattr -dr com.apple.quarantine /Applications/Lumi.app` before first launch.
-- **Windows**: SmartScreen will show an "unknown publisher" warning. Click "More info" → "Run anyway".
-
-We recommend verifying the download checksums from the [Releases](https://github.com/szigen/lumi/releases) page. You can also build from source to avoid unsigned binary concerns entirely.
+We recommend verifying the download checksums from the [Releases](https://github.com/szigen/lumi/releases) page. You can also build from source if you prefer.
 
 ## Reporting a Vulnerability
 

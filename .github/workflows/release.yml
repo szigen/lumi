@@ -41,8 +41,34 @@ jobs:
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y build-essential python3
+      - name: Import macOS signing certificate
+        if: runner.os == 'macOS'
+        env:
+          MAC_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain-db
+          echo "$MAC_CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
+          security create-keychain -p "" $KEYCHAIN_PATH
+          security set-keychain-settings $KEYCHAIN_PATH
+          security unlock-keychain -p "" $KEYCHAIN_PATH
+          security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MAC_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "" $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH login.keychain-db
+      - name: Store notarization credentials
+        if: runner.os == 'macOS'
+        run: |
+          xcrun notarytool store-credentials "lumi-notarize" --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_TEAM_ID }}" --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
       - run: npm ci
-      - run: ${{ matrix.build_cmd }}
+      - name: Build (macOS with notarization)
+        if: runner.os == 'macOS'
+        env:
+          APPLE_KEYCHAIN_PROFILE: lumi-notarize
+        run: ${{ matrix.build_cmd }}
+      - name: Build (non-macOS)
+        if: runner.os != 'macOS'
+        run: ${{ matrix.build_cmd }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
