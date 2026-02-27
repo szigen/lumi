@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Zap, Terminal, TestTube, Package, GitBranch, FileEdit, Plus,
-  Clock, Trash2, RotateCcw, Pencil
+  Clock, Trash2, RotateCcw, Pencil, Info
 } from 'lucide-react'
 import type { Action } from '../../../shared/action-types'
 import { useTerminalStore } from '../../stores/useTerminalStore'
@@ -57,6 +59,11 @@ export default function QuickActions() {
     entries: string[]
     position: { x: number; y: number }
   } | null>(null)
+
+  const [tooltipActionId, setTooltipActionId] = useState<string | null>(null)
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null)
+  const tooltipShowTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tooltipHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
 
@@ -139,8 +146,40 @@ export default function QuickActions() {
     await executeAndTrack(() => window.api.editAction(action.id, action.scope, activeRepo?.path))
   }, [executeAndTrack, activeRepo?.path])
 
+  const showTooltip = useCallback((actionId: string, iconEl: HTMLElement) => {
+    if (tooltipHideTimer.current) {
+      clearTimeout(tooltipHideTimer.current)
+      tooltipHideTimer.current = null
+    }
+    tooltipShowTimer.current = setTimeout(() => {
+      const rect = iconEl.getBoundingClientRect()
+      setTooltipPos({ x: rect.right, y: rect.top - 3 })
+      setTooltipActionId(actionId)
+    }, 300)
+  }, [])
+
+  const hideTooltip = useCallback(() => {
+    if (tooltipShowTimer.current) {
+      clearTimeout(tooltipShowTimer.current)
+      tooltipShowTimer.current = null
+    }
+    tooltipHideTimer.current = setTimeout(() => {
+      setTooltipActionId(null)
+      setTooltipPos(null)
+    }, 150)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (tooltipShowTimer.current) clearTimeout(tooltipShowTimer.current)
+      if (tooltipHideTimer.current) clearTimeout(tooltipHideTimer.current)
+    }
+  }, [])
+
   const userActions = actions.filter((a) => a.scope === 'user')
   const projectActions = actions.filter((a) => a.scope === 'project')
+
+  const tooltipAction = tooltipActionId ? actions.find((a) => a.id === tooltipActionId) : null
 
   const renderActionButton = (action: Action) => (
     <button
@@ -149,10 +188,18 @@ export default function QuickActions() {
       onClick={() => handleAction(action)}
       onContextMenu={(e) => handleContextMenu(e, action)}
       disabled={!activeRepo}
-      title={action.label}
     >
       {ICON_MAP[action.icon] || <Zap size={16} />}
       <span>{action.label}</span>
+      {action.description && (
+        <span
+          className="action-btn__info"
+          onMouseEnter={(e) => showTooltip(action.id, e.currentTarget as HTMLElement)}
+          onMouseLeave={hideTooltip}
+        >
+          <Info size={12} />
+        </span>
+      )}
     </button>
   )
 
@@ -226,6 +273,25 @@ export default function QuickActions() {
             onClick: () => handleRestore(historyPanel.actionId, entry)
           }))}
         />
+      )}
+
+      {createPortal(
+        <AnimatePresence>
+          {tooltipAction?.description && tooltipPos && (
+            <motion.div
+              className="action-tooltip"
+              style={{ left: tooltipPos.x, top: tooltipPos.y }}
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -4 }}
+              transition={{ duration: 0.15 }}
+            >
+              {tooltipAction.description}
+              <span className="action-tooltip__caret" />
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </div>
   )

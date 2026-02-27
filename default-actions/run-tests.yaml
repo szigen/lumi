@@ -1,5 +1,6 @@
 id: run-tests
 label: Run Tests
+description: Detects and runs the project's test suite (npm test, pytest, etc.)
 icon: TestTube
 scope: user
 claude:

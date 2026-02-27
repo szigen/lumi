@@ -885,6 +885,7 @@ body.platform-win32 .header-right {
 }
 
 .action-btn {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
@@ -912,6 +913,52 @@ body.platform-win32 .header-right {
 
 .action-btn:hover:not(:disabled) svg {
   color: var(--text-primary);
+}
+
+.action-btn__info {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+.action-btn__info:hover {
+  opacity: 0.8;
+  color: var(--text-secondary);
+}
+
+/* Action Tooltip (Portal — rendered on document.body) */
+.action-tooltip {
+  position: fixed;
+  margin-left: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  max-width: 220px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  white-space: normal;
+  line-height: 1.4;
+  z-index: 99999;
+}
+
+.action-tooltip__caret {
+  position: absolute;
+  left: -5px;
+  top: 5px;
+  transform: rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .action-divider {

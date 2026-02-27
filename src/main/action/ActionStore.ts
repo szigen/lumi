@@ -92,6 +92,7 @@ export class ActionStore {
           actions.push({
             id: parsed.id as string,
             label: parsed.label as string,
+            description: parsed.description as string | undefined,
             icon: (parsed.icon as string) || 'Zap',
             scope,
             provider: parsed.provider as AIProvider | undefined,

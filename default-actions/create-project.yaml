@@ -1,5 +1,6 @@
 id: create-project
 label: Create New Project
+description: Creates a new project folder with CLAUDE.md template and git initialization
 icon: Package
 scope: user
 steps:

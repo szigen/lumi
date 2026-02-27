@@ -1,5 +1,6 @@
 id: update-claude-md
 label: Update CLAUDE.md
+description: Reads recent git changes and updates CLAUDE.md to reflect the current state of the codebase
 icon: FileEdit
 scope: user
 claude:
