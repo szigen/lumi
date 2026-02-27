@@ -1978,13 +1978,13 @@ body.platform-win32 .header-right {
 }
 
 .settings-modal {
-  width: 640px;
-  max-height: 520px;
+  width: 700px;
+  max-height: 560px;
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border-radius: 16px;
   box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
@@ -1998,7 +1998,7 @@ body.platform-win32 .header-right {
 }
 
 .settings-modal__title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -2029,21 +2029,22 @@ body.platform-win32 .header-right {
 .settings-nav {
   width: 180px;
   flex-shrink: 0;
-  padding: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-md);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 2px;
 }
 
 .settings-nav__item {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
+  padding: 10px;
+  border-radius: var(--radius-lg);
   color: var(--text-secondary);
   font-size: 13px;
+  font-weight: 500;
   transition: all 0.15s ease;
   text-align: left;
 }
@@ -2054,7 +2055,7 @@ body.platform-win32 .header-right {
 }
 
 .settings-nav__item--active {
-  background: var(--bg-elevated);
+  background: rgba(139, 92, 246, 0.08);
   color: var(--accent-primary);
 }
 
@@ -2066,11 +2067,11 @@ body.platform-win32 .header-right {
 .settings-content {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-2xl);
 }
 
 .settings-section__title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: var(--spacing-xs);
@@ -2079,15 +2080,19 @@ body.platform-win32 .header-right {
 .settings-section__desc {
   font-size: 12px;
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
 }
 
 .settings-field {
   margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid rgba(42, 42, 74, 0.3);
 }
 
 .settings-field:last-child {
   margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .settings-label {
@@ -2226,6 +2231,48 @@ body.platform-win32 .header-right {
   background: white;
 }
 
+/* Info Card */
+.settings-info-card {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: var(--radius-md);
+}
+
+.settings-info-card__icon {
+  color: var(--accent-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.settings-info-card__text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Frequency Input */
+.settings-frequency {
+  margin-top: var(--spacing-md);
+  padding-left: var(--spacing-xl);
+}
+
+.settings-frequency__input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.settings-frequency__unit {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* Shortcuts List */
 .shortcuts-list {
   display: flex;
@@ -2281,11 +2328,11 @@ body.platform-win32 .header-right {
 }
 
 .settings-save-btn {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-xl);
   background: var(--accent-vivid);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   color: white;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   transition: all 0.15s ease;
 }

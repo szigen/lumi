@@ -44,6 +44,7 @@ export function setupIpcHandlers(): void {
   const configManager = new ConfigManager()
   const config = configManager.getConfig()
   const notificationManager = new NotificationManager()
+  notificationManager.updateSettings(config.notifications)
   const newTerminalManager = new TerminalManager(config.maxTerminals, notificationManager, configManager)
   const newRepoManager = new RepoManager(config.projectsRoot, config.additionalPaths || [])
   terminalManager = newTerminalManager

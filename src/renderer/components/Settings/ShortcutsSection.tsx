@@ -12,6 +12,7 @@ const SHORTCUTS = [
   { keys: isMac ? '⌘ ⇧ →' : 'Ctrl+Shift+→', action: 'Next Terminal' },
   { keys: `${mod}+,`, action: 'Settings' },
   { keys: isMac ? '⌘ ⇧ F' : 'Ctrl+Shift+F', action: 'Focus Mode' },
+  { keys: `${mod}+Q`, action: 'Quit' },
 ]
 
 export default function ShortcutsSection() {

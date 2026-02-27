@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Folder, TerminalSquare, Palette, Keyboard } from 'lucide-react'
+import { X, Folder, TerminalSquare, Palette, Bell, Keyboard } from 'lucide-react'
 import { useAppStore } from '../../stores/useAppStore'
 import { DEFAULT_CONFIG } from '../../../shared/constants'
 import type { Config, UIState } from '../../../shared/types'
@@ -8,13 +8,15 @@ import GeneralSection from './GeneralSection'
 import TerminalSection from './TerminalSection'
 import AppearanceSection from './AppearanceSection'
 import ShortcutsSection from './ShortcutsSection'
+import NotificationsSection from './NotificationsSection'
 
-type SectionId = 'general' | 'terminal' | 'appearance' | 'shortcuts'
+type SectionId = 'general' | 'terminal' | 'appearance' | 'notifications' | 'shortcuts'
 
 const SECTIONS: { id: SectionId; label: string; icon: React.ReactNode }[] = [
   { id: 'general', label: 'General', icon: <Folder size={16} /> },
   { id: 'terminal', label: 'Terminal', icon: <TerminalSquare size={16} /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
   { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={16} /> },
 ]
 
@@ -124,16 +126,29 @@ export default function SettingsModal() {
               </nav>
 
               <div className="settings-content">
-                {activeSection === 'general' && (
-                  <GeneralSection config={config} onChange={handleConfigChange} />
-                )}
-                {activeSection === 'terminal' && (
-                  <TerminalSection config={config} onChange={handleConfigChange} />
-                )}
-                {activeSection === 'appearance' && (
-                  <AppearanceSection uiDefaults={uiDefaults} onChange={handleUIChange} />
-                )}
-                {activeSection === 'shortcuts' && <ShortcutsSection />}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeSection}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    {activeSection === 'general' && (
+                      <GeneralSection config={config} onChange={handleConfigChange} />
+                    )}
+                    {activeSection === 'terminal' && (
+                      <TerminalSection config={config} onChange={handleConfigChange} />
+                    )}
+                    {activeSection === 'appearance' && (
+                      <AppearanceSection uiDefaults={uiDefaults} onChange={handleUIChange} />
+                    )}
+                    {activeSection === 'notifications' && (
+                      <NotificationsSection config={config} onChange={handleConfigChange} />
+                    )}
+                    {activeSection === 'shortcuts' && <ShortcutsSection />}
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </div>
 

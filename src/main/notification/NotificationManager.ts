@@ -1,13 +1,34 @@
 import { BrowserWindow, Notification } from 'electron'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
+import { DEFAULT_NOTIFICATION_SETTINGS } from '../../shared/constants'
+import type { NotificationSettings } from '../../shared/types'
 import { safeSend } from '../safeSend'
-
-const UNSEEN_INTERVAL_MS = 60_000   // 1 minute
-const SEEN_INTERVAL_MS = 300_000    // 5 minutes
 
 export class NotificationManager {
   private intervals: Map<string, ReturnType<typeof setInterval>> = new Map()
   private terminalContext: Map<string, { window: BrowserWindow; repoPath: string }> = new Map()
+  private terminalStatuses: Map<string, string> = new Map()
+  private settings: NotificationSettings = DEFAULT_NOTIFICATION_SETTINGS
+
+  updateSettings(settings: NotificationSettings): void {
+    this.settings = settings
+
+    // Re-create intervals for all tracked terminals with new settings
+    for (const [terminalId, status] of this.terminalStatuses) {
+      const ctx = this.terminalContext.get(terminalId)
+      if (!ctx || ctx.window.isDestroyed()) continue
+
+      this.clearInterval(terminalId)
+
+      if (status === 'waiting-unseen' && this.settings.unseenEnabled) {
+        const ms = this.settings.unseenIntervalMinutes * 60_000
+        this.startInterval(terminalId, ms, 'Assistant is waiting for input')
+      } else if (status === 'waiting-seen' && this.settings.seenEnabled) {
+        const ms = this.settings.seenIntervalMinutes * 60_000
+        this.startInterval(terminalId, ms, 'Assistant is still waiting for input')
+      }
+    }
+  }
 
   notifyStatusChange(
     terminalId: string,
@@ -18,16 +39,19 @@ export class NotificationManager {
     if (window.isDestroyed()) return
 
     this.terminalContext.set(terminalId, { window, repoPath })
+    this.terminalStatuses.set(terminalId, status)
 
     // Clear any existing interval for this terminal
     this.clearInterval(terminalId)
 
-    if (status === 'waiting-unseen') {
+    if (status === 'waiting-unseen' && this.settings.unseenEnabled) {
+      const ms = this.settings.unseenIntervalMinutes * 60_000
       this.sendNotification(terminalId, 'Assistant is waiting for input')
-      this.startInterval(terminalId, UNSEEN_INTERVAL_MS, 'Assistant is waiting for input')
-    } else if (status === 'waiting-seen') {
+      this.startInterval(terminalId, ms, 'Assistant is waiting for input')
+    } else if (status === 'waiting-seen' && this.settings.seenEnabled) {
+      const ms = this.settings.seenIntervalMinutes * 60_000
       // Don't send immediately on seen transition (user already saw it), just start repeat
-      this.startInterval(terminalId, SEEN_INTERVAL_MS, 'Assistant is still waiting for input')
+      this.startInterval(terminalId, ms, 'Assistant is still waiting for input')
     } else if (status === 'error') {
       this.sendNotification(terminalId, 'Assistant exited with error')
     }
@@ -37,6 +61,7 @@ export class NotificationManager {
   removeTerminal(terminalId: string): void {
     this.clearInterval(terminalId)
     this.terminalContext.delete(terminalId)
+    this.terminalStatuses.delete(terminalId)
   }
 
   private startInterval(terminalId: string, ms: number, title: string): void {

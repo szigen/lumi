@@ -7,6 +7,7 @@ Modal with tabbed navigation for app configuration.
 - **GeneralSection.tsx** — Projects root path, theme selection, delegates additional paths to child
 - **TerminalSection.tsx** — Max terminals slider, font size control
 - **AppearanceSection.tsx** — Sidebar default open/close toggles
+- **NotificationsSection.tsx** — Notification toggles (unseen/seen) with frequency inputs
 - **ShortcutsSection.tsx** — Read-only keyboard shortcut reference
 - **AdditionalPathsField.tsx** — CRUD for additional scan paths (add root/repo, edit label, remove)
 
