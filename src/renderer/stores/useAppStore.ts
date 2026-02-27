@@ -5,6 +5,10 @@ import type { AIProvider } from '../../shared/ai-provider'
 import { useTerminalStore } from './useTerminalStore'
 import { useRepoStore } from './useRepoStore'
 
+/** Stable reference for the default grid layout — prevents infinite re-render
+ *  loops caused by useSyncExternalStore detecting new object references. */
+const DEFAULT_GRID_LAYOUT: GridLayout = { mode: 'auto', count: 2 }
+
 interface AppState extends UIState {
   settingsOpen: boolean
   quitDialogOpen: boolean
@@ -126,10 +130,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   getActiveGridLayout: () => {
     const { activeTab, projectGridLayouts } = get()
-    if (!activeTab) return { mode: 'auto', count: 2 }
+    if (!activeTab) return DEFAULT_GRID_LAYOUT
     const repo = useRepoStore.getState().getRepoByName(activeTab)
-    if (!repo) return { mode: 'auto', count: 2 }
-    return projectGridLayouts[repo.path] ?? { mode: 'auto', count: 2 }
+    if (!repo) return DEFAULT_GRID_LAYOUT
+    return projectGridLayouts[repo.path] ?? DEFAULT_GRID_LAYOUT
   },
 
   setActiveView: (view) => {
