@@ -54,7 +54,7 @@ export default function TerminalPanel() {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return
 
     try {
-      const result = await window.api.spawnTerminal(activeRepo.path)
+      const result = await window.api.spawnTerminal(activeRepo.path, 'Bash')
       if (result) {
         await syncFromMain()
         useTerminalStore.getState().setActiveTerminal(result.id)

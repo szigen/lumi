@@ -18,7 +18,12 @@ const config: Configuration = {
   mac: {
     target: ['dmg', 'zip'],
     artifactName: '${productName}-${version}-${arch}-mac.${ext}',
-    category: 'public.app-category.developer-tools'
+    category: 'public.app-category.developer-tools',
+    hardenedRuntime: true,
+    gatekeeperAssess: false,
+    entitlements: 'build/entitlements.mac.plist',
+    entitlementsInherit: 'build/entitlements.mac.inherit.plist',
+    notarize: true
   },
   win: {
     target: ['nsis', 'portable']

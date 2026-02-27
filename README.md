@@ -60,19 +60,11 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 **DMG (recommended):**
 1. Download the `.dmg` file
 2. Open it and drag **Lumi** into your **Applications** folder
-3. Since Lumi is unsigned, macOS Gatekeeper will block it. Remove the quarantine attribute:
-   ```bash
-   xattr -dr com.apple.quarantine /Applications/Lumi.app
-   ```
-4. Launch Lumi and select a repository to start
+3. Launch Lumi and select a repository to start
 
 **Portable (ZIP):**
 1. Extract the `.zip` file
-2. Remove the quarantine attribute:
-   ```bash
-   xattr -dr com.apple.quarantine Lumi.app
-   ```
-3. Run `Lumi.app` directly — no installation needed
+2. Run `Lumi.app` directly — no installation needed
 
 </details>
 

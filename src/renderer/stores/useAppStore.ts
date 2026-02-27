@@ -5,6 +5,13 @@ import type { AIProvider } from '../../shared/ai-provider'
 import { useTerminalStore } from './useTerminalStore'
 import { useRepoStore } from './useRepoStore'
 
+/** Debounced saveUIState — prevents concurrent IPC/filesystem writes on rapid interactions */
+let saveUIStateTimeout: ReturnType<typeof setTimeout> | null = null
+function debouncedSaveUIState(save: () => Promise<void>) {
+  if (saveUIStateTimeout) clearTimeout(saveUIStateTimeout)
+  saveUIStateTimeout = setTimeout(save, 500)
+}
+
 /** Stable reference for the default grid layout — prevents infinite re-render
  *  loops caused by useSyncExternalStore detecting new object references. */
 const DEFAULT_GRID_LAYOUT: GridLayout = { mode: 'auto', count: 2 }
@@ -122,10 +129,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setProjectGridLayout: (repoPath, layout) => {
+    if (!repoPath) return
     set((state) => ({
       projectGridLayouts: { ...state.projectGridLayouts, [repoPath]: layout }
     }))
-    get().saveUIState()
+    debouncedSaveUIState(() => get().saveUIState())
   },
 
   getActiveGridLayout: () => {

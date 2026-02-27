@@ -12,8 +12,8 @@ interface GridLayoutPopupProps {
 const COUNTS = [2, 3, 4, 5] as const
 
 export default function GridLayoutPopup({ repoPath, iconSize = 16 }: GridLayoutPopupProps) {
-  const { getActiveGridLayout, setProjectGridLayout } = useAppStore()
-  const layout = getActiveGridLayout()
+  const layout = useAppStore((s) => s.getActiveGridLayout())
+  const setProjectGridLayout = useAppStore((s) => s.setProjectGridLayout)
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
