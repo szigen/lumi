@@ -36,8 +36,6 @@ interface AppState extends UIState {
   closeTab: (repoName: string) => void
   setProjectGridLayout: (repoPath: string, layout: GridLayout) => void
   getActiveGridLayout: () => GridLayout
-  setActiveView: (view: 'terminals' | 'bugs') => void
-  toggleBugView: () => void
   toggleLeftSidebar: () => void
   toggleRightSidebar: () => void
   toggleGroupCollapse: (groupKey: string) => void
@@ -144,15 +142,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     return projectGridLayouts[repo.path] ?? DEFAULT_GRID_LAYOUT
   },
 
-  setActiveView: (view) => {
-    set({ activeView: view })
-    get().saveUIState()
-  },
-  toggleBugView: () => {
-    set((s) => ({ activeView: s.activeView === 'bugs' ? 'terminals' : 'bugs' }))
-    get().saveUIState()
-  },
-
   toggleLeftSidebar: () => {
     set((state) => ({ leftSidebarOpen: !state.leftSidebarOpen }))
     get().saveUIState()
@@ -191,9 +180,9 @@ export const useAppStore = create<AppState>((set, get) => ({
             const repo = repos.find(r => r.name === tab)
             if (repo) projectGridLayouts[repo.path] = layout
           }
-          set({ ...state, projectGridLayouts, activeView: 'terminals' })
+          set({ ...state, projectGridLayouts })
         } else {
-          set({ ...state, activeView: 'terminals' })
+          set({ ...state })
         }
       }
     } catch (error) {
@@ -202,9 +191,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   saveUIState: async () => {
-    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, projectGridLayouts, activeView } = get()
+    const { openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, projectGridLayouts } = get()
     try {
-      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, projectGridLayouts, activeView })
+      await window.api.setUIState({ openTabs, activeTab, leftSidebarOpen, rightSidebarOpen, projectGridLayouts })
     } catch (error) {
       console.error('Failed to save UI state:', error)
     }

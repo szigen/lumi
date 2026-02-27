@@ -85,7 +85,6 @@ export interface UIState {
   leftSidebarOpen: boolean
   rightSidebarOpen: boolean
   projectGridLayouts: Record<string, GridLayout>
-  activeView: 'terminals' | 'bugs'
   windowBounds?: { x: number; y: number; width: number; height: number }
   windowMaximized?: boolean
 }

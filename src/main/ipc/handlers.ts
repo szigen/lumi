@@ -7,17 +7,14 @@ import { ActionStore } from '../action/ActionStore'
 import { ActionEngine } from '../action/ActionEngine'
 import { PersonaStore } from '../persona/PersonaStore'
 import { SystemChecker } from '../system/SystemChecker'
-import { BugStorage } from '../bug/bug-storage'
 import { IPC_CHANNELS } from '../../shared/ipc-channels'
 import { safeSend } from '../safeSend'
 import type { AIProvider } from '../../shared/ai-provider'
-import { AssistantOrchestrator } from '../assistant/AssistantOrchestrator'
 import { registerTerminalHandlers } from './handlers/register-terminal-handlers'
 import { registerRepoGitHandlers } from './handlers/register-repo-git-handlers'
 import { registerConfigWindowHandlers } from './handlers/register-config-window-handlers'
 import { registerActionPersonaHandlers } from './handlers/register-action-persona-handlers'
 import { registerSystemHandlers } from './handlers/register-system-handlers'
-import { registerBugHandlers } from './handlers/register-bug-handlers'
 import type { IpcHandlerContext } from './handlers/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -58,20 +55,6 @@ export function setupIpcHandlers(): void {
   actionEngine = newActionEngine
 
   const systemChecker = new SystemChecker(() => getActiveProvider(configManager))
-  const bugStorage = new BugStorage()
-
-  const assistantOrchestrator = new AssistantOrchestrator({
-    getProvider: () => getActiveProvider(configManager),
-    emitDelta: (bugId, text) => {
-      safeSend(mainWindow, IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DELTA, bugId, text)
-    },
-    emitDone: (bugId, fullText, error) => {
-      safeSend(mainWindow, IPC_CHANNELS.BUGS_ASSISTANT_STREAM_DONE, bugId, fullText, error)
-    },
-    emitActivity: (bugId, activity) => {
-      safeSend(mainWindow, IPC_CHANNELS.BUGS_ASSISTANT_STREAM_ACTIVITY, bugId, activity)
-    }
-  })
 
   newActionStore.setOnChange(() => {
     safeSend(mainWindow, IPC_CHANNELS.ACTIONS_CHANGED)
@@ -101,8 +84,6 @@ export function setupIpcHandlers(): void {
     actionEngine: newActionEngine,
     personaStore: newPersonaStore,
     systemChecker,
-    bugStorage,
-    assistantOrchestrator,
     getActiveProvider: () => getActiveProvider(configManager)
   }
 
@@ -111,5 +92,4 @@ export function setupIpcHandlers(): void {
   registerConfigWindowHandlers(context)
   registerActionPersonaHandlers(context)
   registerSystemHandlers(context)
-  registerBugHandlers(context)
 }

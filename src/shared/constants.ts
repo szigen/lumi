@@ -13,7 +13,6 @@ export const DEFAULT_UI_STATE = {
   leftSidebarOpen: true,
   rightSidebarOpen: false,
   projectGridLayouts: {} as Record<string, import('./types').GridLayout>,
-  activeView: 'terminals' as const,
   windowBounds: undefined as { x: number; y: number; width: number; height: number } | undefined,
   windowMaximized: false
 }

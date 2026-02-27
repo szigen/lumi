@@ -6,7 +6,6 @@ State management for the renderer process.
 - **useTerminalStore** — terminal map/output buffers, active terminal selection, repo-local last active map, global terminal event bridge, `syncFromMain()` reconciliation.
 - **useAppStore** — UI layout and modal state. Per-project grid layouts via `projectGridLayouts`, `setProjectGridLayout(repoPath, layout)`, `getActiveGridLayout()`.
 - **useRepoStore** — repositories, branches, status, additional paths.
-- **useBugStore** — bug tracker state and assistant streaming state.
 - **useNotificationStore** — toast queue.
 
 ## Rules
@@ -24,7 +23,6 @@ State management for the renderer process.
 ## Watch Out
 - Terminal bridge listener lifetime is app-level, not terminal-panel-level.
 - `useAppStore.setActiveTab` and `closeTab` cross-reference terminal/repo stores; keep side effects minimal and deterministic.
-- Bug assistant stream handlers append large text and activities in-memory; avoid unnecessary re-subscriptions.
 - `syncFromMain()` uses a `pendingSync` flag to queue re-syncs requested while a sync is in progress — never silently drops requests.
 - `setProjectGridLayout` is debounced (500ms) to prevent concurrent IPC writes on rapid clicks. It also guards against empty `repoPath`.
 - `loadUIState` migration reads `useRepoStore.getState().repos` — callers must ensure `loadRepos()` completes before `loadUIState()`.

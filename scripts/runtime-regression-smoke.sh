@@ -37,11 +37,7 @@ required_files=(
   "src/main/ipc/handlers/register-config-window-handlers.ts"
   "src/main/ipc/handlers/register-action-persona-handlers.ts"
   "src/main/ipc/handlers/register-system-handlers.ts"
-  "src/main/ipc/handlers/register-bug-handlers.ts"
   "src/main/ipc/handlers/types.ts"
-  "src/main/assistant/AssistantOrchestrator.ts"
-  "src/main/assistant/parsers/ClaudeStreamParser.ts"
-  "src/main/assistant/parsers/CodexStreamParser.ts"
 )
 
 for file in "${required_files[@]}"; do
