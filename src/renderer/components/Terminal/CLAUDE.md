@@ -17,6 +17,7 @@ xterm.js wrapper per session. Logic decomposed into hooks, constants, and utilit
 ## Watch Out
 - xterm init guards on `containerRef.current` existing — won't create if DOM not ready
 - `useXTermInstance` requires `allowProposedApi: true` for Unicode11Addon
+- Ctrl+Shift+V paste handler uses an `isPasting` lock to block input while the async clipboard read is in flight, preventing keystroke ordering issues
 - WebGL addon wrapped in try/catch — silently falls back to canvas renderer
 - Output replay is driven by store state; global terminal bridge in `useTerminalStore` owns IPC listeners
 - `useTerminalOutputRenderer` must use `xtermReady` guard so restore cannot race with xterm initialization

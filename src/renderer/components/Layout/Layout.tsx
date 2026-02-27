@@ -64,11 +64,9 @@ export default function Layout() {
         }
         const config = await window.api.getConfig()
         setAiProvider(((config as Record<string, unknown>).aiProvider as 'claude' | 'codex') || 'claude')
-        await Promise.all([
-          loadUIState(),
-          loadRepos(),
-          loadAdditionalPaths()
-        ])
+        await Promise.all([loadRepos(), loadAdditionalPaths()])
+        // loadUIState must run after loadRepos — migration reads repos
+        await loadUIState()
         // Sync terminal state from main process on startup
         await syncFromMain()
       } catch (error) {
@@ -114,7 +112,8 @@ export default function Layout() {
     try {
       const config = await window.api.getConfig()
       setAiProvider(((config as Record<string, unknown>).aiProvider as 'claude' | 'codex') || 'claude')
-      await Promise.all([loadUIState(), loadRepos(), loadAdditionalPaths()])
+      await Promise.all([loadRepos(), loadAdditionalPaths()])
+      await loadUIState()
       await syncFromMain()
     } catch (error) {
       console.error('Failed to initialize after setup:', error)

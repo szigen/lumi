@@ -58,7 +58,7 @@ function createWindow(): void {
     ...(useSavedBounds ? { x: savedBounds!.x, y: savedBounds!.y } : {}),
     minWidth: 1000,
     minHeight: 600,
-    acceptFirstMouse: true,
+    ...(isMac ? { acceptFirstMouse: true } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,

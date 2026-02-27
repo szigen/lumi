@@ -9,6 +9,7 @@ interface TerminalState {
   activeTerminalId: string | null
   lastActiveByRepo: Map<string, string>
   syncing: boolean
+  pendingSync: boolean
 
   removeTerminal: (id: string) => void
   updateTerminal: (id: string, updates: Partial<Terminal>) => void
@@ -124,6 +125,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   activeTerminalId: null,
   lastActiveByRepo: new Map(),
   syncing: false,
+  pendingSync: false,
 
   removeTerminal: (id) => {
     set((state) => {
@@ -242,8 +244,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   },
 
   syncFromMain: async () => {
-    if (get().syncing) return
-    set({ syncing: true })
+    if (get().syncing) {
+      // A sync is in progress — schedule a re-sync after it completes
+      set({ pendingSync: true })
+      return
+    }
+    set({ syncing: true, pendingSync: false })
 
     try {
       const snapshots = await window.api.getTerminalSnapshots()
@@ -268,6 +274,10 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       set({ terminals, outputs, activeTerminalId, lastActiveByRepo })
     } finally {
       set({ syncing: false })
+      // If a sync was requested while we were busy, run it now
+      if (get().pendingSync) {
+        get().syncFromMain()
+      }
     }
   }
 }))

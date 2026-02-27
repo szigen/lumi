@@ -25,3 +25,6 @@ State management for the renderer process.
 - Terminal bridge listener lifetime is app-level, not terminal-panel-level.
 - `useAppStore.setActiveTab` and `closeTab` cross-reference terminal/repo stores; keep side effects minimal and deterministic.
 - Bug assistant stream handlers append large text and activities in-memory; avoid unnecessary re-subscriptions.
+- `syncFromMain()` uses a `pendingSync` flag to queue re-syncs requested while a sync is in progress — never silently drops requests.
+- `setProjectGridLayout` is debounced (500ms) to prevent concurrent IPC writes on rapid clicks. It also guards against empty `repoPath`.
+- `loadUIState` migration reads `useRepoStore.getState().repos` — callers must ensure `loadRepos()` completes before `loadUIState()`.

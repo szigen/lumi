@@ -53,7 +53,11 @@ export function useXTermInstance(
 
     // Windows/Linux: Ctrl+Shift+C → copy, Ctrl+Shift+V → paste
     if (window.api.platform !== 'darwin') {
+      let isPasting = false
       xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+        // Block input while an async paste is in flight to prevent ordering issues
+        if (isPasting) return false
+
         if (e.ctrlKey && e.shiftKey && e.type === 'keydown') {
           if (e.key === 'C' || e.key === 'c') {
             e.preventDefault()
@@ -65,8 +69,11 @@ export function useXTermInstance(
           }
           if (e.key === 'V' || e.key === 'v') {
             e.preventDefault()
+            isPasting = true
             navigator.clipboard.readText().then((text) => {
               xterm.paste(text)
+            }).finally(() => {
+              isPasting = false
             })
             return false
           }
