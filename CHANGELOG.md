@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2026-02-27
+
+### Added
+
+- macOS code signing with Developer ID Application certificate
+- Apple notarization via GitHub Actions release workflow
+
+### Fixed
+
+- Ctrl+Shift+V paste handler uses isPasting lock to prevent keystroke ordering
+- syncFromMain queues re-syncs instead of dropping concurrent requests
+- setProjectGridLayout debounced to prevent concurrent IPC writes
+- loadUIState ordering — loadRepos must complete first
+- GridLayoutPopup uses selectors to avoid re-render loops
+- acceptFirstMouse restricted to macOS only
+
 ## [0.1.5] - 2026-02-27
 
 ### Fixed
