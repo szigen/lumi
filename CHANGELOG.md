@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.8] - 2026-02-28
+
+### Added
+
+- Configurable notification settings with separate intervals for seen/unseen notifications
+- Action description tooltips with info icon in actions panel
+
+### Changed
+
+- Improved startup logic and enhanced ErrorBoundary error UI
+- Better ShortcutsSection grid layout and styling
+
+### Removed
+
+- BugTracker feature entirely (components, parsers, store, IPC handlers)
+
+### Fixed
+
+- Settings modal height constraint
+- Shortcuts grid layout alignment
+
 ## [0.1.6] - 2026-02-27
 
 ### Added
