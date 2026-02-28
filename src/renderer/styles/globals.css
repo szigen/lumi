@@ -1979,7 +1979,7 @@ body.platform-win32 .header-right {
 
 .settings-modal {
   width: 700px;
-  max-height: 560px;
+  height: 600px;
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
@@ -2273,20 +2273,27 @@ body.platform-win32 .header-right {
   color: var(--text-muted);
 }
 
-/* Shortcuts List */
+/* Shortcuts Grid */
 .shortcuts-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
 }
 
 .shortcut-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-sm);
   background: var(--bg-deep);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  transition: background 0.15s ease;
+}
+
+.shortcut-item:hover {
+  background: var(--bg-elevated);
 }
 
 .shortcut-keys {
@@ -2294,14 +2301,15 @@ body.platform-win32 .header-right {
   font-family: inherit;
   color: var(--accent-primary);
   background: var(--bg-elevated);
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .shortcut-action {
-  font-size: 12px;
-  color: var(--text-secondary);
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* Footer */
