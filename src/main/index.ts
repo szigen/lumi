@@ -58,6 +58,8 @@ function createWindow(): void {
     ...(useSavedBounds ? { x: savedBounds!.x, y: savedBounds!.y } : {}),
     minWidth: 1000,
     minHeight: 600,
+    show: false,
+    backgroundColor: '#0a0a12',
     ...(isMac ? { acceptFirstMouse: true } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -67,10 +69,12 @@ function createWindow(): void {
     ...getWindowConfig()
   })
 
-  // Restore maximized state after window creation
-  if (uiState.windowMaximized) {
-    mainWindow.maximize()
-  }
+  mainWindow.once('ready-to-show', () => {
+    if (uiState.windowMaximized) {
+      mainWindow?.maximize()
+    }
+    mainWindow?.show()
+  })
 
   setMainWindow(mainWindow)
 
@@ -137,9 +141,24 @@ function createWindow(): void {
 
   mainWindow.webContents.on('did-fail-load', (_, code, desc, url) => {
     console.error(`Renderer failed to load: ${code} ${desc} (${url})`)
+    if (code !== -3) {
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.reload()
+        }
+      }, 1000)
+    }
   })
+
   mainWindow.webContents.on('render-process-gone', (_, details) => {
     console.error('Renderer process gone:', details.reason)
+    if (details.reason === 'crashed' || details.reason === 'oom') {
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.reload()
+        }
+      }, 1000)
+    }
   })
 
   if (process.env.NODE_ENV === 'development') {

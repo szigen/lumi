@@ -51,7 +51,7 @@
 
 html, body {
   height: 100%;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'SF Mono', 'Menlo', 'Consolas', monospace;
   font-size: 13px;
   line-height: 1.5;
   background: var(--bg-deep);
@@ -63,6 +63,7 @@ html, body {
 
 #root {
   height: 100%;
+  background: var(--bg-deep);
 }
 
 button {
@@ -1080,7 +1081,7 @@ body.platform-win32 .header-right {
 .commit-hash {
   font-size: 11px;
   color: var(--accent-cyan);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'SF Mono', 'Menlo', 'Consolas', monospace;
 }
 
 .commit-message {
@@ -1476,7 +1477,8 @@ body.platform-win32 .header-right {
   top: 100%;
   right: 0;
   margin-top: 4px;
-  min-width: 160px;
+  min-width: 100%;
+  max-width: 220px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -1498,6 +1500,9 @@ body.platform-win32 .header-right {
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .persona-dropdown__item:hover {
@@ -2273,22 +2278,23 @@ body.platform-win32 .header-right {
   color: var(--text-muted);
 }
 
-/* Shortcuts Grid */
+/* Shortcuts List */
 .shortcuts-list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .shortcut-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md) var(--spacing-sm);
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  padding: 10px var(--spacing-lg);
   background: var(--bg-deep);
-  border-radius: var(--radius-lg);
-  text-align: center;
   transition: background 0.15s ease;
 }
 
@@ -2296,20 +2302,54 @@ body.platform-win32 .header-right {
   background: var(--bg-elevated);
 }
 
-.shortcut-keys {
-  font-size: 12px;
-  font-family: inherit;
-  color: var(--accent-primary);
-  background: var(--bg-elevated);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+.shortcut-action {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
   white-space: nowrap;
 }
 
-.shortcut-action {
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.shortcut-keys__group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.shortcut-keys__separator {
   font-size: 11px;
   color: var(--text-muted);
+  margin: 0 2px;
+}
+
+.shortcut-combo {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.shortcut-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-family: inherit;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* Footer */
