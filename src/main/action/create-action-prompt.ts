@@ -34,6 +34,7 @@ Three step types:
 
 id: kebab-case-id
 label: Display Name
+description: One or two sentences explaining what this action does for someone who has never seen it
 icon: Terminal | TestTube | Package | GitBranch | FileEdit | Zap
 scope: user | project
 steps:
@@ -126,6 +127,7 @@ steps:
 4. Keep it minimal. If a single claude step achieves the goal, do not add extra steps.
 5. Every write step content MUST end with \\r to press Enter. The content MUST use double quotes in YAML so \\r is interpreted as carriage return.
 6. The terminal is zsh. Use zsh-compatible syntax: \`read "var?prompt"\` instead of \`read -p "prompt" var\`, \`\${PWD:h}\` instead of \`dirname "$PWD"\`.
+7. Every action MUST have a \`description\` field — a concise (1-2 sentence) explanation shown as a tooltip in the sidebar.
 
 # Icon Guide
 
@@ -142,5 +144,6 @@ steps:
 2. Determine scope: Is this useful across all repos (user) or specific to this project (project)?
 3. Design the step sequence — choose the simplest approach that works reliably.
 4. Select the most fitting icon from the list above.
-5. Write the YAML file directly to the correct path. Do NOT show the YAML and ask for confirmation — just create the file immediately.
+5. Write a concise description (1-2 sentences) explaining what this action does — written for someone who has never seen it before. This appears as a tooltip in the sidebar.
+6. Write the YAML file directly to the correct path. Do NOT show the YAML and ask for confirmation — just create the file immediately.
 `

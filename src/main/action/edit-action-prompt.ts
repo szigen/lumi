@@ -47,6 +47,7 @@ Three step types:
 
 id: kebab-case-id
 label: Display Name
+description: One or two sentences explaining what this action does
 icon: Terminal | TestTube | Package | GitBranch | FileEdit | Zap
 scope: user | project
 modified_at: ISO 8601 timestamp

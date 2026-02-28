@@ -31,9 +31,11 @@ export default function TerminalPanel() {
 
   const activeRepo = activeTab ? getRepoByName(activeTab) : null
   const allTerminals = Array.from(terminals.values())
-  const repoTerminals = activeRepo
-    ? allTerminals.filter(t => t.repoPath === activeRepo.path)
-    : []
+  const repoTerminals = useMemo(
+    () => activeRepo ? allTerminals.filter(t => t.repoPath === activeRepo.path) : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- allTerminals reference changes each render but terminals map is the stable source
+    [terminals, activeRepo?.path]
+  )
 
   const handleNewTerminal = useCallback(async () => {
     if (!activeRepo || !canSpawnTerminal(getTerminalCount)) return

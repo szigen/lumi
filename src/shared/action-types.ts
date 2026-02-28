@@ -31,6 +31,7 @@ export type ActionStep =
 export interface Action {
   id: string
   label: string
+  description?: string
   icon: string
   scope: 'user' | 'project'
   provider?: AIProvider

@@ -1,5 +1,6 @@
 id: sync-plugins
 label: Sync Plugins
+description: Adds your Claude Code plugins to the current project so they work here too
 icon: Zap
 scope: user
 claude:

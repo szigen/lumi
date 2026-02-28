@@ -25,4 +25,3 @@ Each component lives in its own directory with a barrel export (`index.ts`).
 ## Watch Out
 - `Layout` owns terminal IPC bridge lifecycle so terminal output continues across view switches.
 - Terminal cards remain mounted per repo switch (`display: none`) to preserve xterm session state.
-- BugTracker fix terminal controls should sync terminal state after kill/apply actions.

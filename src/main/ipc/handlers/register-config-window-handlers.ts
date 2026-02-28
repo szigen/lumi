@@ -2,10 +2,11 @@ import { ipcMain, dialog } from 'electron'
 import { isMac } from '../../platform'
 import { IPC_CHANNELS } from '../../../shared/ipc-channels'
 import { safeSend } from '../../safeSend'
+import type { NotificationSettings } from '../../../shared/types'
 import type { IpcHandlerContext } from './types'
 
 export function registerConfigWindowHandlers(context: IpcHandlerContext): void {
-  const { configManager, terminalManager, repoManager, getMainWindow } = context
+  const { configManager, terminalManager, repoManager, notificationManager, getMainWindow } = context
 
   ipcMain.handle(IPC_CHANNELS.CONFIG_IS_FIRST_RUN, async () => {
     return configManager.isFirstRun()
@@ -29,6 +30,10 @@ export function registerConfigWindowHandlers(context: IpcHandlerContext): void {
     if (newConfig.additionalPaths !== undefined) {
       repoManager.setAdditionalPaths(newConfig.additionalPaths as import('../../../shared/types').AdditionalPath[])
       reposAffected = true
+    }
+
+    if (newConfig.notifications) {
+      notificationManager.updateSettings(newConfig.notifications as NotificationSettings)
     }
 
     if (reposAffected) {

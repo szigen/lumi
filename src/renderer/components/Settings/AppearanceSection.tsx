@@ -13,7 +13,7 @@ export default function AppearanceSection({ uiDefaults, onChange }: Props) {
 
       <div className="settings-field">
         <div className="settings-toggle-row">
-          <div>
+          <div className="settings-toggle-row__content">
             <label className="settings-label">Left Sidebar</label>
             <p className="settings-hint">Show left sidebar by default on startup.</p>
           </div>
@@ -28,7 +28,7 @@ export default function AppearanceSection({ uiDefaults, onChange }: Props) {
 
       <div className="settings-field">
         <div className="settings-toggle-row">
-          <div>
+          <div className="settings-toggle-row__content">
             <label className="settings-label">Right Sidebar</label>
             <p className="settings-hint">Show right sidebar (commits) by default on startup.</p>
           </div>

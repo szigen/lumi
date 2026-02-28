@@ -63,6 +63,13 @@ export interface Branch {
   isCurrent: boolean
 }
 
+export interface NotificationSettings {
+  unseenEnabled: boolean
+  unseenIntervalMinutes: number
+  seenEnabled: boolean
+  seenIntervalMinutes: number
+}
+
 export interface Config {
   projectsRoot: string
   additionalPaths: AdditionalPath[]
@@ -70,6 +77,7 @@ export interface Config {
   maxTerminals: number
   theme: 'dark' | 'light'
   terminalFontSize: number
+  notifications: NotificationSettings
 }
 
 export type GridLayoutMode = 'auto' | 'columns' | 'rows'
@@ -85,7 +93,6 @@ export interface UIState {
   leftSidebarOpen: boolean
   rightSidebarOpen: boolean
   projectGridLayouts: Record<string, GridLayout>
-  activeView: 'terminals' | 'bugs'
   windowBounds?: { x: number; y: number; width: number; height: number }
   windowMaximized?: boolean
 }
