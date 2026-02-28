@@ -32,7 +32,9 @@ export function useXTermInstance(
     const fitAddon = new FitAddon()
     xterm.loadAddon(fitAddon)
 
-    const webLinksAddon = new WebLinksAddon()
+    const webLinksAddon = new WebLinksAddon((_event, url) => {
+      window.api.openExternal(url)
+    })
     xterm.loadAddon(webLinksAddon)
 
     const unicode11Addon = new Unicode11Addon()

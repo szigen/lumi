@@ -87,6 +87,9 @@ export const IPC_CHANNELS = {
   SYSTEM_CHECK_RUN: 'system:check-run',
   SYSTEM_CHECK_FIX: 'system:check-fix',
 
+  // Shell operations
+  SHELL_OPEN_EXTERNAL: 'shell:open-external',
+
   // App lifecycle
   APP_CONFIRM_QUIT: 'app:confirm-quit',
   APP_QUIT_CONFIRMED: 'app:quit-confirmed'
