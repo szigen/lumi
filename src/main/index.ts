@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen, shell } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
@@ -137,6 +137,20 @@ function createWindow(): void {
   })
   mainWindow.on('blur', () => {
     getTerminalManager()?.setWindowFocused(false)
+  })
+
+  // All external links → default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
+  })
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const currentURL = mainWindow?.webContents.getURL()
+    if (url !== currentURL) {
+      event.preventDefault()
+      shell.openExternal(url)
+    }
   })
 
   mainWindow.webContents.on('did-fail-load', (_, code, desc, url) => {

@@ -144,6 +144,9 @@ const api = {
     ipcRenderer.send(IPC_CHANNELS.APP_QUIT_CONFIRMED)
   },
 
+  // Shell operations
+  openExternal: (url: string) => invokeIpc<void>(IPC_CHANNELS.SHELL_OPEN_EXTERNAL, url),
+
   // Shortcut events from menu
   onShortcut: (callback: (action: string) => void) =>
     createIpcListener<[string]>('shortcut', callback)
