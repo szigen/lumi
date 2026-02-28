@@ -2135,6 +2135,17 @@ body.platform-win32 .header-right {
   width: 80px;
 }
 
+/* Hide native number input spinners */
+.settings-input::-webkit-outer-spin-button,
+.settings-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.settings-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Path Input with Browse */
 .settings-path-input {
   display: flex;
@@ -2201,7 +2212,12 @@ body.platform-win32 .header-right {
 .settings-toggle-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.settings-toggle-row__content {
+  flex: 1;
+  min-width: 0;
 }
 
 .settings-toggle {
@@ -2261,16 +2277,10 @@ body.platform-win32 .header-right {
 }
 
 /* Frequency Input */
-.settings-frequency {
-  margin-top: var(--spacing-md);
-  padding-left: var(--spacing-xl);
-}
-
 .settings-frequency__input-group {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-xs);
 }
 
 .settings-frequency__unit {
