@@ -8,9 +8,10 @@ All platforms use hyphen-based naming with `artifactName` in `electron-builder.c
 |----------|-----------|----------|
 | macOS (Apple Silicon) | `Lumi-X.Y.Z-arm64-mac.dmg` | `Lumi-X.Y.Z-arm64-mac.zip` |
 | Windows | `Lumi-Setup-X.Y.Z-win.exe` | `Lumi-X.Y.Z-win.exe` |
-| Linux | `Lumi-X.Y.Z-linux-x86_64.AppImage` | `Lumi-X.Y.Z-linux-amd64.deb` |
+| Linux (x86_64) | `Lumi-X.Y.Z-linux-x86_64.AppImage` | `Lumi-X.Y.Z-linux-amd64.deb` |
+| Linux (ARM64) | `Lumi-X.Y.Z-linux-arm64.AppImage` | `Lumi-X.Y.Z-linux-arm64.deb` |
 
-> **Note:** `${arch}` resolves per extension — `x86_64` for AppImage, `amd64` for deb, `arm64` for macOS.
+> **Note:** `${arch}` resolves per extension — `x86_64` for AppImage (x86), `amd64` for deb (x86), `arm64` for macOS and Linux ARM64.
 
 ---
 
@@ -46,15 +47,18 @@ Update the download table and **all inline references** to match the naming conv
 |----------|-----------|----------|
 | macOS (Apple Silicon) | [Lumi-X.Y.Z-arm64-mac.dmg](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-arm64-mac.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-arm64-mac.zip) |
 | Windows | [Lumi-Setup-X.Y.Z-win.exe](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-Setup-X.Y.Z-win.exe) | [.exe](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-win.exe) |
-| Linux | [Lumi-X.Y.Z-linux-x86_64.AppImage](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-linux-x86_64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-linux-amd64.deb) |
+| Linux (x86_64) | [Lumi-X.Y.Z-linux-x86_64.AppImage](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-linux-x86_64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-linux-amd64.deb) |
+| Linux (ARM64) | [Lumi-X.Y.Z-linux-arm64.AppImage](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-linux-arm64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/vX.Y.Z/Lumi-X.Y.Z-linux-arm64.deb) |
 ```
 
 **Inline references to update:**
 
 - [ ] Windows install section: `Lumi-Setup-X.Y.Z-win.exe`
 - [ ] Windows portable mention: `Lumi-X.Y.Z-win.exe`
-- [ ] Linux AppImage commands: `Lumi-X.Y.Z-linux-x86_64.AppImage`
-- [ ] Linux deb command: `Lumi-X.Y.Z-linux-amd64.deb`
+- [ ] Linux (x86_64) AppImage commands: `Lumi-X.Y.Z-linux-x86_64.AppImage`
+- [ ] Linux (x86_64) deb command: `Lumi-X.Y.Z-linux-amd64.deb`
+- [ ] Linux (ARM64) AppImage commands: `Lumi-X.Y.Z-linux-arm64.AppImage`
+- [ ] Linux (ARM64) deb command: `Lumi-X.Y.Z-linux-arm64.deb`
 
 ### 4. Verify Build
 
@@ -70,35 +74,29 @@ npm run typecheck && npm run lint && npm test
 
 ```bash
 git add package.json package-lock.json CHANGELOG.md README.md
-git commit -m "Bump version to X.Y.Z"
+git commit -m "chore: bump version to X.Y.Z and update CHANGELOG"
 git push origin main
 ```
 
-### 6. Create Release PR
+### 6. Tag & Push Tag
 
 ```bash
-gh pr create --base release --head main --title "Release vX.Y.Z"
+git tag vX.Y.Z
+git push origin main --tags
 ```
 
-### 7. CI Check & Merge
+### 7. Wait for Release Workflow
 
-```bash
-gh pr checks <PR_NO> --watch
-gh pr merge <PR_NO> --merge
-```
+Tag push triggers `release.yml`:
 
-### 8. Wait for Release Workflow
-
-Merge triggers a push to `release` branch, which runs `release.yml`:
-
-**test** → **build** (macOS, Linux, Windows) → **draft release** with all artifacts
+**validate** (lint, typecheck, test, version match) → **build** (macOS, Linux x86_64, Linux ARM64, Windows) → **draft release** with all artifacts
 
 ```bash
 gh run list --workflow=release.yml --limit 1
 gh run watch <RUN_ID>
 ```
 
-### 9. Publish
+### 8. Publish
 
 ```bash
 gh release edit vX.Y.Z --draft=false
@@ -108,7 +106,7 @@ gh release edit vX.Y.Z --draft=false
 
 ## Post-release Verification
 
-### 10. Verify Artifacts
+### 9. Verify Artifacts
 
 ```bash
 # List all assets in the release
@@ -124,9 +122,11 @@ Lumi-Setup-X.Y.Z-win.exe
 Lumi-X.Y.Z-win.exe
 Lumi-X.Y.Z-linux-x86_64.AppImage
 Lumi-X.Y.Z-linux-amd64.deb
+Lumi-X.Y.Z-linux-arm64.AppImage
+Lumi-X.Y.Z-linux-arm64.deb
 ```
 
-### 11. Verify Download Links
+### 10. Verify Download Links
 
 - [ ] Click each link in the README download table — confirm no 404s
 - [ ] Verify each asset name in `gh release view` matches the README links exactly

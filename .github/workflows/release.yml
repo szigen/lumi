@@ -1,10 +1,14 @@
 name: Release
 on:
   push:
-    branches: [release]
+    tags: ['v*']
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  test:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,9 +22,17 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME}"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
 
   build:
-    needs: test
+    needs: validate
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +40,8 @@ jobs:
           - os: macos-latest
             build_cmd: npm run build:mac
           - os: ubuntu-latest
+            build_cmd: npm run build:linux
+          - os: ubuntu-24.04-arm
             build_cmd: npm run build:linux
           - os: windows-latest
             build_cmd: npm run build:win
@@ -83,7 +97,7 @@ jobs:
             release/*.yml
           if-no-files-found: error
 
-  release:
+  publish:
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -95,23 +109,8 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      - name: Get version
-        id: version
-        run: echo "version=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Check if release already exists
-        id: check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if gh release view "${{ steps.version.outputs.version }}" &>/dev/null; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "::warning::Release ${{ steps.version.outputs.version }} already exists — skipping"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
       - name: Create GitHub Release
-        if: steps.check.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          find artifacts -maxdepth 1 -type f -print0 | xargs -0 gh release create "${{ steps.version.outputs.version }}" --draft --title "${{ steps.version.outputs.version }}" --generate-notes
+          find artifacts -maxdepth 1 -type f -print0 | xargs -0 gh release create "${{ github.ref_name }}" --draft --title "${{ github.ref_name }}" --generate-notes
