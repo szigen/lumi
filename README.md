@@ -2,41 +2,20 @@
 [![Release](https://img.shields.io/github/v/release/szigen/lumi)](https://github.com/szigen/lumi/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-# Lumi
-
 <p align="center">
   <img src="src/renderer/assets/mascot/app-icon.webp" alt="Lumi" width="120" />
 </p>
 
+<h1 align="center">Lumi</h1>
+
 <p align="center">
-  <strong>Desktop dashboard for managing multiple AI coding CLI sessions</strong>
+  Mission control for your AI coding terminals.<br>
+  Run multiple <a href="https://code.claude.com/docs/en/setup">Claude Code</a> or <a href="https://github.com/openai/codex">Codex CLI</a> sessions side-by-side, from one dashboard.
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#download">Download</a> •
-  <a href="#installation-from-source">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#contributing">Contributing</a> •
-  <a href="#license">License</a>
+  <img src="docs/assets/hero.png" alt="Lumi dashboard" width="800" />
 </p>
-
----
-
-Lumi is an Electron-based desktop application that lets you run and manage multiple AI coding CLI sessions (Claude Code or OpenAI Codex) from a single dashboard. Think of it as a mission control for your AI-powered coding workflows.
-
-## Features
-
-- **Multi-terminal management** — Spawn up to 20 AI sessions (default 12, configurable in Settings), each with its own terminal, running in parallel
-- **Multi-provider support** — Switch between [Claude Code](https://code.claude.com/docs/en/setup) and [OpenAI Codex CLI](https://github.com/openai/codex) in Settings; all terminals and bug-fix tools use the selected provider
-- **Action system** — Define reusable YAML-based workflows (run tests, sync plugins, update docs); create or edit actions via AI with automatic backup history
-- **Persona system** — Switch between predefined AI personas (architect, reviewer, fixer, expert) with custom system prompts
-- **Git integration** — Built-in branch management, reactive file-changes view with right-click context menu, and commit history per repository
-- **Multi-repo support** — Work across multiple repositories with tab-based navigation
-- **Terminal codenames** — Each session gets a unique codename (e.g., "brave-alpaca")
-- **Smart terminal status** — Activity-based status detection via OSC9 signals, with window-focus-aware notifications
-- **Keyboard shortcuts** — Platform-adaptive shortcuts (`Cmd` on macOS, `Ctrl+Shift` on Windows/Linux)
-- **Native notifications** — Terminal bell and activity detection with OS-level notifications
 
 ## Download
 
@@ -49,14 +28,14 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 
 > All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
 
-### Installation
+## Quick Start
 
-**Before you start:** You need at least one AI CLI installed and authenticated:
-- [Claude Code](https://code.claude.com/docs/en/setup): `curl -fsSL https://claude.ai/install.sh | bash` (macOS/Linux) or `irm https://claude.ai/install.ps1 | iex` (Windows)
-- [OpenAI Codex CLI](https://github.com/openai/codex): `npm install -g @openai/codex` (see [official docs](https://developers.openai.com/codex/cli/))
+1. **Install an AI CLI** — [Claude Code](https://code.claude.com/docs/en/setup) or [OpenAI Codex CLI](https://github.com/openai/codex)
+2. **Download Lumi** — grab the installer for your platform above
+3. **Open, pick a repo, go** — launch Lumi, select a repository, and start coding with AI
 
 <details>
-<summary><strong>macOS</strong></summary>
+<summary><strong>macOS installation notes</strong></summary>
 
 **DMG (recommended):**
 1. Download the `.dmg` file
@@ -70,7 +49,7 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 </details>
 
 <details>
-<summary><strong>Windows</strong></summary>
+<summary><strong>Windows installation notes</strong></summary>
 
 1. Download `Lumi-Setup-0.1.9-win.exe`
 2. Run the installer — Windows SmartScreen may show a warning since Lumi is unsigned. Click **"More info"** → **"Run anyway"** to proceed
@@ -82,7 +61,7 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 </details>
 
 <details>
-<summary><strong>Linux (x86_64)</strong></summary>
+<summary><strong>Linux (x86_64) installation notes</strong></summary>
 
 **AppImage (recommended):**
 ```bash
@@ -103,7 +82,7 @@ sudo dpkg -i Lumi-0.1.9-linux-amd64.deb
 </details>
 
 <details>
-<summary><strong>Linux (ARM64)</strong></summary>
+<summary><strong>Linux (ARM64) installation notes</strong></summary>
 
 For ARM64 devices (Raspberry Pi, ARM Chromebooks, ARM cloud VMs, etc.):
 
@@ -125,136 +104,65 @@ sudo dpkg -i Lumi-0.1.9-linux-arm64.deb
 
 </details>
 
-## Prerequisites (building from source)
+---
+
+<details>
+<summary><strong>Features</strong></summary>
+
+- **Multi-terminal management** — Up to 20 parallel AI sessions, each with its own terminal
+- **Multi-provider support** — Claude Code and OpenAI Codex CLI, switchable in Settings
+- **Action system** — Reusable YAML-based workflows with AI-assisted editing and auto-backup
+- **Persona system** — Predefined AI personas (architect, reviewer, fixer, expert) with custom system prompts
+- **Git integration** — Branch management, file-changes view, and commit history per repo
+- **Multi-repo support** — Tab-based navigation across repositories
+- **Smart terminal status** — Activity detection via OSC9 signals with native notifications
+- **Keyboard shortcuts** — Platform-adaptive (`Cmd` on macOS, `Ctrl+Shift` on Windows/Linux)
+
+</details>
+
+<details>
+<summary><strong>Development</strong></summary>
+
+### Prerequisites
 
 - **Node.js** 22+ (required by Vite 7 — `crypto.hash()` API)
-- **AI CLI** — at least one of:
-  - Claude Code: `curl -fsSL https://claude.ai/install.sh | bash` (then authenticate)
-  - OpenAI Codex: `npm install -g @openai/codex` (see [Codex CLI docs](https://developers.openai.com/codex/cli/))
-- **macOS** (primary platform), **Windows**, or **Linux**
+- **AI CLI** — [Claude Code](https://code.claude.com/docs/en/setup) or [OpenAI Codex CLI](https://github.com/openai/codex)
+- **macOS**, **Windows**, or **Linux**
 
 > **Note:** Lumi uses [node-pty](https://github.com/nicktaf/node-pty) for terminal emulation,
 > which requires native compilation. On macOS, Xcode Command Line Tools are needed.
 > On Linux, install `build-essential` and `python3`. On Windows, install
 > [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/).
 
-## Installation (from source)
+### Build from source
 
 ```bash
-# Clone the repository
 git clone https://github.com/szigen/lumi.git
 cd lumi
-
-# Install dependencies
 npm install
-
-# Start in development mode
-npm run dev
-
-# On Linux, use the sandbox-disabled variant:
-npm run dev:linux
+npm run dev            # Development mode (Vite + Electron with HMR)
+# On Linux: npm run dev:linux
 ```
 
-## Usage
-
-### Quick Start
-
-**Installed app:**
-1. Launch Lumi from your Applications folder, Start Menu, or desktop
-2. Select a repository from the repo selector in the header
-3. Click "New Session" or use `Cmd+T` (`Ctrl+Shift+T` on Windows/Linux) to spawn an AI coding terminal
-4. Use the left sidebar to trigger quick actions or switch between sessions
-
-**From source:**
-1. Run `npm run dev` (or `npm run dev:linux` on Linux)
-2. Follow the same steps above — the app will open automatically
-
-### Actions
-
-Actions are YAML-based workflows stored in `~/.lumi/actions/` (user-level) or `<repo>/.lumi/actions/` (project-level).
-
-```yaml
-id: run-tests
-label: Run Tests
-icon: TestTube
-scope: user
-claude:
-  model: sonnet
-  allowedTools:
-    - "Bash(npm test *)"
-steps:
-  - type: write
-    content: "claude \"Run the test suite for this project.\"\r"
-```
-
-**Action editing:** Right-click any action in the sidebar to open an AI-assisted edit flow. Changes are preserved across app restarts — default actions are never overwritten once you've modified them.
-
-**Auto-backup:** Every save to a user action is automatically backed up in `~/.lumi/actions/.history/<action-id>/` (up to 20 snapshots, oldest pruned automatically).
-
-### Personas
-
-Personas customize the AI behavior with system prompts. Stored in `~/.lumi/personas/` or `<repo>/.lumi/personas/`.
-
-```yaml
-name: Architect
-description: High-level system design focus
-systemPrompt: |
-  You are a senior software architect. Focus on system design,
-  scalability, and maintainability.
-```
-
-Built-in personas: **Architect**, **Expert**, **Fixer**, **Reviewer**
-
-## Development
+### Commands
 
 ```bash
-npm run dev          # Development mode (Vite + Electron with HMR)
-npm run build        # Production build
-npm test             # Vitest unit tests
-npm run lint         # ESLint
-npm run typecheck    # TypeScript type checking
+npm run build          # Production build
+npm test               # Vitest unit tests
+npm run lint           # ESLint
+npm run typecheck      # TypeScript type checking
 ```
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Electron 40 + TypeScript |
-| UI | React 19 + Custom CSS |
-| State | Zustand 5 |
-| Terminal | xterm.js 6 + node-pty |
-| Animations | Framer Motion 12 |
-| Git | simple-git |
-| Code Viewer | Monaco Editor 4 |
-| Build | Vite 7 + electron-vite 5 |
+Electron 40 · React 19 · Zustand 5 · xterm.js 6 · node-pty · Framer Motion 12 · simple-git · Monaco Editor 4 · Vite 7
 
-### Project Structure
-
-```
-src/
-├── main/
-│   ├── action/         # YAML action system (engine, store, AI edit flow)
-│   ├── assistant/      # Multi-provider AI orchestrator (Claude + Codex stream parsers)
-│   ├── ipc/            # IPC handlers (split by domain: terminal, git, actions, config…)
-│   ├── terminal/       # node-pty sessions, OSC9 status state machine
-│   └── …               # persona, git, notification, config, system
-├── preload/            # Secure IPC bridge (contextBridge)
-├── renderer/           # React UI (components, stores, hooks)
-└── shared/             # Shared types and constants
-```
+</details>
 
 ## Contributing
 
-Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
+Contributions welcome — please read the [Contributing Guide](CONTRIBUTING.md) first. Found a vulnerability? See our [Security Policy](SECURITY.md).
 
 ## License
 
 [MIT](LICENSE) — szigen
-
-## Security
-
-Found a vulnerability? Please see our [Security Policy](SECURITY.md).
-
-## Code of Conduct
-
-This project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
