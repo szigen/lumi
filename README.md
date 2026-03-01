@@ -44,7 +44,8 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 |----------|-----------|----------|
 | macOS (Apple Silicon) | [Lumi-0.1.9-arm64-mac.dmg](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-arm64-mac.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-arm64-mac.zip) |
 | Windows | [Lumi-Setup-0.1.9-win.exe](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-Setup-0.1.9-win.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-win.exe) |
-| Linux | [Lumi-0.1.9-linux-x86_64.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-linux-x86_64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-linux-amd64.deb) |
+| Linux (x86_64) | [Lumi-0.1.9-linux-x86_64.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-linux-x86_64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-linux-amd64.deb) |
+| Linux (ARM64) | [Lumi-0.1.9-linux-arm64.AppImage](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-linux-arm64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.1.9/Lumi-0.1.9-linux-arm64.deb) |
 
 > All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
 
@@ -81,7 +82,7 @@ Lumi is an Electron-based desktop application that lets you run and manage multi
 </details>
 
 <details>
-<summary><strong>Linux</strong></summary>
+<summary><strong>Linux (x86_64)</strong></summary>
 
 **AppImage (recommended):**
 ```bash
@@ -97,6 +98,29 @@ sudo dpkg -i Lumi-0.1.9-linux-amd64.deb
 > If you get a sandbox error, either run with the `--no-sandbox` flag or set the environment variable:
 > ```bash
 > ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.1.9-linux-x86_64.AppImage
+> ```
+
+</details>
+
+<details>
+<summary><strong>Linux (ARM64)</strong></summary>
+
+For ARM64 devices (Raspberry Pi, ARM Chromebooks, ARM cloud VMs, etc.):
+
+**AppImage (recommended):**
+```bash
+chmod +x Lumi-0.1.9-linux-arm64.AppImage
+./Lumi-0.1.9-linux-arm64.AppImage
+```
+
+**DEB package (Debian/Ubuntu):**
+```bash
+sudo dpkg -i Lumi-0.1.9-linux-arm64.deb
+```
+
+> If you get a sandbox error, either run with the `--no-sandbox` flag or set the environment variable:
+> ```bash
+> ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.1.9-linux-arm64.AppImage
 > ```
 
 </details>
