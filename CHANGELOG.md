@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-03-02
+
+### Fixed
+
+- ARM64 AppImage crash due to missing libz.so (AppImageKit cross-compile bug)
+- DEB package install failure on Ubuntu 24.04+ due to Debian t64 dependency rename (libxss1, libgtk-3-0, libatspi2.0-0)
+
 ## [0.2.0] - 2026-03-02
 
 ### Changed
