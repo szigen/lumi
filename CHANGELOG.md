@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2] - 2026-03-02
+
+### Fixed
+
+- ARM64 Linux DEB window not opening — removed conflicting GPU flags (`in-process-gpu`, `use-angle swiftshader`) that hang the renderer on ARM64
+- Added `ready-to-show` safety timeout (5s) to force-show window if renderer hangs
+- Removed ineffective `afterPack` libz.so symlink hook (symlink was inside squashfs, unreachable by AppImage runtime)
+
+### Changed
+
+- ARM64 Linux: DEB is now the recommended install method; AppImage requires `zlib1g-dev` prerequisite
+
 ## [0.2.1] - 2026-03-02
 
 ### Fixed

@@ -18,10 +18,6 @@ if (isLinux) {
   app.commandLine.appendSwitch('disable-gpu')
   app.commandLine.appendSwitch('disable-gpu-compositing')
   app.commandLine.appendSwitch('no-zygote')
-  app.commandLine.appendSwitch('in-process-gpu')
-  // Software rendering fallback
-  app.commandLine.appendSwitch('use-gl', 'angle')
-  app.commandLine.appendSwitch('use-angle', 'swiftshader')
   // Wayland support
   app.commandLine.appendSwitch('ozone-platform-hint', 'auto')
   app.commandLine.appendSwitch('enable-features', 'WaylandWindowDecorations')
@@ -75,6 +71,14 @@ function createWindow(): void {
     }
     mainWindow?.show()
   })
+
+  // Safety timeout: force-show window if ready-to-show never fires (ARM64 GPU hang)
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      console.warn('ready-to-show timeout — force-showing window')
+      mainWindow.show()
+    }
+  }, 5000)
 
   setMainWindow(mainWindow)
 
