@@ -21,10 +21,10 @@
 
 | Platform | Installer | Portable |
 |----------|-----------|----------|
-| macOS (Apple Silicon) | [Lumi-0.2.2-arm64-mac.dmg](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-arm64-mac.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-arm64-mac.zip) |
-| Windows | [Lumi-Setup-0.2.2-win.exe](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-Setup-0.2.2-win.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-win.exe) |
-| Linux (x86_64) | [Lumi-0.2.2-linux-x86_64.AppImage](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-linux-x86_64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-linux-amd64.deb) |
-| Linux (ARM64) | [Lumi-0.2.2-linux-arm64.AppImage](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-linux-arm64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.2.2/Lumi-0.2.2-linux-arm64.deb) |
+| macOS (Apple Silicon) | [Lumi-0.2.3-arm64-mac.dmg](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-arm64-mac.dmg) | [.zip](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-arm64-mac.zip) |
+| Windows | [Lumi-Setup-0.2.3-win.exe](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-Setup-0.2.3-win.exe) | [.exe](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-win.exe) |
+| Linux (x86_64) | [Lumi-0.2.3-linux-x86_64.AppImage](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-linux-x86_64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-linux-amd64.deb) |
+| Linux (ARM64) | [Lumi-0.2.3-linux-arm64.AppImage](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-linux-arm64.AppImage) | [.deb](https://github.com/szigen/lumi/releases/download/v0.2.3/Lumi-0.2.3-linux-arm64.deb) |
 
 > All downloads are available on the [Releases](https://github.com/szigen/lumi/releases) page.
 
@@ -51,12 +51,12 @@
 <details>
 <summary><strong>Windows installation notes</strong></summary>
 
-1. Download `Lumi-Setup-0.2.2-win.exe`
+1. Download `Lumi-Setup-0.2.3-win.exe`
 2. Run the installer — Windows SmartScreen may show a warning since Lumi is unsigned. Click **"More info"** → **"Run anyway"** to proceed
 3. Choose the installation directory and complete the setup
 4. Launch from the Start Menu or Desktop shortcut
 
-> **Portable:** Download `Lumi-0.2.2-win.exe` and run it directly — no installation needed. The same SmartScreen warning applies.
+> **Portable:** Download `Lumi-0.2.3-win.exe` and run it directly — no installation needed. The same SmartScreen warning applies.
 
 </details>
 
@@ -65,18 +65,18 @@
 
 **AppImage (recommended):**
 ```bash
-chmod +x Lumi-0.2.2-linux-x86_64.AppImage
-./Lumi-0.2.2-linux-x86_64.AppImage
+chmod +x Lumi-0.2.3-linux-x86_64.AppImage
+./Lumi-0.2.3-linux-x86_64.AppImage
 ```
 
 **DEB package (Debian/Ubuntu):**
 ```bash
-sudo dpkg -i Lumi-0.2.2-linux-amd64.deb
+sudo dpkg -i Lumi-0.2.3-linux-amd64.deb
 ```
 
 > If you get a sandbox error, either run with the `--no-sandbox` flag or set the environment variable:
 > ```bash
-> ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.2.2-linux-x86_64.AppImage
+> ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.2.3-linux-x86_64.AppImage
 > ```
 
 </details>
@@ -88,7 +88,7 @@ For ARM64 devices (Raspberry Pi, ARM Chromebooks, ARM cloud VMs, etc.):
 
 **DEB package (recommended):**
 ```bash
-sudo dpkg -i Lumi-0.2.2-linux-arm64.deb
+sudo dpkg -i Lumi-0.2.3-linux-arm64.deb
 ```
 
 **AppImage:**
@@ -99,13 +99,13 @@ sudo dpkg -i Lumi-0.2.2-linux-arm64.deb
 > ```
 
 ```bash
-chmod +x Lumi-0.2.2-linux-arm64.AppImage
-./Lumi-0.2.2-linux-arm64.AppImage
+chmod +x Lumi-0.2.3-linux-arm64.AppImage
+./Lumi-0.2.3-linux-arm64.AppImage
 ```
 
 > If you get a sandbox error, either run with the `--no-sandbox` flag or set the environment variable:
 > ```bash
-> ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.2.2-linux-arm64.AppImage
+> ELECTRON_DISABLE_SANDBOX=1 ./Lumi-0.2.3-linux-arm64.AppImage
 > ```
 
 </details>
