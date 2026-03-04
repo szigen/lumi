@@ -64,7 +64,8 @@ export class TerminalManager extends EventEmitter {
       createdAt: new Date(),
       agentHint: 'unknown',
       outputBuffer: new OutputBuffer(),
-      statusMachine
+      statusMachine,
+      pendingOutput: ''
     }
 
     statusMachine.setOnChange((status) => {
@@ -114,12 +115,22 @@ export class TerminalManager extends EventEmitter {
 
       terminal.outputBuffer.append(data)
 
-      safeSend(window, IPC_CHANNELS.TERMINAL_OUTPUT, id, data)
+      terminal.pendingOutput += data
+      this.scheduleOutputFlush(terminal, window)
       this.emit('output', { terminalId: id, data })
     })
 
     ptyProcess.onExit(({ exitCode }) => {
       this.clearActivityTimer(terminal)
+      // Flush any buffered output before cleanup
+      if (terminal.outputFlushTimer !== undefined) {
+        clearTimeout(terminal.outputFlushTimer)
+        terminal.outputFlushTimer = undefined
+      }
+      if (terminal.pendingOutput.length > 0 && !window.isDestroyed()) {
+        safeSend(window, IPC_CHANNELS.TERMINAL_OUTPUT, id, terminal.pendingOutput)
+        terminal.pendingOutput = ''
+      }
       this.terminals.delete(id)
       this.notifier.removeTerminal(id)
       terminal.statusMachine.onExit(exitCode)
@@ -166,6 +177,7 @@ export class TerminalManager extends EventEmitter {
     const terminal = this.terminals.get(terminalId)
     if (!terminal) return false
     this.clearActivityTimer(terminal)
+    this.clearOutputFlushTimer(terminal)
     terminal.pty.kill()
     this.terminals.delete(terminalId)
     this.oscParser.delete(terminalId)
@@ -176,6 +188,7 @@ export class TerminalManager extends EventEmitter {
   killAll(): void {
     for (const [id, terminal] of this.terminals.entries()) {
       this.clearActivityTimer(terminal)
+      this.clearOutputFlushTimer(terminal)
       terminal.pty.kill()
       this.notifier.removeTerminal(id)
     }
@@ -268,15 +281,49 @@ export class TerminalManager extends EventEmitter {
     }
   }
 
-  /** Reset the activity silence timer — marks terminal as working on output */
+  /** Batch PTY output into a single IPC message per 16ms window */
+  private scheduleOutputFlush(terminal: ManagedTerminal, window: BrowserWindow): void {
+    if (terminal.outputFlushTimer !== undefined) return
+    terminal.outputFlushTimer = setTimeout(() => {
+      terminal.outputFlushTimer = undefined
+      const payload = terminal.pendingOutput
+      terminal.pendingOutput = ''
+      if (payload.length > 0 && !window.isDestroyed() && this.terminals.has(terminal.id)) {
+        safeSend(window, IPC_CHANNELS.TERMINAL_OUTPUT, terminal.id, payload)
+      }
+    }, 16)
+  }
+
+  private clearOutputFlushTimer(terminal: ManagedTerminal): void {
+    if (terminal.outputFlushTimer !== undefined) {
+      clearTimeout(terminal.outputFlushTimer)
+      terminal.outputFlushTimer = undefined
+      terminal.pendingOutput = ''
+    }
+  }
+
+  /**
+   * Reset the activity silence timer — marks terminal as working on output.
+   * Throttled: only reschedules the timer if >500ms since last schedule,
+   * reducing timer churn from ~100/s to ~2/s.
+   */
   private resetActivityTimer(terminal: ManagedTerminal): void {
-    this.clearActivityTimer(terminal)
-    terminal.statusMachine.onOutputActivity()
-    terminal.lastActivityAt = Date.now()
-    terminal.activityTimer = setTimeout(() => {
-      terminal.activityTimer = undefined
-      terminal.statusMachine.onOutputSilence()
-    }, STATUS_DETECTION.activitySilenceMs)
+    const now = Date.now()
+    const prevActivity = terminal.lastActivityAt ?? 0
+    terminal.lastActivityAt = now
+
+    if (!terminal.activityTimer) {
+      terminal.statusMachine.onOutputActivity()
+    }
+
+    // Only reschedule if >500ms since last schedule
+    if (now - prevActivity > 500) {
+      this.clearActivityTimer(terminal)
+      terminal.activityTimer = setTimeout(() => {
+        terminal.activityTimer = undefined
+        terminal.statusMachine.onOutputSilence()
+      }, STATUS_DETECTION.activitySilenceMs)
+    }
   }
 
   private clearActivityTimer(terminal: ManagedTerminal): void {

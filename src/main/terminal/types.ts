@@ -20,6 +20,10 @@ export interface ManagedTerminal {
   activityTimer?: ReturnType<typeof setTimeout>
   outputBuffer: OutputBuffer
   statusMachine: StatusStateMachine
+  /** Accumulated PTY output waiting to be flushed as a single IPC message */
+  pendingOutput: string
+  /** Timer handle for the 16ms output flush window */
+  outputFlushTimer?: ReturnType<typeof setTimeout>
 }
 
 /** Abstracts notification dispatch so TerminalManager doesn't depend on concrete NotificationManager */

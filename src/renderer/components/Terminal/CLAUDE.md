@@ -5,7 +5,7 @@ xterm.js wrapper per session. Logic decomposed into hooks, constants, and utilit
 ## Files
 - **Terminal.tsx** — Thin shell that composes hooks and renders the card
 - **constants.ts** — `TERMINAL_CONSTANTS` (debounce ms, scrollback, chunk size) and `XTERM_THEME` (ANSI palette matching app theme)
-- **utils.ts** — `writeChunked(xterm, data)` — writes large buffers in 10KB chunks via `requestAnimationFrame`
+- **utils.ts** — `writeChunked(xterm, data)` — writes large buffers in 10KB chunks via `requestAnimationFrame`, returns a `WriteChunkedHandle` with `cancel()` to abort in-flight rAF chains
 - **hooks/useXTermInstance.ts** — xterm init, addon loading (FitAddon, WebLinksAddon with `openExternal` callback, Unicode11Addon, WebglAddon with fallback), Windows/Linux Ctrl+Shift+C/V copy/paste handler, exposes `xtermReady`
 - **hooks/useTerminalResize.ts** — ResizeObserver + IntersectionObserver, 150ms debounce via `useRef`
 - **hooks/useTerminalOutputRenderer.ts** — applies store output to xterm via patch strategy (`append` delta or `replace` full redraw)
@@ -21,4 +21,5 @@ xterm.js wrapper per session. Logic decomposed into hooks, constants, and utilit
 - WebGL addon wrapped in try/catch — silently falls back to canvas renderer
 - Output replay is driven by store state; global terminal bridge in `useTerminalStore` owns IPC listeners
 - `useTerminalOutputRenderer` must use `xtermReady` guard so restore cannot race with xterm initialization
+- `useTerminalOutputRenderer` cancels any in-flight `writeChunked` rAF chain on terminal switch or new output to prevent corrupted/duplicate writes
 - Font size loaded async from config on mount — initial render uses default 13px

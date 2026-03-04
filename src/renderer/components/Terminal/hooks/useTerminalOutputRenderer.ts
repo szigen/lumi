@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { Terminal as XTerm } from '@xterm/xterm'
 import { useTerminalStore } from '../../../stores/useTerminalStore'
-import { writeChunked } from '../utils'
+import { writeChunked, type WriteChunkedHandle } from '../utils'
 
 export type OutputPatch =
   | { kind: 'noop' }
@@ -27,9 +27,12 @@ export function useTerminalOutputRenderer(
 ) {
   const output = useTerminalStore((s) => s.outputs.get(terminalId) || '')
   const renderedOutputRef = useRef('')
+  const activeWriteRef = useRef<WriteChunkedHandle | null>(null)
 
   useEffect(() => {
     renderedOutputRef.current = ''
+    activeWriteRef.current?.cancel()
+    activeWriteRef.current = null
   }, [terminalId])
 
   useEffect(() => {
@@ -39,14 +42,16 @@ export function useTerminalOutputRenderer(
     const patch = computeOutputPatch(renderedOutputRef.current, output)
 
     if (patch.kind === 'append') {
+      activeWriteRef.current?.cancel()
+      activeWriteRef.current = null
       if (patch.chunk.length > 0) {
         xterm.write(patch.chunk)
       }
     } else if (patch.kind === 'replace') {
+      activeWriteRef.current?.cancel()
       xterm.clear()
-      if (patch.value.length > 0) {
-        writeChunked(xterm, patch.value)
-      }
+      activeWriteRef.current = patch.value.length > 0
+        ? writeChunked(xterm, patch.value) : null
     }
 
     renderedOutputRef.current = output
