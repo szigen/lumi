@@ -12,4 +12,5 @@ Type definitions and constants shared between main and renderer.
 ## Rules
 - Do not use hardcoded IPC strings; always add channels here first.
 - `Terminal` (renderer) uses `Date`, IPC payloads (`TerminalInfo`/`TerminalSnapshot`) use ISO strings.
+- `Terminal.minimized` is renderer-only state (not in `TerminalInfo`/`TerminalSnapshot`); preserved during `reconcileTerminals`.
 - Keep status naming provider-agnostic (`TerminalStatus`).

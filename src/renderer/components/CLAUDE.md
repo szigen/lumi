@@ -22,6 +22,11 @@ Each component lives in its own directory with a barrel export (`index.ts`).
 - Used in `ProjectContext` header to filter the file tree by filename. Search toggle uses CSS-only crossfade (no Framer Motion) via `__content` wrapper with absolute-positioned `__search` overlay.
 - `filterTree` and `collectAllDirPaths` utilities live in `ProjectContext.tsx` for tree filtering and auto-expand.
 
+## CloseTabDialog
+- `CloseTabDialog` — confirmation modal shown when closing a repo tab that has minimized terminals. Mirrors `QuitDialog` structure (Framer Motion animation, ESC to dismiss, overlay click to dismiss).
+- State managed by `closeTabDialogOpen` / `closeTabRepoName` / `closeTabMinimizedCount` in `useAppStore`.
+- Triggered from `closeTab()` when minimized terminals are detected.
+
 ## Watch Out
 - `Layout` owns terminal IPC bridge lifecycle so terminal output continues across view switches.
 - Terminal cards remain mounted per repo switch (`display: none`) to preserve xterm session state.

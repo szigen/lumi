@@ -12,6 +12,7 @@ import TerminalPanel from '../TerminalPanel/TerminalPanel'
 import { Mascot } from '../icons'
 import { SettingsModal } from '../Settings'
 import { QuitDialog } from '../QuitDialog'
+import { CloseTabDialog } from '../CloseTabDialog'
 import { FocusExitControl } from '../FocusMode'
 import { SetupScreen } from '../Setup'
 import { FileViewerModal } from '../FileViewer'
@@ -178,6 +179,7 @@ export default function Layout() {
       </div>
       <SettingsModal />
       <QuitDialog />
+      <CloseTabDialog />
       <ToastContainer />
       <FileViewerModal />
     </div>

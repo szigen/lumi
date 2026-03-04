@@ -20,6 +20,9 @@ interface AppState extends UIState {
   settingsOpen: boolean
   quitDialogOpen: boolean
   quitTerminalCount: number
+  closeTabDialogOpen: boolean
+  closeTabRepoName: string | null
+  closeTabMinimizedCount: number
   aiProvider: AIProvider
   focusModeActive: boolean
   collapsedGroups: Set<string>
@@ -30,6 +33,9 @@ interface AppState extends UIState {
   closeSettings: () => void
   showQuitDialog: (count: number) => void
   hideQuitDialog: () => void
+  showCloseTabDialog: (repoName: string, count: number) => void
+  hideCloseTabDialog: () => void
+  confirmCloseTab: () => void
   setAiProvider: (provider: AIProvider) => void
   setActiveTab: (tab: string | null) => void
   openTab: (repoName: string) => void
@@ -51,11 +57,44 @@ export const useAppStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   quitDialogOpen: false,
   quitTerminalCount: 0,
+  closeTabDialogOpen: false,
+  closeTabRepoName: null,
+  closeTabMinimizedCount: 0,
   aiProvider: 'claude',
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
   showQuitDialog: (count) => set({ quitDialogOpen: true, quitTerminalCount: count }),
   hideQuitDialog: () => set({ quitDialogOpen: false, quitTerminalCount: 0 }),
+  showCloseTabDialog: (repoName, count) => set({ closeTabDialogOpen: true, closeTabRepoName: repoName, closeTabMinimizedCount: count }),
+  hideCloseTabDialog: () => set({ closeTabDialogOpen: false, closeTabRepoName: null, closeTabMinimizedCount: 0 }),
+  confirmCloseTab: () => {
+    const { closeTabRepoName } = get()
+    if (closeTabRepoName) {
+      // Bypass the guard by calling the close logic directly
+      const { openTabs, activeTab } = get()
+      const newTabs = openTabs.filter((t) => t !== closeTabRepoName)
+      const newActive = activeTab === closeTabRepoName
+        ? newTabs[newTabs.length - 1] || null
+        : activeTab
+
+      const repo = useRepoStore.getState().getRepoByName(closeTabRepoName)
+      if (repo) {
+        const terminalState = useTerminalStore.getState()
+        const repoTerminals = terminalState.getTerminalsByRepo(repo.path)
+
+        Promise.all(repoTerminals.map((terminal) => window.api.killTerminal(terminal.id)))
+          .catch((err) => console.error('Failed to kill terminals:', err))
+          .finally(() => {
+            terminalState.syncFromMain()
+          })
+
+        window.api.unwatchFileTree(repo.path)
+      }
+
+      set({ openTabs: newTabs, activeTab: newActive, closeTabDialogOpen: false, closeTabRepoName: null, closeTabMinimizedCount: 0 })
+      get().saveUIState()
+    }
+  },
   setAiProvider: (provider) => set({ aiProvider: provider }),
   focusModeActive: false,
   collapsedGroups: new Set<string>(),
@@ -77,13 +116,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (repo) {
         const repoTerminals = getTerminalsByRepo(repo.path)
         const lastTerminalId = lastActiveByRepo.get(repo.path)
+        const lastTerminal = lastTerminalId ? terminalState.terminals.get(lastTerminalId) : null
 
-        if (lastTerminalId && repoTerminals.some(t => t.id === lastTerminalId)) {
+        if (lastTerminalId && lastTerminal && !lastTerminal.minimized && repoTerminals.some(t => t.id === lastTerminalId)) {
           setActiveTerminal(lastTerminalId)
-        } else if (repoTerminals.length > 0) {
-          setActiveTerminal(repoTerminals[0].id)
         } else {
-          setActiveTerminal(null)
+          const firstVisible = repoTerminals.find(t => !t.minimized)
+          setActiveTerminal(firstVisible?.id ?? null)
         }
       }
     }
@@ -102,13 +141,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   closeTab: (repoName) => {
+    const repo = useRepoStore.getState().getRepoByName(repoName)
+    if (repo) {
+      const terminalState = useTerminalStore.getState()
+      const repoTerminals = terminalState.getTerminalsByRepo(repo.path)
+      const minimizedCount = repoTerminals.filter((t) => t.minimized).length
+
+      if (minimizedCount > 0) {
+        get().showCloseTabDialog(repoName, minimizedCount)
+        return
+      }
+    }
+
     const { openTabs, activeTab } = get()
     const newTabs = openTabs.filter((t) => t !== repoName)
     const newActive = activeTab === repoName
       ? newTabs[newTabs.length - 1] || null
       : activeTab
 
-    const repo = useRepoStore.getState().getRepoByName(repoName)
     if (repo) {
       const terminalState = useTerminalStore.getState()
       const repoTerminals = terminalState.getTerminalsByRepo(repo.path)

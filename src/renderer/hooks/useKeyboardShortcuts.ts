@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import { useAppStore } from '../stores/useAppStore'
 import { useRepoStore } from '../stores/useRepoStore'
-import { useTerminalStore } from '../stores/useTerminalStore'
+import { useTerminalStore, getVisibleTerminals } from '../stores/useTerminalStore'
 import { DEFAULT_CONFIG } from '../../shared/constants'
 import { getProviderLaunchCommand } from '../../shared/ai-provider'
 
@@ -75,7 +75,8 @@ export function useKeyboardShortcuts() {
   }, [handleNewTerminal, handleCloseTerminal, toggleLeftSidebar, toggleRightSidebar, openSettings])
 
   const navigateTerminal = useCallback((direction: 'prev' | 'next') => {
-    const terminalIds = Array.from(terminals.keys())
+    const visible = getVisibleTerminals(terminals)
+    const terminalIds = Array.from(visible.keys())
     if (terminalIds.length === 0) return
     const currentIndex = activeTerminalId
       ? terminalIds.indexOf(activeTerminalId)
@@ -86,7 +87,7 @@ export function useKeyboardShortcuts() {
     const newTerminalId = terminalIds[newIndex]
     setActiveTerminal(newTerminalId)
 
-    const newTerminal = terminals.get(newTerminalId)
+    const newTerminal = visible.get(newTerminalId)
     if (newTerminal) {
       const repoName = repos.find(r => r.path === newTerminal.repoPath)?.name
       if (repoName && repoName !== activeTab) {

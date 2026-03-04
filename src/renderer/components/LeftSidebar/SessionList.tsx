@@ -6,7 +6,7 @@ import { useRepoStore } from '../../stores/useRepoStore'
 import { StatusDot } from '../icons'
 
 export default function SessionList() {
-  const { terminals, activeTerminalId, setActiveTerminal } = useTerminalStore()
+  const { terminals, activeTerminalId, setActiveTerminal, restoreTerminal } = useTerminalStore()
   const { activeTab } = useAppStore()
   const { getRepoByName } = useRepoStore()
 
@@ -32,8 +32,11 @@ export default function SessionList() {
           {repoTerminals.map((terminal) => (
             <div
               key={terminal.id}
-              className={`session-item ${activeTerminalId === terminal.id ? 'session-item--active' : ''}`}
-              onClick={() => setActiveTerminal(terminal.id)}
+              className={`session-item ${activeTerminalId === terminal.id ? 'session-item--active' : ''} ${terminal.minimized ? 'session-item--minimized' : ''}`}
+              onClick={() => {
+                if (terminal.minimized) restoreTerminal(terminal.id)
+                setActiveTerminal(terminal.id)
+              }}
             >
               <StatusDot status={terminal.status} />
               <span className="session-item__name">

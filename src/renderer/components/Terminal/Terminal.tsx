@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { Minus, X } from 'lucide-react'
 import { useTerminalStore } from '../../stores/useTerminalStore'
 import { StatusDot } from '../icons'
 import { useXTermInstance, useTerminalResize, useTerminalOutputRenderer, useTerminalDragDrop } from './hooks'
@@ -8,9 +8,10 @@ import '@xterm/xterm/css/xterm.css'
 interface TerminalProps {
   terminalId: string
   onClose: () => void
+  onMinimize: () => void
 }
 
-export default function Terminal({ terminalId, onClose }: TerminalProps) {
+export default function Terminal({ terminalId, onClose, onMinimize }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const [fontSize, setFontSize] = useState(13)
 
@@ -58,6 +59,12 @@ export default function Terminal({ terminalId, onClose }: TerminalProps) {
       <div className="terminal-card__header">
         <StatusDot status={status} />
         <span className="terminal-card__title">{terminal?.oscTitle || terminal?.task || terminal?.name || 'Terminal'}</span>
+        <button
+          className="terminal-card__minimize"
+          onClick={(e) => { e.stopPropagation(); onMinimize() }}
+        >
+          <Minus size={14} />
+        </button>
         <button
           className="terminal-card__close"
           onClick={(e) => { e.stopPropagation(); onClose() }}

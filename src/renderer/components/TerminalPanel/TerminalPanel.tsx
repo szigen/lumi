@@ -24,7 +24,7 @@ function canSpawnTerminal(getTerminalCount: () => number): boolean {
 }
 
 export default function TerminalPanel() {
-  const { terminals, getTerminalCount, syncFromMain } = useTerminalStore()
+  const { terminals, getTerminalCount, syncFromMain, minimizeTerminal } = useTerminalStore()
   const { activeTab, focusModeActive, aiProvider } = useAppStore()
   const gridLayout = useAppStore((s) => s.getActiveGridLayout())
   const { getRepoByName } = useRepoStore()
@@ -35,6 +35,10 @@ export default function TerminalPanel() {
     () => activeRepo ? allTerminals.filter(t => t.repoPath === activeRepo.path) : [],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- allTerminals reference changes each render but terminals map is the stable source
     [terminals, activeRepo?.path]
+  )
+  const visibleTerminals = useMemo(
+    () => repoTerminals.filter(t => !t.minimized),
+    [repoTerminals]
   )
 
   const handleNewTerminal = useCallback(async () => {
@@ -111,12 +115,12 @@ export default function TerminalPanel() {
     if (gridLayout.mode === 'columns') return gridLayout.count
     if (gridLayout.mode === 'rows') {
       const rows = gridLayout.count
-      return Math.max(1, Math.ceil(repoTerminals.length / rows))
+      return Math.max(1, Math.ceil(visibleTerminals.length / rows))
     }
     // auto mode
     if (!containerWidth) return 1
     return Math.max(1, Math.floor((containerWidth + GRID_GAP) / (400 + GRID_GAP)))
-  }, [gridLayout, containerWidth, repoTerminals.length])
+  }, [gridLayout, containerWidth, visibleTerminals.length])
 
   const gridStyle = useMemo(() => {
     if (gridLayout.mode === 'auto') return undefined
@@ -140,7 +144,7 @@ export default function TerminalPanel() {
   }, [gridLayout, computedColumns, containerWidth, containerHeight])
 
   const focusGridStyle = useMemo(() => {
-    if (!focusModeActive || !containerHeight || repoTerminals.length === 0) return undefined
+    if (!focusModeActive || !containerHeight || visibleTerminals.length === 0) return undefined
     const cols = computedColumns
 
     let colTemplate: string
@@ -155,17 +159,17 @@ export default function TerminalPanel() {
 
     const rows = gridLayout.mode === 'rows'
       ? gridLayout.count
-      : Math.ceil(repoTerminals.length / cols)
+      : Math.ceil(visibleTerminals.length / cols)
     const rowHeight = Math.floor((containerHeight - (rows - 1) * GRID_GAP) / rows)
     return { gridTemplateColumns: colTemplate, gridTemplateRows: `repeat(${rows}, ${rowHeight}px)` }
-  }, [focusModeActive, containerHeight, containerWidth, repoTerminals.length, computedColumns, gridLayout])
+  }, [focusModeActive, containerHeight, containerWidth, visibleTerminals.length, computedColumns, gridLayout])
 
   // Compute column-span styles for terminals on the last incomplete row
   // so they stretch to fill the full grid width
   const lastRowSpanStyles = useMemo(() => {
     if (gridLayout.mode === 'auto') return new Map<string, React.CSSProperties>()
 
-    const count = repoTerminals.length
+    const count = visibleTerminals.length
     const cols = computedColumns
     if (cols <= 1 || count === 0) return new Map<string, React.CSSProperties>()
 
@@ -180,11 +184,11 @@ export default function TerminalPanel() {
     for (let i = lastRowStart; i < count; i++) {
       const posInLastRow = i - lastRowStart
       const span = posInLastRow >= remainder - extraCols ? baseSpan + 1 : baseSpan
-      map.set(repoTerminals[i].id, { gridColumn: `span ${span}` })
+      map.set(visibleTerminals[i].id, { gridColumn: `span ${span}` })
     }
 
     return map
-  }, [gridLayout.mode, repoTerminals, computedColumns])
+  }, [gridLayout.mode, visibleTerminals, computedColumns])
 
   const providerLabel = getProviderLabel(aiProvider)
 
@@ -202,11 +206,11 @@ export default function TerminalPanel() {
 
   return (
     <div className="terminal-panel">
-      {repoTerminals.length > 0 && !focusModeActive && (
+      {visibleTerminals.length > 0 && !focusModeActive && (
         <div className="terminal-panel__header">
           <h2 className="terminal-panel__title">Terminals</h2>
           <span className="terminal-panel__count">
-            {repoTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
+            {visibleTerminals.length} / {DEFAULT_CONFIG.maxTerminals}
           </span>
           <div className="terminal-panel__actions">
             <GridLayoutPopup repoPath={activeRepo?.path ?? ''} />
@@ -238,10 +242,20 @@ export default function TerminalPanel() {
           />
         </div>
       )}
+      {visibleTerminals.length === 0 && repoTerminals.length > 0 && (
+        <div className="terminal-empty">
+          <EmptyState
+            icon={<Mascot variant="empty" size={96} />}
+            title="All terminals minimized"
+            description="Click a session in the sidebar to restore"
+          />
+        </div>
+      )}
       {allTerminals.length > 0 && (
-        <div ref={gridRef} className={`terminal-grid${focusModeActive ? ' terminal-grid--focus' : ''}`} style={{ display: repoTerminals.length > 0 ? undefined : 'none', ...(focusModeActive ? focusGridStyle : gridStyle) }}>
+        <div ref={gridRef} className={`terminal-grid${focusModeActive ? ' terminal-grid--focus' : ''}`} style={{ display: visibleTerminals.length > 0 ? undefined : 'none', ...(focusModeActive ? focusGridStyle : gridStyle) }}>
           {allTerminals.map((terminal) => {
-            const isVisible = terminal.repoPath === activeRepo?.path
+            const isRepoMatch = terminal.repoPath === activeRepo?.path
+            const isVisible = isRepoMatch && !terminal.minimized
             return (
             <div
               key={terminal.id}
@@ -250,6 +264,7 @@ export default function TerminalPanel() {
               <Terminal
                 terminalId={terminal.id}
                 onClose={() => handleCloseTerminal(terminal.id)}
+                onMinimize={() => minimizeTerminal(terminal.id)}
               />
             </div>
             )

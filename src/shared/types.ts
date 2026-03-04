@@ -17,6 +17,7 @@ export interface Terminal {
   task?: string
   oscTitle?: string
   isNew?: boolean
+  minimized?: boolean
   createdAt: Date
 }
 

@@ -14,7 +14,11 @@ export default function ToastContainer() {
       setActiveTab(title)
     }
 
-    if (terminals.has(terminalId)) {
+    const terminal = terminals.get(terminalId)
+    if (terminal) {
+      if (terminal.minimized) {
+        useTerminalStore.getState().restoreTerminal(terminalId)
+      }
       setActiveTerminal(terminalId)
     }
 

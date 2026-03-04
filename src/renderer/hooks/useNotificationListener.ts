@@ -19,6 +19,9 @@ export function useNotificationListener() {
 
       const terminal = terminals.get(terminalId)
       if (terminal) {
+        if (terminal.minimized) {
+          useTerminalStore.getState().restoreTerminal(terminalId)
+        }
         const repoName = terminal.repoPath.split('/').pop() || ''
         if (openTabs.includes(repoName)) {
           setActiveTab(repoName)

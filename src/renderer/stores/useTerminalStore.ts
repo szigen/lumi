@@ -13,6 +13,8 @@ interface TerminalState {
 
   removeTerminal: (id: string) => void
   updateTerminal: (id: string, updates: Partial<Terminal>) => void
+  minimizeTerminal: (id: string) => void
+  restoreTerminal: (id: string) => void
   appendOutput: (id: string, data: string) => void
   setActiveTerminal: (id: string | null) => void
   getTerminalsByRepo: (repoPath: string) => Terminal[]
@@ -59,6 +61,7 @@ export function reconcileTerminals(
       task: snapshot.task,
       oscTitle: snapshot.oscTitle || existing?.oscTitle,
       isNew: existing?.isNew,
+      minimized: existing?.minimized,
       createdAt: new Date(snapshot.createdAt)
     })
     const currentOutput = currentOutputs.get(snapshot.id) || ''
@@ -66,6 +69,15 @@ export function reconcileTerminals(
   }
 
   return { terminals, outputs }
+}
+
+/** Filter out minimized terminals — returns only visible ones */
+export function getVisibleTerminals(terminals: Map<string, Terminal>): Map<string, Terminal> {
+  const visible = new Map<string, Terminal>()
+  for (const [id, t] of terminals) {
+    if (!t.minimized) visible.set(id, t)
+  }
+  return visible
 }
 
 /** Pick the active terminal: keep current if still valid, otherwise pick first available */
@@ -131,9 +143,10 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
     set((state) => {
       const terminal = state.terminals.get(id)
 
-      // Compute neighbor BEFORE deleting so index is correct
+      // Compute neighbor BEFORE deleting — only consider visible terminals
+      const visible = getVisibleTerminals(state.terminals)
       const neighborId = state.activeTerminalId === id
-        ? findNeighborTerminalId(id, state.terminals, terminal?.repoPath)
+        ? findNeighborTerminalId(id, visible, terminal?.repoPath)
         : null
 
       const newTerminals = new Map(state.terminals)
@@ -146,7 +159,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         const lastActiveForRepo = newLastActive.get(terminal.repoPath)
         if (lastActiveForRepo === id) {
           const repoTerminals = Array.from(newTerminals.values())
-            .filter(t => t.repoPath === terminal.repoPath)
+            .filter(t => t.repoPath === terminal.repoPath && !t.minimized)
           if (repoTerminals.length > 0) {
             newLastActive.set(terminal.repoPath, repoTerminals[0].id)
           } else {
@@ -177,6 +190,22 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
       }
       return { terminals: newTerminals }
     })
+  },
+
+  minimizeTerminal: (id) => {
+    get().updateTerminal(id, { minimized: true })
+
+    // Proactive focus shift: if we just minimized the active terminal, move to visible neighbor
+    if (get().activeTerminalId === id) {
+      const terminal = get().terminals.get(id)
+      const visible = getVisibleTerminals(get().terminals)
+      const neighborId = findNeighborTerminalId(id, visible, terminal?.repoPath)
+      get().setActiveTerminal(neighborId)
+    }
+  },
+
+  restoreTerminal: (id) => {
+    get().updateTerminal(id, { minimized: false })
   },
 
   appendOutput: (id, data) => {
@@ -253,21 +282,21 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
 
     try {
       const snapshots = await window.api.getTerminalSnapshots()
-      const mainIds = new Set(snapshots.map(t => t.id))
       const { terminals, outputs } = reconcileTerminals(
         snapshots,
         get().terminals,
         get().outputs
       )
 
+      const visible = getVisibleTerminals(terminals)
       const activeTerminalId = resolveActiveTerminal(
         get().activeTerminalId,
-        mainIds,
-        terminals
+        new Set(visible.keys()),
+        visible
       )
 
       const lastActiveByRepo = rebuildLastActiveByRepo(
-        terminals,
+        visible,
         get().lastActiveByRepo
       )
 
