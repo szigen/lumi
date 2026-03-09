@@ -113,6 +113,7 @@ export interface FileTreeNode {
   path: string
   type: 'file' | 'folder'
   children?: FileTreeNode[]
+  ignored?: boolean
 }
 
 export interface FileChange {

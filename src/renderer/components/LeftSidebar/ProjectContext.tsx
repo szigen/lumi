@@ -58,16 +58,17 @@ function TreeNode({ node, depth, expandedPaths, onToggle, onContextMenu, onFileC
 
   const handleClick = useCallback(() => {
     if (isFolder) {
-      onToggle(node.path)
+      // Don't expand ignored folders (children are empty)
+      if (!node.ignored) onToggle(node.path)
     } else {
       onFileClick?.(node.path)
     }
-  }, [isFolder, onToggle, onFileClick, node.path])
+  }, [isFolder, onToggle, onFileClick, node.path, node.ignored])
 
   return (
     <div className="tree-node">
       <div
-        className="tree-node__content"
+        className={`tree-node__content${node.ignored ? ' tree-node__content--ignored' : ''}`}
         draggable
         onDragStart={handleDragStart}
         onClick={handleClick}

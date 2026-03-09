@@ -13,7 +13,8 @@ Git operations and file tree management via `simple-git`.
 - All git operations are async via `simple-git`
 - `listRepos()` uses private `scanDirectory()` helper for DRY directory scanning. Returns repos from projectsRoot + additionalPaths, with duplicate detection by absolute path. Each repo has a `source` field.
 - Commit log: branch-specific shows `main..<branch>` (only branch-unique commits), main/master shows all
-- File tree sorted: folders first, then files, alphabetically
+- File tree sorted: folders first → non-ignored folders, ignored folders, non-ignored files, ignored files; alphabetically within each group
+- Ignored items (gitignored) are included with `ignored: true` flag instead of being filtered out. `.git` is always hidden. Ignored folders have `children: []` (no recursion for performance).
 - `readFile(repoPath, filePath)` — reads file content with path traversal protection
 - `getFileDiff(repoPath, filePath)` — returns `{ original, modified }` for working tree diff
 - `getCommitDiff(repoPath, commitHash)` — returns `CommitDiffFile[]` with file contents at commit vs parent

@@ -799,6 +799,10 @@ body.platform-win32 .header-right {
   color: var(--text-secondary);
 }
 
+.tree-node__content--ignored {
+  opacity: 0.4;
+}
+
 .tree-node__content:hover {
   background: var(--bg-elevated);
   color: var(--text-primary);

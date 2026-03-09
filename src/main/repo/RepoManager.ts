@@ -396,37 +396,46 @@ export class RepoManager {
         return nodes
       }
 
-      // Sort: folders first, then files, alphabetically
-      entries.sort((a, b) => {
-        if (a.isDirectory() && !b.isDirectory()) return -1
-        if (!a.isDirectory() && b.isDirectory()) return 1
-        return a.name.localeCompare(b.name)
-      })
-
       for (const entry of entries) {
         const entryRelativePath = relativePath ? `${relativePath}/${entry.name}` : entry.name
         const fullPath = path.join(dir, entry.name)
 
-        // Check against ignore patterns
+        // Always hide .git
+        if (entry.name === '.git') continue
+
         const checkPath = entry.isDirectory() ? `${entryRelativePath}/` : entryRelativePath
-        if (ig.ignores(checkPath)) continue
+        const isIgnored = ig.ignores(checkPath)
 
         if (entry.isDirectory()) {
-          const children = buildTree(fullPath, entryRelativePath)
+          // Don't recurse into ignored folders (performance: skip node_modules etc.)
+          const children = isIgnored ? [] : buildTree(fullPath, entryRelativePath)
           nodes.push({
             name: entry.name,
             path: entryRelativePath,
             type: 'folder',
-            children
+            children,
+            ...(isIgnored && { ignored: true })
           })
         } else {
           nodes.push({
             name: entry.name,
             path: entryRelativePath,
-            type: 'file'
+            type: 'file',
+            ...(isIgnored && { ignored: true })
           })
         }
       }
+
+      // Sort: folders first, then files; within each group non-ignored first, then ignored; alphabetically
+      nodes.sort((a, b) => {
+        const aIsFolder = a.type === 'folder' ? 0 : 1
+        const bIsFolder = b.type === 'folder' ? 0 : 1
+        if (aIsFolder !== bIsFolder) return aIsFolder - bIsFolder
+        const aIgnored = a.ignored ? 1 : 0
+        const bIgnored = b.ignored ? 1 : 0
+        if (aIgnored !== bIgnored) return aIgnored - bIgnored
+        return a.name.localeCompare(b.name)
+      })
 
       return nodes
     }

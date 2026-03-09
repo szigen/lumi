@@ -3,7 +3,7 @@
 Type definitions and constants shared between main and renderer.
 
 ## Files
-- **types.ts** — shared domain interfaces, including `TerminalStatus`, `Terminal`, `TerminalInfo`, `TerminalSnapshot`, `FileViewerState`, `CommitDiffFile`, `FileViewerMode`, `GridLayoutMode`, `GridLayout`, `NotificationSettings`.
+- **types.ts** — shared domain interfaces, including `TerminalStatus`, `Terminal`, `TerminalInfo`, `TerminalSnapshot`, `FileViewerState`, `CommitDiffFile`, `FileViewerMode`, `GridLayoutMode`, `GridLayout`, `NotificationSettings`. `FileTreeNode` has optional `ignored` flag for gitignored items.
 - **ipc-channels.ts** — centralized IPC channel constants (`domain:operation` naming). Includes `ACTIONS_EDIT` for terminal-first action editing, `WINDOW_FULLSCREEN_CHANGED` for fullscreen state sync, `SHELL_OPEN_EXTERNAL` for opening URLs in default browser.
 - **action-types.ts** — action/persona config payload types. `Action` interface includes optional `description` field for sidebar tooltips.
 - **persona-types.ts** — persona definition.
