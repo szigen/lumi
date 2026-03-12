@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.4] - 2026-03-12
+
+### Added
+
+- Include ignored files/folders in file tree
+
 ## [0.2.3] - 2026-03-04
 
 ### Added
