@@ -23,7 +23,10 @@ const config: Configuration = {
     gatekeeperAssess: false,
     entitlements: 'build/entitlements.mac.plist',
     entitlementsInherit: 'build/entitlements.mac.inherit.plist',
-    notarize: true
+    notarize: true,
+    extendInfo: {
+      NSMicrophoneUsageDescription: 'Lumi needs microphone access for Claude Code voice mode.'
+    }
   },
   win: {
     target: ['nsis', 'portable']

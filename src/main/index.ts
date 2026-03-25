@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen, shell } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, powerMonitor, screen, session, shell } from 'electron'
 import { join } from 'path'
 import { rmSync } from 'fs'
 import { setupIpcHandlers, setMainWindow, getTerminalManager, getRepoManager } from './ipc/handlers'
@@ -326,6 +326,15 @@ process.on('unhandledRejection', (reason) => {
 })
 
 app.whenReady().then(() => {
+  // Grant microphone permission for Claude Code voice mode
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'media')
+  })
+
+  session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+    return permission === 'media'
+  })
+
   fixProcessPath()
   setupIpcHandlers()
   createWindow()
