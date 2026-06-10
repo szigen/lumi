@@ -1,37 +1,23 @@
-const DEFAULT_MAX_SIZE = 500_000
-const NEWLINE_SEARCH_WINDOW = 2048
+import { trimOutputTail, OUTPUT_TRIM_DEFAULTS } from '../../shared/output-trim'
 
 export class OutputBuffer {
   private buffer = ''
   private readonly maxSize: number
   private readonly searchWindow: number
 
-  constructor(maxSize = DEFAULT_MAX_SIZE, searchWindow = NEWLINE_SEARCH_WINDOW) {
+  constructor(
+    maxSize = OUTPUT_TRIM_DEFAULTS.MAX_SIZE,
+    searchWindow = OUTPUT_TRIM_DEFAULTS.NEWLINE_SEARCH_WINDOW
+  ) {
     this.maxSize = maxSize
     this.searchWindow = searchWindow
   }
 
   append(data: string): void {
-    this.buffer += data
-    if (this.buffer.length > this.maxSize) {
-      this.truncate()
-    }
+    this.buffer = trimOutputTail(this.buffer + data, this.maxSize, this.searchWindow)
   }
 
   get(): string {
     return this.buffer
-  }
-
-  private truncate(): void {
-    let cutIndex = this.buffer.length - this.maxSize
-    // Look forward up to searchWindow for the nearest newline to avoid splitting ANSI escape codes
-    const searchEnd = Math.min(cutIndex + this.searchWindow, this.buffer.length)
-    const newlinePos = this.buffer.indexOf('\n', cutIndex)
-
-    if (newlinePos !== -1 && newlinePos < searchEnd) {
-      cutIndex = newlinePos + 1
-    }
-
-    this.buffer = this.buffer.slice(cutIndex)
   }
 }

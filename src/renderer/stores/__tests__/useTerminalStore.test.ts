@@ -3,15 +3,136 @@ import {
   resolveActiveTerminal,
   rebuildLastActiveByRepo,
   findNeighborTerminalId,
+  appendTerminalOutput,
+  mergeSnapshotOutput,
+  preserveNewerLiveOutputs,
+  RENDERER_OUTPUT_MAX_SIZE,
   useTerminalStore
 } from '../useTerminalStore'
+import type { TerminalOutput } from '../useTerminalStore'
 import type { Terminal } from '../../../shared/types'
 
 function makeTerminal(id: string, repoPath = '/repo'): Terminal {
   return { id, name: `Terminal ${id}`, repoPath, status: 'idle', createdAt: new Date() }
 }
 
+function makeOutput(overrides: Partial<TerminalOutput> = {}): TerminalOutput {
+  return { text: '', totalLength: 0, epoch: 0, ...overrides }
+}
+
 // --- Pure function tests ---
+
+describe('appendTerminalOutput', () => {
+  it('appends chunk and tracks total length', () => {
+    const result = appendTerminalOutput(makeOutput({ text: 'abc', totalLength: 3 }), 'def')
+    expect(result.text).toBe('abcdef')
+    expect(result.totalLength).toBe(6)
+    expect(result.epoch).toBe(0)
+  })
+
+  it('starts from empty when there is no current output', () => {
+    const result = appendTerminalOutput(undefined, 'hi')
+    expect(result.text).toBe('hi')
+    expect(result.totalLength).toBe(2)
+  })
+
+  it('caps the buffered text but keeps absolute total length', () => {
+    const big = 'x'.repeat(RENDERER_OUTPUT_MAX_SIZE)
+    let output = appendTerminalOutput(undefined, big)
+    output = appendTerminalOutput(output, big)
+
+    expect(output.text.length).toBeLessThanOrEqual(RENDERER_OUTPUT_MAX_SIZE)
+    expect(output.totalLength).toBe(big.length * 2)
+  })
+
+  it('does not mutate the previous output object', () => {
+    const current = makeOutput({ text: 'abc', totalLength: 3 })
+    appendTerminalOutput(current, 'def')
+    expect(current.text).toBe('abc')
+    expect(current.totalLength).toBe(3)
+  })
+})
+
+describe('mergeSnapshotOutput', () => {
+  it('adopts snapshot when renderer has nothing', () => {
+    const result = mergeSnapshotOutput(undefined, 'snapshot')
+    expect(result.text).toBe('snapshot')
+    expect(result.totalLength).toBe(8)
+  })
+
+  it('keeps current when snapshot is empty', () => {
+    const current = makeOutput({ text: 'live', totalLength: 4 })
+    expect(mergeSnapshotOutput(current, '')).toBe(current)
+  })
+
+  it('returns current when snapshot equals current text', () => {
+    const current = makeOutput({ text: 'same', totalLength: 4 })
+    expect(mergeSnapshotOutput(current, 'same')).toBe(current)
+  })
+
+  it('extends incrementally when snapshot is ahead (renderer missed events)', () => {
+    const current = makeOutput({ text: 'abc', totalLength: 3 })
+    const result = mergeSnapshotOutput(current, 'abcdef')
+    expect(result.text).toBe('abcdef')
+    expect(result.totalLength).toBe(6)
+    expect(result.epoch).toBe(current.epoch) // incremental — no redraw needed
+  })
+
+  it('keeps current when renderer is ahead (sync raced live output)', () => {
+    const current = makeOutput({ text: 'abcdef', totalLength: 6 })
+    expect(mergeSnapshotOutput(current, 'abc')).toBe(current)
+  })
+
+  it('prefers the longer buffer on divergence and bumps epoch for a redraw', () => {
+    const current = makeOutput({ text: 'short', totalLength: 5, epoch: 0 })
+    const result = mergeSnapshotOutput(current, 'completely different long output')
+    expect(result.text).toBe('completely different long output')
+    expect(result.epoch).toBe(1)
+    expect(result.totalLength).toBeGreaterThan(current.totalLength)
+  })
+
+  it('keeps current on divergence when current is longer', () => {
+    const current = makeOutput({ text: 'a much longer live buffer', totalLength: 25 })
+    expect(mergeSnapshotOutput(current, 'short')).toBe(current)
+  })
+})
+
+describe('preserveNewerLiveOutputs', () => {
+  it('keeps live entry when it advanced past the reconciled one (append raced sync)', () => {
+    const reconciled = new Map([['t1', makeOutput({ text: 'abc', totalLength: 3 })]])
+    const live = new Map([['t1', makeOutput({ text: 'abcdef', totalLength: 6 })]])
+
+    const result = preserveNewerLiveOutputs(reconciled, live)
+    expect(result.get('t1')).toBe(live.get('t1'))
+  })
+
+  it('keeps reconciled entry when epochs differ (snapshot forced a redraw)', () => {
+    const reconciled = new Map([['t1', makeOutput({ text: 'snapshot', totalLength: 8, epoch: 1 })]])
+    const live = new Map([['t1', makeOutput({ text: 'liveliveliv', totalLength: 11, epoch: 0 })]])
+
+    const result = preserveNewerLiveOutputs(reconciled, live)
+    expect(result.get('t1')).toBe(reconciled.get('t1'))
+  })
+
+  it('keeps reconciled entry when live is not newer', () => {
+    const reconciled = new Map([['t1', makeOutput({ text: 'abcdef', totalLength: 6 })]])
+    const live = new Map([['t1', makeOutput({ text: 'abc', totalLength: 3 })]])
+
+    const result = preserveNewerLiveOutputs(reconciled, live)
+    expect(result.get('t1')).toBe(reconciled.get('t1'))
+  })
+
+  it('ignores live entries for terminals not present in reconciled (killed terminals)', () => {
+    const reconciled = new Map([['t1', makeOutput({ text: 'abc', totalLength: 3 })]])
+    const live = new Map([
+      ['t1', makeOutput({ text: 'abc', totalLength: 3 })],
+      ['dead', makeOutput({ text: 'gone', totalLength: 4 })]
+    ])
+
+    const result = preserveNewerLiveOutputs(reconciled, live)
+    expect(result.has('dead')).toBe(false)
+  })
+})
 
 describe('resolveActiveTerminal', () => {
   it('keeps current active when still valid', () => {

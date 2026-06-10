@@ -13,7 +13,7 @@ State management for the renderer process.
 - Terminal spawn/kill UX paths must call `syncFromMain()` after IPC mutations.
 - `syncFromMain()` consumes `TERMINAL_SNAPSHOT` and rebuilds `terminals`, `outputs`, `activeTerminalId`, and `lastActiveByRepo`.
 - After spawning a new terminal, callers must explicitly call `setActiveTerminal(newId)` after `syncFromMain()` to focus the new terminal (syncFromMain preserves the current active terminal if still valid).
-- Live terminal output should append incrementally in renderer (no head-trimming) to avoid ANSI redraw artifacts; snapshot sync merges without rolling back newer live output.
+- Terminal outputs are stored as `TerminalOutput` objects (`{ text, totalLength, epoch }`), **capped at `RENDERER_OUTPUT_MAX_SIZE` (500KB)** via shared `trimOutputTail` — unbounded accumulation previously caused renderer V8 OOM crashes under heavy PTY output. `totalLength` is the monotonic absolute stream offset (drives O(delta) append rendering in xterm); `epoch` bumps on non-incremental rewrites to force a full xterm redraw. Snapshot sync merges without rolling back newer live output.
 
 ## Minimized Terminal Filtering
 - `getVisibleTerminals(terminals)` — exported utility that filters out minimized terminals. Used across stores and hooks to ensure minimized terminals never receive focus.
@@ -33,5 +33,6 @@ State management for the renderer process.
 - `useAppStore.setActiveTab` and `closeTab` cross-reference terminal/repo stores; keep side effects minimal and deterministic.
 - `closeTab` checks for minimized terminals before closing — if any exist, it shows `CloseTabDialog` instead of proceeding. `confirmCloseTab()` bypasses the guard and performs the actual close.
 - `syncFromMain()` uses a `pendingSync` flag to queue re-syncs requested while a sync is in progress — never silently drops requests.
+- `syncFromMain()`'s final commit goes through `preserveNewerLiveOutputs()` — live `appendOutput` events that land while the snapshot IPC is in flight must not be clobbered (would roll `totalLength` backwards and force a destructive xterm redraw).
 - `setProjectGridLayout` is debounced (500ms) to prevent concurrent IPC writes on rapid clicks. It also guards against empty `repoPath`.
 - `loadUIState` migration reads `useRepoStore.getState().repos` — callers must ensure `loadRepos()` completes before `loadUIState()`.

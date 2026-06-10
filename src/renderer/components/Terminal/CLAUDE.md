@@ -8,7 +8,7 @@ xterm.js wrapper per session. Logic decomposed into hooks, constants, and utilit
 - **utils.ts** — `writeChunked(xterm, data)` — writes large buffers in 10KB chunks via `requestAnimationFrame`
 - **hooks/useXTermInstance.ts** — xterm init, addon loading (FitAddon, WebLinksAddon with `openExternal` callback, Unicode11Addon, WebglAddon with fallback), Windows/Linux Ctrl+Shift+C/V copy/paste handler, exposes `xtermReady`
 - **hooks/useTerminalResize.ts** — ResizeObserver + IntersectionObserver, 150ms debounce via `useRef`
-- **hooks/useTerminalOutputRenderer.ts** — applies store output to xterm via patch strategy (`append` delta or `replace` full redraw)
+- **hooks/useTerminalOutputRenderer.ts** — applies store output to xterm via patch strategy (`append` delta or `replace` full redraw). Patches are computed from absolute stream offsets (`TerminalOutput.totalLength`) + `epoch`, NOT string prefix comparison — the store buffer is capped, and per-chunk O(n) `startsWith` scans previously caused renderer OOM under heavy output
 - **hooks/useTerminalDragDrop.ts** — drag-over/drop state, writes dropped file path to PTY
 
 ## Store Dependencies

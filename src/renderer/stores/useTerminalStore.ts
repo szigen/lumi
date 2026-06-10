@@ -1,11 +1,31 @@
 import { create } from 'zustand'
 import type { TerminalStatus, Terminal, TerminalSnapshot } from '../../shared/types'
+import { trimOutputTail } from '../../shared/output-trim'
 
 let terminalBridgeCleanup: (() => void) | null = null
 
+/** Cap for the renderer-side output buffer — matches main's OutputBuffer cap.
+ *  Unbounded accumulation here caused renderer V8 OOM crashes under heavy PTY output. */
+export const RENDERER_OUTPUT_MAX_SIZE = 500_000
+
+export interface TerminalOutput {
+  /** Capped tail of the output stream */
+  text: string
+  /** Absolute count of chars ever appended — monotonic, drives delta rendering */
+  totalLength: number
+  /** Bumped on non-incremental rewrites — signals xterm to do a full redraw */
+  epoch: number
+}
+
+export const EMPTY_TERMINAL_OUTPUT: TerminalOutput = Object.freeze({
+  text: '',
+  totalLength: 0,
+  epoch: 0
+})
+
 interface TerminalState {
   terminals: Map<string, Terminal>
-  outputs: Map<string, string>
+  outputs: Map<string, TerminalOutput>
   activeTerminalId: string | null
   lastActiveByRepo: Map<string, string>
   syncing: boolean
@@ -24,32 +44,61 @@ interface TerminalState {
   syncFromMain: () => Promise<void>
 }
 
-export function appendTerminalOutput(current: string, chunk: string): string {
-  return current + chunk
+export function appendTerminalOutput(
+  current: TerminalOutput | undefined,
+  chunk: string
+): TerminalOutput {
+  const base = current ?? EMPTY_TERMINAL_OUTPUT
+  return {
+    text: trimOutputTail(base.text + chunk, RENDERER_OUTPUT_MAX_SIZE),
+    totalLength: base.totalLength + chunk.length,
+    epoch: base.epoch
+  }
 }
 
-export function mergeSnapshotOutput(current: string, snapshot: string): string {
-  if (!current) return snapshot
-  if (!snapshot) return current
+export function mergeSnapshotOutput(
+  current: TerminalOutput | undefined,
+  snapshot: string
+): TerminalOutput {
+  if (!current || current.text.length === 0) {
+    if (!snapshot) return current ?? EMPTY_TERMINAL_OUTPUT
+    return {
+      text: trimOutputTail(snapshot, RENDERER_OUTPUT_MAX_SIZE),
+      totalLength: (current?.totalLength ?? 0) + snapshot.length,
+      epoch: (current?.epoch ?? 0) + 1
+    }
+  }
+  if (!snapshot || snapshot === current.text) return current
 
-  // Snapshot is ahead (renderer missed events) -> trust snapshot.
-  if (snapshot.startsWith(current)) return snapshot
+  // Snapshot is ahead (renderer missed events) -> extend incrementally, no redraw.
+  if (snapshot.startsWith(current.text)) {
+    return {
+      text: trimOutputTail(snapshot, RENDERER_OUTPUT_MAX_SIZE),
+      totalLength: current.totalLength + (snapshot.length - current.text.length),
+      epoch: current.epoch
+    }
+  }
 
   // Renderer is ahead (sync raced with live output) -> keep current to avoid rollback flicker.
-  if (current.startsWith(snapshot)) return current
+  if (current.text.startsWith(snapshot)) return current
 
   // Diverged streams: prefer longer buffer to reduce destructive full redraws.
-  return current.length >= snapshot.length ? current : snapshot
+  if (current.text.length >= snapshot.length) return current
+  return {
+    text: trimOutputTail(snapshot, RENDERER_OUTPUT_MAX_SIZE),
+    totalLength: current.totalLength + snapshot.length,
+    epoch: current.epoch + 1
+  }
 }
 
 /** Reconcile main process snapshots with renderer state */
 export function reconcileTerminals(
   snapshots: TerminalSnapshot[],
   currentTerminals: Map<string, Terminal>,
-  currentOutputs: Map<string, string>
-): { terminals: Map<string, Terminal>; outputs: Map<string, string> } {
+  currentOutputs: Map<string, TerminalOutput>
+): { terminals: Map<string, Terminal>; outputs: Map<string, TerminalOutput> } {
   const terminals = new Map<string, Terminal>()
-  const outputs = new Map<string, string>()
+  const outputs = new Map<string, TerminalOutput>()
 
   for (const snapshot of snapshots) {
     const existing = currentTerminals.get(snapshot.id)
@@ -64,11 +113,28 @@ export function reconcileTerminals(
       minimized: existing?.minimized,
       createdAt: new Date(snapshot.createdAt)
     })
-    const currentOutput = currentOutputs.get(snapshot.id) || ''
+    const currentOutput = currentOutputs.get(snapshot.id)
     outputs.set(snapshot.id, mergeSnapshotOutput(currentOutput, snapshot.output || ''))
   }
 
   return { terminals, outputs }
+}
+
+/** Preserve live outputs that advanced past the reconciled snapshot while
+ *  `syncFromMain` was awaiting IPC — otherwise the final `set` would roll
+ *  `totalLength` backwards and force a destructive xterm redraw. */
+export function preserveNewerLiveOutputs(
+  reconciled: Map<string, TerminalOutput>,
+  live: Map<string, TerminalOutput>
+): Map<string, TerminalOutput> {
+  const merged = new Map(reconciled)
+  for (const [id, entry] of reconciled) {
+    const liveEntry = live.get(id)
+    if (liveEntry && liveEntry.epoch === entry.epoch && liveEntry.totalLength > entry.totalLength) {
+      merged.set(id, liveEntry)
+    }
+  }
+  return merged
 }
 
 /** Filter out minimized terminals — returns only visible ones */
@@ -211,9 +277,7 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
   appendOutput: (id, data) => {
     set((state) => {
       const newOutputs = new Map(state.outputs)
-      const current = newOutputs.get(id) || ''
-      const next = appendTerminalOutput(current, data)
-      newOutputs.set(id, next)
+      newOutputs.set(id, appendTerminalOutput(newOutputs.get(id), data))
       return { outputs: newOutputs }
     })
   },
@@ -300,7 +364,12 @@ export const useTerminalStore = create<TerminalState>((set, get) => ({
         get().lastActiveByRepo
       )
 
-      set({ terminals, outputs, activeTerminalId, lastActiveByRepo })
+      set((liveState) => ({
+        terminals,
+        outputs: preserveNewerLiveOutputs(outputs, liveState.outputs),
+        activeTerminalId,
+        lastActiveByRepo
+      }))
     } finally {
       set({ syncing: false })
       // If a sync was requested while we were busy, run it now
