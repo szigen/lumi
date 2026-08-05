@@ -1,0 +1,77 @@
+name: Release Native
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 0.6.0) — release tag will be native-v<version>'
+        required: true
+      ref:
+        description: 'berkaysazlioglu/Lumi ref to build (branch/tag/sha)'
+        required: false
+        default: 'main'
+
+concurrency:
+  group: release-native
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout native repo
+        uses: actions/checkout@v4
+        with:
+          repository: berkaysazlioglu/Lumi
+          ref: ${{ inputs.ref }}
+
+      - name: Run tests
+        working-directory: LumiPackages
+        run: swift test
+
+      - name: Import macOS signing certificate
+        env:
+          MAC_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+        run: |
+          CERT_PATH=$RUNNER_TEMP/certificate.p12
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain-db
+          echo "$MAC_CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
+          security create-keychain -p "" $KEYCHAIN_PATH
+          security set-keychain-settings $KEYCHAIN_PATH
+          security unlock-keychain -p "" $KEYCHAIN_PATH
+          security import $CERT_PATH -k $KEYCHAIN_PATH -P "$MAC_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -k "" $KEYCHAIN_PATH
+          security list-keychains -d user -s $KEYCHAIN_PATH login.keychain-db
+
+      - name: Store notarization credentials
+        run: |
+          xcrun notarytool store-credentials "lumi-notarize" --apple-id "${{ secrets.APPLE_ID }}" --team-id "${{ secrets.APPLE_TEAM_ID }}" --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}"
+
+      - name: Build, sign and notarize
+        env:
+          VERSION: ${{ inputs.version }}
+          NOTARY_PROFILE: lumi-notarize
+        run: |
+          IDENTITY="$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/ {print $2; exit}')"
+          if [ -z "$IDENTITY" ]; then
+            echo "::error::No Developer ID Application identity in keychain"
+            exit 1
+          fi
+          IDENTITY="$IDENTITY" Scripts/make-app.sh --notarize
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          gh release create "native-v${{ inputs.version }}" \
+            dist/Lumi-${{ inputs.version }}-*-mac.zip \
+            dist/Lumi-${{ inputs.version }}-*-mac.dmg \
+            dist/SHA256SUMS-${{ inputs.version }}.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --draft \
+            --title "Lumi Native v${{ inputs.version }}" \
+            --notes "Native macOS (Apple Silicon) build of Lumi v${{ inputs.version }}. Built from berkaysazlioglu/Lumi@${SOURCE_SHA}. Signed with Developer ID and notarized by Apple."
